@@ -148,3 +148,7 @@ export const MOCK_RESTROOMS: Restroom[] = [
     createdAt: "2026-09-19T15:25:00.000Z",
   },
 ];
+
+export function getRestroomById(id: string): Restroom | undefined {
+  return MOCK_RESTROOMS.find((restroom) => restroom.id === id);
+}

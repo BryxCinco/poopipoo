@@ -1,0 +1,74 @@
+import Image from "next/image";
+import Link from "next/link";
+import { ChevronRight, MapPin, Toilet } from "lucide-react";
+
+import { AmenityBadge, PriceBadge } from "@/components/restroom/RestroomBadges";
+import { StarRating } from "@/components/restroom/StarRating";
+import { Badge } from "@/components/ui/badge";
+import { formatDistance } from "@/lib/distance";
+import { getDisplayAmenities } from "@/lib/icons";
+import type { Restroom } from "@/types/restroom";
+
+const MAX_AMENITY_BADGES = 3;
+
+interface RestroomListItemProps {
+  restroom: Restroom;
+  /** Kilometers from the user, or null when the location is unknown. */
+  distanceKm: number | null;
+}
+
+export function RestroomListItem({ restroom, distanceKm }: RestroomListItemProps) {
+  const amenities = getDisplayAmenities(restroom.amenities);
+  const shownAmenities = amenities.slice(0, MAX_AMENITY_BADGES);
+  const hiddenCount = amenities.length - shownAmenities.length;
+  const thumbnail = restroom.images[0];
+
+  return (
+    <Link
+      href={`/restroom/${restroom.id}`}
+      className="flex gap-3 rounded-lg border bg-card p-3 transition-colors hover:bg-muted/50 active:bg-muted"
+    >
+      <div className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-md bg-[#8B4513]/10 text-[#8B4513]">
+        {thumbnail ? (
+          // `unoptimized`: image hosts aren't configured yet (no next.config remotePatterns)
+          <Image src={thumbnail} alt="" fill sizes="56px" className="object-cover" unoptimized />
+        ) : (
+          <Toilet className="h-6 w-6" aria-hidden="true" />
+        )}
+      </div>
+
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
+        <div className="flex items-start justify-between gap-2">
+          <h2 className="line-clamp-2 font-semibold leading-tight">{restroom.name}</h2>
+          <PriceBadge isFree={restroom.isFree} className="shrink-0" />
+        </div>
+
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <StarRating rating={restroom.rating} />
+          <span className="font-medium text-foreground">{restroom.rating.toFixed(1)}</span>
+          <span>({restroom.reviewCount})</span>
+        </div>
+
+        {distanceKm !== null && (
+          <p className="flex items-center gap-1 text-xs text-muted-foreground">
+            <MapPin className="h-3.5 w-3.5" aria-hidden="true" />
+            {formatDistance(distanceKm)}
+          </p>
+        )}
+
+        <div className="mt-0.5 flex flex-wrap gap-1">
+          {shownAmenities.map((amenity) => (
+            <AmenityBadge key={amenity} amenity={amenity} className="px-1.5 py-0 text-[11px]" />
+          ))}
+          {hiddenCount > 0 && (
+            <Badge variant="secondary" className="px-1.5 py-0 text-[11px] font-normal">
+              +{hiddenCount} more
+            </Badge>
+          )}
+        </div>
+      </div>
+
+      <ChevronRight className="h-4 w-4 shrink-0 self-center text-muted-foreground" aria-hidden="true" />
+    </Link>
+  );
+}

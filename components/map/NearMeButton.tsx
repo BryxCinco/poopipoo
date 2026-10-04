@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2 } from "lucide-react";
+import { Loader2, MapPin } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { useGeolocation } from "@/hooks/use-geolocation";
@@ -56,7 +56,10 @@ export function NearMeButton({ onLocate, className }: NearMeButtonProps) {
           Hinahanap...
         </>
       ) : (
-        <>📍 Near Me</>
+        <>
+          <MapPin className="text-red-600" aria-hidden="true" />
+          Near Me
+        </>
       )}
     </Button>
   );

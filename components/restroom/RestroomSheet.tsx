@@ -1,8 +1,8 @@
 "use client";
 
-import { MapPin, Navigation } from "lucide-react";
+import Link from "next/link";
+import { ChevronRight, MapPin, Navigation } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -11,18 +11,16 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { AMENITY_CONFIG } from "@/components/restroom/amenities";
+import { AmenityBadge, PriceBadge } from "@/components/restroom/RestroomBadges";
 import { StarRating } from "@/components/restroom/StarRating";
+import { getDirectionsUrl } from "@/lib/directions";
+import { getDisplayAmenities } from "@/lib/icons";
 import type { Restroom } from "@/types/restroom";
 
 interface RestroomSheetProps {
   restroom: Restroom | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-}
-
-function getDirectionsUrl({ latitude, longitude }: Restroom): string {
-  return `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`;
 }
 
 export function RestroomSheet({ restroom, open, onOpenChange }: RestroomSheetProps) {
@@ -42,9 +40,7 @@ export function RestroomSheet({ restroom, open, onOpenChange }: RestroomSheetPro
                 <span className="text-sm text-muted-foreground">
                   ({restroom.reviewCount} reviews)
                 </span>
-                <Badge variant={restroom.isFree ? "secondary" : "outline"}>
-                  {restroom.isFree ? "Libre" : "May bayad"}
-                </Badge>
+                <PriceBadge isFree={restroom.isFree} />
               </div>
               <SheetDescription className="flex items-start gap-1.5">
                 <MapPin className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
@@ -53,25 +49,31 @@ export function RestroomSheet({ restroom, open, onOpenChange }: RestroomSheetPro
             </SheetHeader>
 
             <div className="flex flex-wrap gap-2">
-              {restroom.amenities.map((amenity) => {
-                const { label, icon: Icon } = AMENITY_CONFIG[amenity];
-                return (
-                  <Badge key={amenity} variant="outline" className="gap-1 py-1">
-                    <Icon className="h-3.5 w-3.5" aria-hidden="true" />
-                    {label}
-                  </Badge>
-                );
-              })}
+              {getDisplayAmenities(restroom.amenities).map((amenity) => (
+                <AmenityBadge key={amenity} amenity={amenity} className="py-1" />
+              ))}
             </div>
 
             <p className="text-sm leading-relaxed">{restroom.description}</p>
 
-            <Button asChild size="lg" className="w-full">
-              <a href={getDirectionsUrl(restroom)} target="_blank" rel="noopener noreferrer">
-                <Navigation aria-hidden="true" />
-                Get Directions
-              </a>
-            </Button>
+            <div className="flex flex-col gap-2">
+              <Button asChild size="lg" className="w-full">
+                <a
+                  href={getDirectionsUrl(restroom.latitude, restroom.longitude)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Navigation aria-hidden="true" />
+                  Get Directions
+                </a>
+              </Button>
+              <Button asChild size="lg" variant="outline" className="w-full">
+                <Link href={`/restroom/${restroom.id}`}>
+                  Tingnan ang buong detalye
+                  <ChevronRight aria-hidden="true" />
+                </Link>
+              </Button>
+            </div>
           </div>
         )}
       </SheetContent>
