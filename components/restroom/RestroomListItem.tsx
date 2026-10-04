@@ -2,8 +2,12 @@ import Image from "next/image";
 import Link from "next/link";
 import { ChevronRight, MapPin, Toilet } from "lucide-react";
 
-import { AmenityBadge, PriceBadge } from "@/components/restroom/RestroomBadges";
-import { StarRating } from "@/components/restroom/StarRating";
+import {
+  AmenityBadge,
+  PriceBadge,
+  UserAddedBadge,
+} from "@/components/restroom/RestroomBadges";
+import { RestroomRating } from "@/components/restroom/RestroomRating";
 import { Badge } from "@/components/ui/badge";
 import { formatDistance } from "@/lib/distance";
 import { getDisplayAmenities } from "@/lib/icons";
@@ -15,9 +19,14 @@ interface RestroomListItemProps {
   restroom: Restroom;
   /** Kilometers from the user, or null when the location is unknown. */
   distanceKm: number | null;
+  isUserAdded?: boolean;
 }
 
-export function RestroomListItem({ restroom, distanceKm }: RestroomListItemProps) {
+export function RestroomListItem({
+  restroom,
+  distanceKm,
+  isUserAdded = false,
+}: RestroomListItemProps) {
   const amenities = getDisplayAmenities(restroom.amenities);
   const shownAmenities = amenities.slice(0, MAX_AMENITY_BADGES);
   const hiddenCount = amenities.length - shownAmenities.length;
@@ -43,11 +52,9 @@ export function RestroomListItem({ restroom, distanceKm }: RestroomListItemProps
           <PriceBadge isFree={restroom.isFree} className="shrink-0" />
         </div>
 
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <StarRating rating={restroom.rating} />
-          <span className="font-medium text-foreground">{restroom.rating.toFixed(1)}</span>
-          <span>({restroom.reviewCount})</span>
-        </div>
+        {isUserAdded && <UserAddedBadge className="w-fit px-1.5 py-0 text-[11px]" />}
+
+        <RestroomRating rating={restroom.rating} reviewCount={restroom.reviewCount} size="sm" />
 
         {distanceKm !== null && (
           <p className="flex items-center gap-1 text-xs text-muted-foreground">

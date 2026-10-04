@@ -11,19 +11,29 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { AmenityBadge, PriceBadge } from "@/components/restroom/RestroomBadges";
-import { StarRating } from "@/components/restroom/StarRating";
+import {
+  AmenityBadge,
+  PriceBadge,
+  UserAddedBadge,
+} from "@/components/restroom/RestroomBadges";
+import { RestroomRating } from "@/components/restroom/RestroomRating";
 import { getDirectionsUrl } from "@/lib/directions";
 import { getDisplayAmenities } from "@/lib/icons";
 import type { Restroom } from "@/types/restroom";
 
 interface RestroomSheetProps {
   restroom: Restroom | null;
+  isUserAdded?: boolean;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-export function RestroomSheet({ restroom, open, onOpenChange }: RestroomSheetProps) {
+export function RestroomSheet({
+  restroom,
+  isUserAdded = false,
+  open,
+  onOpenChange,
+}: RestroomSheetProps) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
@@ -33,13 +43,10 @@ export function RestroomSheet({ restroom, open, onOpenChange }: RestroomSheetPro
         {restroom && (
           <div className="mx-auto flex w-full max-w-screen-md flex-col gap-4">
             <SheetHeader className="space-y-2 text-left">
+              {isUserAdded && <UserAddedBadge label="Iyong contribution" className="w-fit" />}
               <SheetTitle className="pr-6 text-2xl font-bold">{restroom.name}</SheetTitle>
               <div className="flex flex-wrap items-center gap-2">
-                <StarRating rating={restroom.rating} />
-                <span className="text-sm font-medium">{restroom.rating.toFixed(1)}</span>
-                <span className="text-sm text-muted-foreground">
-                  ({restroom.reviewCount} reviews)
-                </span>
+                <RestroomRating rating={restroom.rating} reviewCount={restroom.reviewCount} />
                 <PriceBadge isFree={restroom.isFree} />
               </div>
               <SheetDescription className="flex items-start gap-1.5">
@@ -54,7 +61,9 @@ export function RestroomSheet({ restroom, open, onOpenChange }: RestroomSheetPro
               ))}
             </div>
 
-            <p className="text-sm leading-relaxed">{restroom.description}</p>
+            {restroom.description && (
+              <p className="whitespace-pre-line text-sm leading-relaxed">{restroom.description}</p>
+            )}
 
             <div className="flex flex-col gap-2">
               <Button asChild size="lg" className="w-full">

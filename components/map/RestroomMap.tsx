@@ -1,19 +1,14 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { CircleMarker, MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
 
+import { MapController, type MapTarget } from "@/components/map/MapController";
 import { createRestroomIcon } from "@/components/map/marker-icon";
 import { Button } from "@/components/ui/button";
-import { StarRating } from "@/components/restroom/StarRating";
+import { RestroomRating } from "@/components/restroom/RestroomRating";
 import { MANILA_COORDS } from "@/hooks/use-geolocation";
 import type { Restroom } from "@/types/restroom";
-
-export interface MapTarget {
-  latitude: number;
-  longitude: number;
-  zoom: number;
-}
 
 interface RestroomMapProps {
   restrooms: Restroom[];
@@ -24,19 +19,6 @@ interface RestroomMapProps {
 }
 
 const DEFAULT_ZOOM = 12;
-
-/** Imperatively moves the map when `target` changes. Must be inside MapContainer. */
-function MapController({ target }: { target: MapTarget | null }) {
-  const map = useMap();
-
-  useEffect(() => {
-    if (target) {
-      map.flyTo([target.latitude, target.longitude], target.zoom, { duration: 1 });
-    }
-  }, [map, target]);
-
-  return null;
-}
 
 interface RestroomPopupContentProps {
   restroom: Restroom;
@@ -55,10 +37,7 @@ function RestroomPopupContent({ restroom, onSelectRestroom }: RestroomPopupConte
   return (
     <div className="flex min-w-[180px] flex-col gap-1.5">
       <p className="!m-0 text-sm font-semibold">{restroom.name}</p>
-      <div className="flex items-center gap-1.5">
-        <StarRating rating={restroom.rating} />
-        <span className="text-xs text-muted-foreground">{restroom.rating.toFixed(1)}</span>
-      </div>
+      <RestroomRating rating={restroom.rating} reviewCount={restroom.reviewCount} size="sm" />
       <p className="!m-0 text-xs text-muted-foreground">{restroom.address}</p>
       <Button size="sm" className="mt-1" onClick={handleViewDetails}>
         View details

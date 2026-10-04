@@ -3,11 +3,11 @@
 import { useCallback, useState } from "react";
 import dynamic from "next/dynamic";
 
-import type { MapTarget } from "@/components/map/RestroomMap";
+import type { MapTarget } from "@/components/map/MapController";
 import { NearMeButton, type LocateResult } from "@/components/map/NearMeButton";
 import { RestroomSheet } from "@/components/restroom/RestroomSheet";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MOCK_RESTROOMS } from "@/lib/mock-restrooms";
+import { useRestrooms } from "@/hooks/use-restrooms";
 import type { Restroom } from "@/types/restroom";
 
 // Leaflet touches `window` on import, so the map must only load in the browser.
@@ -17,6 +17,7 @@ const RestroomMap = dynamic(() => import("@/components/map/RestroomMap"), {
 });
 
 export default function HomePage() {
+  const { restrooms, isUserAdded } = useRestrooms();
   const [selectedRestroom, setSelectedRestroom] = useState<Restroom | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [flyTo, setFlyTo] = useState<MapTarget | null>(null);
@@ -42,7 +43,7 @@ export default function HomePage() {
     // so the header, bottom nav, and sheet still render above the map.
     <div className="relative isolate flex-1">
       <RestroomMap
-        restrooms={MOCK_RESTROOMS}
+        restrooms={restrooms}
         onSelectRestroom={handleSelectRestroom}
         flyTo={flyTo}
         userLocation={userLocation}
@@ -53,6 +54,7 @@ export default function HomePage() {
       {/* Keeps the last restroom while closing so the slide-out animation still has content */}
       <RestroomSheet
         restroom={selectedRestroom}
+        isUserAdded={selectedRestroom ? isUserAdded(selectedRestroom.id) : false}
         open={sheetOpen}
         onOpenChange={setSheetOpen}
       />

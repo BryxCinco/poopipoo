@@ -149,6 +149,7 @@ export const MOCK_RESTROOMS: Restroom[] = [
   },
 ];
 
-export function getRestroomById(id: string): Restroom | undefined {
+/** Server-safe lookup of mock data only (used for metadata / static params). */
+export function getMockRestroomById(id: string): Restroom | undefined {
   return MOCK_RESTROOMS.find((restroom) => restroom.id === id);
 }

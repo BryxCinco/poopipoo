@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { List } from "lucide-react";
 
 import { RestroomList } from "@/components/restroom/RestroomList";
-import { MOCK_RESTROOMS } from "@/lib/mock-restrooms";
 
 export const metadata: Metadata = {
   title: "Poopipoo — Mga CR Malapit Sa'yo",
@@ -15,7 +14,7 @@ export default function ListPage() {
         <List className="h-5 w-5" aria-hidden="true" />
         Mga CR Malapit Sa&apos;yo
       </h1>
-      <RestroomList restrooms={MOCK_RESTROOMS} />
+      <RestroomList />
     </div>
   );
 }

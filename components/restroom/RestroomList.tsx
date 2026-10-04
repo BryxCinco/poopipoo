@@ -12,22 +12,26 @@ import { RestroomListItem } from "@/components/restroom/RestroomListItem";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useGeolocation } from "@/hooks/use-geolocation";
+import { useRestrooms } from "@/hooks/use-restrooms";
 import { calculateDistance } from "@/lib/distance";
 import type { Restroom } from "@/types/restroom";
-
-interface RestroomListProps {
-  restrooms: Restroom[];
-}
 
 interface RestroomWithDistance {
   restroom: Restroom;
   distanceKm: number | null;
 }
 
-export function RestroomList({ restrooms }: RestroomListProps) {
-  const { latitude, longitude, hasLocation, loading, error, requestLocation } = useGeolocation({
-    requestOnMount: true,
-  });
+export function RestroomList() {
+  const { restrooms, isUserAdded, loading: storeLoading } = useRestrooms();
+  const {
+    latitude,
+    longitude,
+    hasLocation,
+    loading: locationLoading,
+    error,
+    requestLocation,
+  } = useGeolocation({ requestOnMount: true });
+  const loading = locationLoading || storeLoading;
   const [activeFilters, setActiveFilters] = useState<FilterId[]>([]);
 
   // Filter, then sort: nearest first when we know where the user is,
@@ -100,7 +104,11 @@ export function RestroomList({ restrooms }: RestroomListProps) {
         <ul className="flex flex-col gap-2">
           {items.map(({ restroom, distanceKm }) => (
             <li key={restroom.id}>
-              <RestroomListItem restroom={restroom} distanceKm={distanceKm} />
+              <RestroomListItem
+                restroom={restroom}
+                distanceKm={distanceKm}
+                isUserAdded={isUserAdded(restroom.id)}
+              />
             </li>
           ))}
         </ul>
