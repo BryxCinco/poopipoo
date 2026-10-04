@@ -1,9 +1,11 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
+import "leaflet/dist/leaflet.css";
 import "./globals.css";
 
 import { BottomNav } from "@/components/layout/BottomNav";
 import { Header } from "@/components/layout/Header";
+import { Toaster } from "@/components/ui/toaster";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -38,13 +40,16 @@ export default function RootLayout({
   return (
     <html lang="fil">
       <body
-        className={`${geistSans.variable} flex min-h-dvh flex-col font-sans antialiased`}
+        className={`${geistSans.variable} flex h-dvh flex-col font-sans antialiased`}
       >
         <Header />
-        <main className="mx-auto flex w-full max-w-screen-md flex-1 flex-col">
+        {/* Fills the space between header and bottom nav; pages scroll inside it.
+            Full width so the map can go edge to edge; pages set their own max-width. */}
+        <main className="flex min-h-0 w-full flex-1 flex-col overflow-y-auto">
           {children}
         </main>
         <BottomNav />
+        <Toaster />
       </body>
     </html>
   );
