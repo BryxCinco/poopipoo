@@ -1,30 +1,33 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 
 import { RestroomDetail } from "@/components/restroom/RestroomDetail";
-import { getMockRestroomById, MOCK_RESTROOMS } from "@/lib/mock-restrooms";
+import { getCurrentUser } from "@/lib/auth/server";
+import { getRestroomByIdServer } from "@/lib/restrooms/server";
 
 interface RestroomPageProps {
   params: { id: string };
 }
 
-// Pre-render mock restrooms at build time. Other ids (user-added restrooms that
-// live in localStorage) render on demand and are resolved on the client.
-export function generateStaticParams(): RestroomPageProps["params"][] {
-  return MOCK_RESTROOMS.map((restroom) => ({ id: restroom.id }));
-}
-
-export function generateMetadata({ params }: RestroomPageProps): Metadata {
-  const restroom = getMockRestroomById(params.id);
-  if (!restroom) {
-    // Server can't see localStorage; RestroomDetail sets the real title on the client.
-    return { title: "Poopipoo — CR" };
-  }
+export async function generateMetadata({ params }: RestroomPageProps): Promise<Metadata> {
+  const restroom = await getRestroomByIdServer(params.id);
+  if (!restroom) notFound();
   return {
     title: `Poopipoo — ${restroom.name}`,
-    description: `${restroom.description} ${restroom.address}`,
+    description: [restroom.description, restroom.address].filter(Boolean).join(" "),
   };
 }
 
-export default function RestroomPage({ params }: RestroomPageProps) {
-  return <RestroomDetail id={params.id} />;
+// Server-rendered from Supabase: unknown ids get a real 404 status.
+// Note: no loading.tsx for this route on purpose. A loading boundary makes Next
+// start streaming (status 200) before notFound() runs, losing the 404.
+export default async function RestroomPage({ params }: RestroomPageProps) {
+  const [restroom, user] = await Promise.all([
+    getRestroomByIdServer(params.id),
+    getCurrentUser(),
+  ]);
+  if (!restroom) notFound();
+
+  const isOwner = user !== null && restroom.createdBy === user.id;
+  return <RestroomDetail restroom={restroom} isOwner={isOwner} />;
 }

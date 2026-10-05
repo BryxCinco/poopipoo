@@ -1,6 +1,6 @@
 import type { Restroom } from "@/types/restroom";
 
-// Mock data for Phase 2. Replaced by Supabase in a later phase.
+// Original mock data. Now only used by scripts/seed-restrooms.ts to seed Supabase.
 // Coordinates are approximate real-world locations in Metro Manila.
 export const MOCK_RESTROOMS: Restroom[] = [
   // --- Makati ---
@@ -149,7 +149,3 @@ export const MOCK_RESTROOMS: Restroom[] = [
   },
 ];
 
-/** Server-safe lookup of mock data only (used for metadata / static params). */
-export function getMockRestroomById(id: string): Restroom | undefined {
-  return MOCK_RESTROOMS.find((restroom) => restroom.id === id);
-}

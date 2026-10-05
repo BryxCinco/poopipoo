@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { MapPin, Navigation } from "lucide-react";
 
@@ -9,12 +8,9 @@ import { BackButton } from "@/components/restroom/BackButton";
 import { DeleteRestroomButton } from "@/components/restroom/DeleteRestroomButton";
 import { DistanceFromUser } from "@/components/restroom/DistanceFromUser";
 import { PriceBadge, UserAddedBadge } from "@/components/restroom/RestroomBadges";
-import { RestroomNotFound } from "@/components/restroom/RestroomNotFound";
 import { RestroomRating } from "@/components/restroom/RestroomRating";
 import { ShareButton } from "@/components/restroom/ShareButton";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useRestrooms } from "@/hooks/use-restrooms";
 import { getDirectionsUrl } from "@/lib/directions";
 import {
   ALL_AMENITIES,
@@ -23,27 +19,20 @@ import {
   getDisplayAmenities,
 } from "@/lib/icons";
 import { cn } from "@/lib/utils";
+import type { Restroom } from "@/types/restroom";
+
+interface RestroomDetailProps {
+  restroom: Restroom;
+  /** Decided on the server from the validated session. */
+  isOwner: boolean;
+}
 
 /**
- * Client-side because user-added restrooms only exist in localStorage.
- * Mock restrooms still render on the server (the store's server snapshot
- * contains them), so shared links to mock restrooms get full HTML.
+ * Restroom detail view. Data is loaded on the server (app/restroom/[id]/page.tsx);
+ * this is a Client Component only for the interactive bits (delete, router).
  */
-export function RestroomDetail({ id }: { id: string }) {
+export function RestroomDetail({ restroom, isOwner }: RestroomDetailProps) {
   const router = useRouter();
-  const { restrooms, isUserAdded, loading } = useRestrooms();
-  const restroom = restrooms.find((r) => r.id === id);
-  const isOwner = restroom ? isUserAdded(restroom.id) : false;
-
-  // Server metadata only knows mock restrooms; set the title for user-added ones too.
-  useEffect(() => {
-    if (restroom) document.title = `Poopipoo — ${restroom.name}`;
-  }, [restroom]);
-
-  if (!restroom) {
-    // Before mount, user-added restrooms aren't loaded yet — don't flash "not found".
-    return loading ? <DetailSkeleton /> : <RestroomNotFound />;
-  }
 
   return (
     <article className="mx-auto flex w-full max-w-screen-md flex-col gap-5 px-4 py-3 pb-8">
@@ -126,21 +115,13 @@ export function RestroomDetail({ id }: { id: string }) {
         <DeleteRestroomButton
           restroom={restroom}
           variant="full"
-          onDeleted={() => router.replace("/profile")}
+          onDeleted={() => {
+            router.replace("/profile");
+            router.refresh();
+          }}
         />
       )}
     </article>
   );
 }
 
-function DetailSkeleton() {
-  return (
-    <div className="mx-auto flex w-full max-w-screen-md flex-col gap-4 px-4 py-4" aria-busy="true">
-      <Skeleton className="h-8 w-24" />
-      <Skeleton className="h-8 w-3/4" />
-      <Skeleton className="h-5 w-1/2" />
-      <Skeleton className="h-48 w-full" />
-      <Skeleton className="h-24 w-full" />
-    </div>
-  );
-}

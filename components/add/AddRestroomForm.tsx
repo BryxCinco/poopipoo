@@ -37,9 +37,9 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { useGeolocation } from "@/hooks/use-geolocation";
-import { useRestrooms } from "@/hooks/use-restrooms";
 import { useToast } from "@/hooks/use-toast";
 import { reverseGeocode } from "@/lib/geocode";
+import { addRestroom } from "@/lib/restroom-store";
 import { ALL_AMENITIES, getAmenityIcon, getAmenityLabel, getDisplayAmenities } from "@/lib/icons";
 import { cn } from "@/lib/utils";
 import type { Amenity } from "@/types/restroom";
@@ -105,10 +105,14 @@ const formatCoords = ({ latitude, longitude }: LatLng) =>
 
 // ---------- component ----------
 
-export function AddRestroomForm() {
+interface AddRestroomFormProps {
+  /** Signed-in user's id (the page redirects guests to login). */
+  userId: string;
+}
+
+export function AddRestroomForm({ userId }: AddRestroomFormProps) {
   const router = useRouter();
   const { toast } = useToast();
-  const { addRestroom } = useRestrooms();
   const geolocation = useGeolocation();
 
   const [step, setStep] = useState(0);
@@ -116,6 +120,7 @@ export function AddRestroomForm() {
   const [errors, setErrors] = useState<FieldErrors>({});
   const [focus, setFocus] = useState<MapTarget | null>(null);
   const [confirmCancel, setConfirmCancel] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   // Address auto-fill bookkeeping
   const [geocoding, setGeocoding] = useState(false);
@@ -209,7 +214,8 @@ export function AddRestroomForm() {
 
   const handleCancel = () => (isDirty ? setConfirmCancel(true) : leave());
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    if (submitting) return;
     // Re-check everything in case a step was skipped via "I-edit" links.
     for (const s of [0, 1]) {
       const stepErrors = validateStep(s, form);
@@ -221,21 +227,32 @@ export function AddRestroomForm() {
     }
     if (!form.location) return;
 
-    const restroom = addRestroom({
-      name: form.name.trim(),
-      description: form.description.trim(),
-      address: form.address.trim(),
-      latitude: form.location.latitude,
-      longitude: form.location.longitude,
-      rating: 0,
-      reviewCount: 0,
-      amenities: form.amenities,
-      images: [],
-      isFree: form.isFree,
-    });
-
-    toast({ title: "Naidagdag ang CR!", description: "Salamat sa contribution." });
-    router.push(`/restroom/${restroom.id}`);
+    setSubmitting(true);
+    try {
+      const restroom = await addRestroom(
+        {
+          name: form.name,
+          description: form.description,
+          address: form.address,
+          latitude: form.location.latitude,
+          longitude: form.location.longitude,
+          amenities: form.amenities,
+          images: [],
+          isFree: form.isFree,
+        },
+        userId
+      );
+      toast({ title: "Naidagdag ang CR!", description: "Salamat sa contribution." });
+      // Button stays disabled while navigating away
+      router.push(`/restroom/${restroom.id}`);
+    } catch (error) {
+      setSubmitting(false);
+      toast({
+        variant: "destructive",
+        title: "Hindi ma-save ang CR",
+        description: error instanceof Error ? error.message : "Subukan ulit mamaya.",
+      });
+    }
   };
 
   const toggleAmenity = (amenity: Amenity) =>
@@ -502,9 +519,19 @@ export function AddRestroomForm() {
             <ArrowRight aria-hidden="true" />
           </Button>
         ) : (
-          <Button type="button" size="lg" onClick={handleSubmit} className="flex-1">
-            <Check aria-hidden="true" />
-            I-submit
+          <Button
+            type="button"
+            size="lg"
+            onClick={() => void handleSubmit()}
+            disabled={submitting}
+            className="flex-1"
+          >
+            {submitting ? (
+              <Loader2 className="animate-spin" aria-hidden="true" />
+            ) : (
+              <Check aria-hidden="true" />
+            )}
+            {submitting ? "Sine-save..." : "I-submit"}
           </Button>
         )}
       </div>

@@ -1,46 +1,48 @@
 "use client";
 
-import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useSyncExternalStore } from "react";
 
+import { useAuthUser } from "@/hooks/use-auth-user";
 import {
-  addUserRestroom,
-  getAllRestrooms,
-  getServerAllRestrooms,
-  getServerUserRestrooms,
-  getUserRestrooms,
-  removeUserRestroom,
+  addRestroom,
+  ensureFreshRestrooms,
+  fetchRestrooms,
+  getServerSnapshot,
+  getSnapshot,
+  removeRestroom,
   subscribe,
 } from "@/lib/restroom-store";
+import type { Restroom } from "@/types/restroom";
 
-/**
- * Restrooms from the local store (mock + user-added).
- *
- * During SSR and the first client render only mock data is available
- * (localStorage can't be read on the server), so `loading` stays true until
- * the component has mounted and user-added restrooms are included.
- */
-export function useRestrooms() {
-  const restrooms = useSyncExternalStore(subscribe, getAllRestrooms, getServerAllRestrooms);
-  const userRestrooms = useSyncExternalStore(
-    subscribe,
-    getUserRestrooms,
-    getServerUserRestrooms
-  );
+/** Restrooms from Supabase via the shared client store. Fetches on first use. */
+export function useRestroomsFromSupabase() {
+  const state = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-
-  const isUserAdded = useCallback(
-    (id: string) => userRestrooms.some((restroom) => restroom.id === id),
-    [userRestrooms]
-  );
+  useEffect(() => {
+    ensureFreshRestrooms();
+  }, []);
 
   return {
-    restrooms,
-    userRestrooms,
-    isUserAdded,
-    addRestroom: addUserRestroom,
-    removeRestroom: removeUserRestroom,
-    loading: !mounted,
+    restrooms: state.restrooms,
+    /** First load only — background refreshes keep showing the cached list. */
+    loading: !state.loaded && state.status !== "error",
+    error: state.status === "error" ? state.error : null,
+    retry: fetchRestrooms,
+    addRestroom,
+    removeRestroom,
   };
+}
+
+/** Supabase restrooms + "is this mine?" for the signed-in user. */
+export function useRestrooms() {
+  const data = useRestroomsFromSupabase();
+  const { user } = useAuthUser();
+  const userId = user?.id ?? null;
+
+  const isUserAdded = useCallback(
+    (restroom: Restroom) => userId !== null && restroom.createdBy === userId,
+    [userId]
+  );
+
+  return { ...data, userId, isUserAdded };
 }

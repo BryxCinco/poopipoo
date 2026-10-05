@@ -11,6 +11,8 @@ export interface Restroom {
   images: string[];
   isFree: boolean;
   createdAt: string;
+  /** Profile id of the user who added it; null for seeded restrooms. */
+  createdBy?: string | null;
 }
 
 export type Amenity =

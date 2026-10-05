@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Loader2, LocateOff, RefreshCw, SearchX } from "lucide-react";
+import Link from "next/link";
+import { CloudOff, Loader2, LocateOff, Plus, RefreshCw, SearchX, Toilet } from "lucide-react";
 
 import {
   applyFilters,
@@ -11,6 +12,7 @@ import {
 import { RestroomListItem } from "@/components/restroom/RestroomListItem";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useErrorToast } from "@/hooks/use-error-toast";
 import { useGeolocation } from "@/hooks/use-geolocation";
 import { useRestrooms } from "@/hooks/use-restrooms";
 import { calculateDistance } from "@/lib/distance";
@@ -22,17 +24,27 @@ interface RestroomWithDistance {
 }
 
 export function RestroomList() {
-  const { restrooms, isUserAdded, loading: storeLoading } = useRestrooms();
+  const {
+    restrooms,
+    isUserAdded,
+    loading: dataLoading,
+    error: dataError,
+    retry,
+  } = useRestrooms();
   const {
     latitude,
     longitude,
     hasLocation,
     loading: locationLoading,
-    error,
+    error: locationError,
     requestLocation,
   } = useGeolocation({ requestOnMount: true });
-  const loading = locationLoading || storeLoading;
   const [activeFilters, setActiveFilters] = useState<FilterId[]>([]);
+
+  useErrorToast(dataError, "Hindi makuha ang mga CR", retry);
+
+  // Wait for the location too, so the list doesn't reorder right after appearing.
+  const loading = dataLoading || locationLoading;
 
   // Filter, then sort: nearest first when we know where the user is,
   // otherwise highest rating first.
@@ -55,7 +67,7 @@ export function RestroomList() {
     <div className="flex flex-col gap-3">
       <RestroomFilters active={activeFilters} onChange={setActiveFilters} />
 
-      {loading ? (
+      {locationLoading ? (
         <p className="flex items-center gap-1.5 text-xs text-muted-foreground" role="status">
           <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
           Kinukuha ang iyong location...
@@ -64,7 +76,7 @@ export function RestroomList() {
         <div className="flex items-center justify-between gap-2 rounded-md bg-muted px-3 py-2 text-xs text-muted-foreground">
           <span className="flex items-center gap-1.5">
             <LocateOff className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-            {error ?? "Walang location."} Naka-sort ayon sa rating.
+            {locationError ?? "Walang location."} Naka-sort ayon sa rating.
           </span>
           <Button
             type="button"
@@ -81,24 +93,45 @@ export function RestroomList() {
         <p className="text-xs text-muted-foreground">Naka-sort mula sa pinakamalapit.</p>
       )}
 
-      {loading ? (
-        <ul className="flex flex-col gap-2" aria-hidden="true">
+      {dataError && restrooms.length === 0 ? (
+        // Error with nothing cached: full error state with retry
+        <div className="flex flex-col items-center gap-2 py-12 text-center text-muted-foreground" role="alert">
+          <CloudOff className="h-10 w-10" aria-hidden="true" />
+          <p className="font-medium text-foreground">Hindi makuha ang mga CR</p>
+          <p className="text-sm">I-check ang internet connection mo.</p>
+          <Button variant="outline" size="sm" className="mt-2" onClick={() => void retry()}>
+            <RefreshCw aria-hidden="true" />
+            Subukan ulit
+          </Button>
+        </div>
+      ) : loading ? (
+        <ul className="flex flex-col gap-2" aria-busy="true" aria-label="Naglo-load">
           {Array.from({ length: 4 }, (_, i) => (
             <li key={i}>
               <Skeleton className="h-[104px] w-full" />
             </li>
           ))}
         </ul>
+      ) : restrooms.length === 0 ? (
+        <div className="flex flex-col items-center gap-2 py-12 text-center text-muted-foreground">
+          <Toilet className="h-10 w-10" aria-hidden="true" />
+          <p className="font-medium text-foreground">Wala pang CR dito. Mag-add ka!</p>
+          <p className="text-sm">Ikaw ang unang tumulong sa komunidad.</p>
+          <Button asChild size="sm" className="mt-2">
+            <Link href="/add">
+              <Plus aria-hidden="true" />
+              Magdagdag ng CR
+            </Link>
+          </Button>
+        </div>
       ) : items.length === 0 ? (
         <div className="flex flex-col items-center gap-2 py-12 text-center text-muted-foreground">
           <SearchX className="h-10 w-10" aria-hidden="true" />
           <p className="font-medium text-foreground">Walang CR na tugma</p>
           <p className="text-sm">Subukang bawasan ang mga filter.</p>
-          {activeFilters.length > 0 && (
-            <Button variant="outline" size="sm" className="mt-2" onClick={() => setActiveFilters([])}>
-              Clear all filters
-            </Button>
-          )}
+          <Button variant="outline" size="sm" className="mt-2" onClick={() => setActiveFilters([])}>
+            Clear all filters
+          </Button>
         </div>
       ) : (
         <ul className="flex flex-col gap-2">
@@ -107,7 +140,7 @@ export function RestroomList() {
               <RestroomListItem
                 restroom={restroom}
                 distanceKm={distanceKm}
-                isUserAdded={isUserAdded(restroom.id)}
+                isUserAdded={isUserAdded(restroom)}
               />
             </li>
           ))}
