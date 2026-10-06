@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronRight, MapPin, Navigation } from "lucide-react";
+import { ChevronRight, MapPin } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -17,7 +17,7 @@ import {
   UserAddedBadge,
 } from "@/components/restroom/RestroomBadges";
 import { RestroomRating } from "@/components/restroom/RestroomRating";
-import { getDirectionsUrl } from "@/lib/directions";
+import { NavigateButton } from "@/components/navigation/NavigateButton";
 import { getDisplayAmenities } from "@/lib/icons";
 import type { Restroom } from "@/types/restroom";
 
@@ -66,16 +66,16 @@ export function RestroomSheet({
             )}
 
             <div className="flex flex-col gap-2">
-              <Button asChild size="lg" className="w-full">
-                <a
-                  href={getDirectionsUrl(restroom.latitude, restroom.longitude)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <Navigation aria-hidden="true" />
-                  Get Directions
-                </a>
-              </Button>
+              {/* Plans a route on this map; the sheet closes so the route is visible */}
+              <NavigateButton
+                destination={{
+                  id: restroom.id,
+                  name: restroom.name,
+                  latitude: restroom.latitude,
+                  longitude: restroom.longitude,
+                }}
+                onPlanned={() => onOpenChange(false)}
+              />
               <Button asChild size="lg" variant="outline" className="w-full">
                 <Link href={`/restroom/${restroom.id}`}>
                   Tingnan ang buong detalye

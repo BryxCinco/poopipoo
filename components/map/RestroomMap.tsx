@@ -1,13 +1,16 @@
 "use client";
 
 import { useMemo } from "react";
-import { CircleMarker, MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
+import { MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
 
 import { MapController, type MapTarget } from "@/components/map/MapController";
 import { createRestroomIcon } from "@/components/map/marker-icon";
+import { RouteLayer } from "@/components/map/RouteLayer";
+import { UserLocationLayer, type UserLocation } from "@/components/map/UserLocationLayer";
 import { Button } from "@/components/ui/button";
 import { RestroomRating } from "@/components/restroom/RestroomRating";
 import { MANILA_COORDS } from "@/hooks/use-geolocation";
+import type { LatLng } from "@/types/geo";
 import type { Restroom } from "@/types/restroom";
 
 interface RestroomMapProps {
@@ -15,7 +18,17 @@ interface RestroomMapProps {
   onSelectRestroom: (restroom: Restroom) => void;
   /** When this changes (new object), the map flies to it. */
   flyTo: MapTarget | null;
-  userLocation: { latitude: number; longitude: number } | null;
+  userLocation: UserLocation | null;
+  /** Active navigation route to draw */
+  route?: LatLng[] | null;
+  /** Zoom to the whole route when it changes (preview) */
+  fitRoute?: boolean;
+  /** Keep the map centered on the user (navigating) */
+  followUser?: boolean;
+  /** User dragged the map (pauses follow mode) */
+  onUserPan?: () => void;
+  /** Height (px) of a panel covering the bottom of the map, so routes and the user stay visible */
+  bottomInset?: number;
 }
 
 const DEFAULT_ZOOM = 12;
@@ -51,7 +64,13 @@ export default function RestroomMap({
   onSelectRestroom,
   flyTo,
   userLocation,
+  route = null,
+  fitRoute = false,
+  followUser = false,
+  onUserPan,
+  bottomInset = 0,
 }: RestroomMapProps) {
+  const fitPadding = useMemo(() => ({ top: 70, bottom: bottomInset + 30 }), [bottomInset]);
   const restroomIcon = useMemo(() => createRestroomIcon(), []);
 
   return (
@@ -67,11 +86,14 @@ export default function RestroomMap({
 
       <MapController target={flyTo} />
 
+      {route && route.length > 1 && <RouteLayer coordinates={route} fit={fitRoute} fitPadding={fitPadding} />}
+
       {userLocation && (
-        <CircleMarker
-          center={[userLocation.latitude, userLocation.longitude]}
-          radius={8}
-          pathOptions={{ color: "#ffffff", weight: 2, fillColor: "#2563eb", fillOpacity: 1 }}
+        <UserLocationLayer
+          location={userLocation}
+          follow={followUser}
+          onUserPan={onUserPan}
+          followOffsetY={bottomInset / 2}
         />
       )}
 

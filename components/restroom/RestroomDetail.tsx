@@ -1,9 +1,12 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { MapPin, Navigation } from "lucide-react";
 
 import { MiniMapLoader } from "@/components/map/MiniMapLoader";
+import { NavigateButton } from "@/components/navigation/NavigateButton";
+import { NavigationPanel } from "@/components/navigation/NavigationPanel";
 import { BackButton } from "@/components/restroom/BackButton";
 import { DeleteRestroomButton } from "@/components/restroom/DeleteRestroomButton";
 import { DistanceFromUser } from "@/components/restroom/DistanceFromUser";
@@ -12,7 +15,7 @@ import { RestroomRating } from "@/components/restroom/RestroomRating";
 import { ReviewsSection, type ReviewViewer } from "@/components/restroom/ReviewsSection";
 import { ShareButton } from "@/components/restroom/ShareButton";
 import { Button } from "@/components/ui/button";
-import { getDirectionsUrl } from "@/lib/directions";
+import { useNavigation } from "@/hooks/use-navigation";
 import {
   ALL_AMENITIES,
   getAmenityIcon,
@@ -43,9 +46,33 @@ interface RestroomDetailProps {
  */
 export function RestroomDetail({ restroom, isOwner, reviews }: RestroomDetailProps) {
   const router = useRouter();
+  const nav = useNavigation();
+
+  // Navigation state that belongs to this restroom
+  const navHere = nav.destination?.id === restroom.id ? nav.status : "idle";
+  const planning = navHere === "routing" || navHere === "preview" || navHere === "error";
+  const underway = navHere === "navigating" || navHere === "arrived";
+  const destination = {
+    id: restroom.id,
+    name: restroom.name,
+    latitude: restroom.latitude,
+    longitude: restroom.longitude,
+  };
+
+  const handleStart = () => {
+    nav.startNavigation();
+    // Live navigation runs on the full-screen map
+    router.push("/");
+  };
 
   return (
-    <article className="mx-auto flex w-full max-w-screen-md flex-col gap-5 px-4 py-3 pb-8">
+    <article
+      className={cn(
+        "mx-auto flex w-full max-w-screen-md flex-col gap-5 px-4 py-3",
+        // Leave room for the fixed navigation panel
+        planning ? "pb-[60dvh]" : "pb-8"
+      )}
+    >
       <BackButton />
 
       <header className="flex flex-col gap-2">
@@ -65,25 +92,33 @@ export function RestroomDetail({ restroom, isOwner, reviews }: RestroomDetailPro
       </header>
 
       {/* `isolate` keeps Leaflet's z-indexes from covering the header/nav/toasts */}
-      <div className="relative isolate h-48 overflow-hidden rounded-lg border">
+      {/* Grows to show the route preview */}
+      <div
+        className={cn(
+          "relative isolate overflow-hidden rounded-lg border transition-[height]",
+          planning && nav.route ? "h-72" : "h-48"
+        )}
+      >
         <MiniMapLoader
           latitude={restroom.latitude}
           longitude={restroom.longitude}
           label={restroom.name}
+          route={planning ? (nav.route?.coordinates ?? null) : null}
+          origin={planning ? nav.origin : null}
         />
       </div>
 
       <div className="grid grid-cols-2 gap-2">
-        <Button asChild size="lg" className="w-full">
-          <a
-            href={getDirectionsUrl(restroom.latitude, restroom.longitude)}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Navigation aria-hidden="true" />
-            Get Directions
-          </a>
-        </Button>
+        {underway ? (
+          <Button asChild size="lg" className="w-full">
+            <Link href="/">
+              <Navigation aria-hidden="true" />
+              Bumalik sa navigation
+            </Link>
+          </Button>
+        ) : (
+          <NavigateButton destination={destination} />
+        )}
         <ShareButton />
       </div>
 
@@ -124,6 +159,20 @@ export function RestroomDetail({ restroom, isOwner, reviews }: RestroomDetailPro
       )}
 
       <ReviewsSection restroomId={restroom.id} {...reviews} />
+
+      {planning && (
+        <NavigationPanel
+          nav={nav}
+          progress={null}
+          onStart={handleStart}
+          onStop={nav.stopNavigation}
+          onRetry={nav.retryRoute}
+          onProfileChange={nav.setProfile}
+          onVoiceChange={nav.setVoiceEnabled}
+          // Fixed just above the bottom nav bar (h-16 + safe area)
+          className="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-30 mx-auto max-w-screen-md"
+        />
+      )}
 
       {isOwner && (
         <DeleteRestroomButton
