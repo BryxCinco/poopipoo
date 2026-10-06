@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 
+import type { AgentUsage } from "@/components/profile/AgentSettings";
 import { ProfileView, type ProfileAccount, type ProfileReview } from "@/components/profile/ProfileView";
 import { getCurrentUser } from "@/lib/auth/server";
-import { rowToRestroom } from "@/lib/restrooms/mappers";
+import { RESTROOM_COLUMNS, rowToRestroom } from "@/lib/restrooms/mappers";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
@@ -12,15 +13,22 @@ export const metadata: Metadata = {
 export default async function ProfilePage() {
   const user = await getCurrentUser();
   if (!user) {
-    return <ProfileView account={null} restrooms={[]} reviews={[]} />;
+    return <ProfileView account={null} restrooms={[]} reviews={[]} agentUsage={null} />;
   }
 
   const supabase = createClient();
-  const [profileResult, restroomsResult, reviewsResult] = await Promise.all([
+  // Start of today in Manila (UTC+8, no daylight saving)
+  const MANILA_OFFSET_MS = 8 * 60 * 60 * 1000;
+  const DAY_MS = 24 * 60 * 60 * 1000;
+  const startOfToday = new Date(
+    Math.floor((Date.now() + MANILA_OFFSET_MS) / DAY_MS) * DAY_MS - MANILA_OFFSET_MS
+  ).toISOString();
+
+  const [profileResult, restroomsResult, reviewsResult, agentTotalResult, agentTodayResult] = await Promise.all([
     supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
     supabase
       .from("restrooms")
-      .select("*")
+      .select(RESTROOM_COLUMNS)
       .eq("created_by", user.id)
       .order("created_at", { ascending: false }),
     supabase
@@ -28,6 +36,13 @@ export default async function ProfilePage() {
       .select("*")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false }),
+    // AI agent usage (counts only, no rows)
+    supabase.from("agent_queries").select("id", { count: "exact", head: true }).eq("user_id", user.id),
+    supabase
+      .from("agent_queries")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .gte("created_at", startOfToday),
   ]);
 
   // Thrown errors are shown by app/error.tsx with a retry button
@@ -43,6 +58,12 @@ export default async function ProfilePage() {
     if (error) throw new Error(error.message);
     data.forEach((row) => names.set(row.id, row.name));
   }
+
+  // Usage stats are optional: show "-" instead of failing the whole page
+  const agentUsage: AgentUsage | null =
+    agentTotalResult.error || agentTodayResult.error
+      ? null
+      : { total: agentTotalResult.count ?? 0, today: agentTodayResult.count ?? 0 };
 
   const profile = profileResult.data;
   const account: ProfileAccount = {
@@ -67,6 +88,7 @@ export default async function ProfilePage() {
       account={account}
       restrooms={restroomsResult.data.map(rowToRestroom)}
       reviews={reviews}
+      agentUsage={agentUsage}
     />
   );
 }

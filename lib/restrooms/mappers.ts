@@ -4,6 +4,14 @@ import type { Amenity, Restroom } from "@/types/restroom";
 
 const AMENITY_SET = new Set<string>(ALL_AMENITIES);
 
+/**
+ * Every restrooms column except `embedding` (384 numbers, only needed by the
+ * vector search). Use this instead of select("*"). supabase-js infers the
+ * row type (RestroomRow) from this literal string.
+ */
+export const RESTROOM_COLUMNS =
+  "id, name, description, address, latitude, longitude, amenities, is_free, images, rating, review_count, created_by, created_at, updated_at" as const;
+
 function isAmenity(value: string): value is Amenity {
   return AMENITY_SET.has(value);
 }

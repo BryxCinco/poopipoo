@@ -1,6 +1,6 @@
 import { cache } from "react";
 
-import { isUuid, rowToRestroom } from "@/lib/restrooms/mappers";
+import { isUuid, RESTROOM_COLUMNS, rowToRestroom } from "@/lib/restrooms/mappers";
 import { createClient } from "@/lib/supabase/server";
 import type { Restroom } from "@/types/restroom";
 
@@ -15,7 +15,7 @@ export const getRestroomByIdServer = cache(async (id: string): Promise<Restroom 
 
   const { data, error } = await createClient()
     .from("restrooms")
-    .select("*")
+    .select(RESTROOM_COLUMNS)
     .eq("id", id)
     .maybeSingle();
   if (error) throw new Error(`Failed to load restroom: ${error.message}`);

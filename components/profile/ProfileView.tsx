@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 
 import { LogoutButton } from "@/components/auth/LogoutButton";
+import { AgentSettings, type AgentUsage } from "@/components/profile/AgentSettings";
 import { DeleteRestroomButton } from "@/components/restroom/DeleteRestroomButton";
 import { DeleteReviewButton } from "@/components/restroom/DeleteReviewButton";
 import { LocalRestroomsUpload } from "@/components/restroom/LocalRestroomsUpload";
@@ -59,6 +60,8 @@ interface ProfileViewProps {
   account: ProfileAccount | null;
   restrooms: Restroom[];
   reviews: ProfileReview[];
+  /** AI agent usage; null for guests or if it couldn't be loaded */
+  agentUsage: AgentUsage | null;
 }
 
 const SETTINGS: { label: string; icon: LucideIcon }[] = [
@@ -67,7 +70,7 @@ const SETTINGS: { label: string; icon: LucideIcon }[] = [
   { label: "About", icon: Info },
 ];
 
-export function ProfileView({ account, restrooms, reviews }: ProfileViewProps) {
+export function ProfileView({ account, restrooms, reviews, agentUsage }: ProfileViewProps) {
   const router = useRouter();
   const { toast } = useToast();
   // Restrooms hidden right away while their delete is in flight (optimistic UI)
@@ -249,6 +252,8 @@ export function ProfileView({ account, restrooms, reviews }: ProfileViewProps) {
               </ul>
             )}
           </section>
+
+          <AgentSettings usage={agentUsage} />
         </>
       )}
 

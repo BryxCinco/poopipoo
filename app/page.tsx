@@ -2,8 +2,9 @@
 
 import { useCallback, useEffect, useState } from "react";
 import dynamic from "next/dynamic";
-import { LocateFixed, Loader2, RefreshCw } from "lucide-react";
+import { LocateFixed, Loader2, RefreshCw, Sparkles } from "lucide-react";
 
+import { AgentChat } from "@/components/agent/AgentChat";
 import type { MapTarget } from "@/components/map/MapController";
 import { NearMeButton, type LocateResult } from "@/components/map/NearMeButton";
 import type { UserLocation } from "@/components/map/UserLocationLayer";
@@ -11,6 +12,7 @@ import { NavigationPanel } from "@/components/navigation/NavigationPanel";
 import { RestroomSheet } from "@/components/restroom/RestroomSheet";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAgentEnabled } from "@/hooks/use-agent-enabled";
 import { useErrorToast } from "@/hooks/use-error-toast";
 import { useNavigation, useNavigationGuidance } from "@/hooks/use-navigation";
 import { useRestrooms } from "@/hooks/use-restrooms";
@@ -29,6 +31,8 @@ export default function HomePage() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [flyTo, setFlyTo] = useState<MapTarget | null>(null);
   const [nearMeLocation, setNearMeLocation] = useState<LocateResult | null>(null);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [agentEnabled] = useAgentEnabled();
 
   // ---- navigation ----
   const nav = useNavigation();
@@ -120,7 +124,8 @@ export default function HomePage() {
           size="sm"
           variant="destructive"
           onClick={() => void retry()}
-          className="absolute bottom-8 left-1/2 z-[1000] -translate-x-1/2 rounded-full shadow-lg"
+          // Sits above the AI button when that is shown
+          className={`absolute left-1/2 z-[1000] -translate-x-1/2 rounded-full shadow-lg ${agentEnabled ? "bottom-24" : "bottom-8"}`}
         >
           <RefreshCw aria-hidden="true" />
           Hindi makuha ang mga CR. Subukan ulit
@@ -139,6 +144,20 @@ export default function HomePage() {
         onVoiceChange={nav.setVoiceEnabled}
         className="absolute inset-x-0 bottom-0 z-[1000]"
       />
+
+      {/* AI assistant: hidden during navigation, or when turned off in Profile */}
+      {agentEnabled && !navActive && (
+        <Button
+          type="button"
+          size="icon"
+          onClick={() => setChatOpen(true)}
+          aria-label="Buksan ang Poopipoo Assistant"
+          className="absolute bottom-6 right-3 z-[1000] h-14 w-14 rounded-full shadow-lg [&_svg]:size-6"
+        >
+          <Sparkles aria-hidden="true" />
+        </Button>
+      )}
+      <AgentChat open={chatOpen} onOpenChange={setChatOpen} />
 
       {/* Keeps the last restroom while closing so the slide-out animation still has content */}
       <RestroomSheet

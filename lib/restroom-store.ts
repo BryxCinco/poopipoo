@@ -1,5 +1,6 @@
 import {
   newRestroomToInsert,
+  RESTROOM_COLUMNS,
   rowToRestroom,
   type NewRestroom,
 } from "@/lib/restrooms/mappers";
@@ -55,7 +56,7 @@ export function fetchRestrooms(): Promise<void> {
     try {
       const { data, error } = await createClient()
         .from("restrooms")
-        .select("*")
+        .select(RESTROOM_COLUMNS)
         .order("created_at", { ascending: false });
       if (error) throw new Error(error.message);
 
@@ -95,7 +96,7 @@ export async function getRestroomById(id: string): Promise<Restroom | null> {
   const cached = state.restrooms.find((restroom) => restroom.id === id);
   if (cached) return cached;
 
-  const { data, error } = await createClient().from("restrooms").select("*").eq("id", id).maybeSingle();
+  const { data, error } = await createClient().from("restrooms").select(RESTROOM_COLUMNS).eq("id", id).maybeSingle();
   if (error) throw new Error(error.message);
   return data ? rowToRestroom(data) : null;
 }
@@ -107,7 +108,7 @@ export async function addRestroom(data: NewRestroom, userId: string): Promise<Re
   const { data: row, error } = await createClient()
     .from("restrooms")
     .insert(newRestroomToInsert(data, userId))
-    .select("*")
+    .select(RESTROOM_COLUMNS)
     .single();
   if (error) throw new Error(error.message);
 
@@ -123,7 +124,7 @@ export async function addRestrooms(items: NewRestroom[], userId: string): Promis
   const { data: rows, error } = await createClient()
     .from("restrooms")
     .insert(items.map((item) => newRestroomToInsert(item, userId)))
-    .select("*");
+    .select(RESTROOM_COLUMNS);
   if (error) throw new Error(error.message);
 
   setState({ restrooms: [...rows.map(rowToRestroom), ...state.restrooms] });

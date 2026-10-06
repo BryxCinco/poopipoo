@@ -3,7 +3,7 @@
 
 /**
  * Supabase database types, written by hand to match
- * supabase/migrations/0001_init.sql. Keep the two in sync.
+ * supabase/migrations/ (0001–0003). Keep the two in sync.
  * (Can be replaced later with `supabase gen types typescript`.)
  */
 
@@ -30,6 +30,23 @@ export type RestroomRow = {
   created_by: string | null;
   created_at: string;
   updated_at: string;
+};
+
+/**
+ * The restrooms table also has `embedding vector(384)` (Phase 8). It's left out
+ * of RestroomRow on purpose: app queries select RESTROOM_COLUMNS (without it)
+ * so the big vector isn't downloaded with every restroom. PostgREST returns
+ * vectors as text like "[0.1,0.2,...]".
+ */
+export type RestroomTableRow = RestroomRow & { embedding: string | null };
+
+/** A row from the match_restrooms() vector search. */
+export type RestroomMatchRow = RestroomRow & { similarity: number };
+
+export type AgentQueryRow = {
+  id: number;
+  user_id: string;
+  created_at: string;
 };
 
 export type ReviewRow = {
@@ -76,13 +93,28 @@ export type Database = {
         Relationships: [];
       };
       restrooms: {
-        Row: RestroomRow;
+        Row: RestroomTableRow;
         Insert: RestroomInsert;
-        Update: RestroomUpdate;
+        // embedding: writable by the secret (admin) key only
+        Update: RestroomUpdate & { embedding?: string | null };
         Relationships: [
           {
             foreignKeyName: "restrooms_created_by_fkey";
             columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      agent_queries: {
+        Row: AgentQueryRow;
+        Insert: Pick<AgentQueryRow, "user_id">;
+        Update: Record<string, never>;
+        Relationships: [
+          {
+            foreignKeyName: "agent_queries_user_id_fkey";
+            columns: ["user_id"];
             isOneToOne: false;
             referencedRelation: "profiles";
             referencedColumns: ["id"];
@@ -113,7 +145,17 @@ export type Database = {
       };
     };
     Views: Record<never, never>;
-    Functions: Record<never, never>;
+    Functions: {
+      match_restrooms: {
+        Args: {
+          /** pgvector accepts a JSON number array (or its text form) */
+          query_embedding: number[] | string;
+          match_threshold: number;
+          match_count: number;
+        };
+        Returns: RestroomMatchRow[];
+      };
+    };
     Enums: Record<never, never>;
     CompositeTypes: Record<never, never>;
   };
