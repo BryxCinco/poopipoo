@@ -37,4 +37,6 @@ export type AgentErrorCode = "unauthorized" | "invalid" | "rate_limited" | "ai_b
 export interface AgentErrorResponse {
   error: string;
   code: AgentErrorCode;
+  /** Seconds to wait (rate_limited / ai_busy) */
+  retry_after?: number;
 }

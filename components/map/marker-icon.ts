@@ -9,7 +9,7 @@ import { TOILET_SVG } from "@/lib/icons";
 export function createRestroomIcon(): L.DivIcon {
   return L.divIcon({
     className: "", // remove Leaflet's default white box
-    html: `<div class="flex h-9 w-9 items-center justify-center rounded-full border-2 border-white bg-[#8B4513] text-white shadow-md">${TOILET_SVG}</div>`,
+    html: `<div class="flex h-9 w-9 items-center justify-center rounded-full border-2 border-white bg-primary text-primary-foreground shadow-md transition-transform duration-150 hover:scale-110">${TOILET_SVG}</div>`,
     iconSize: [36, 36],
     iconAnchor: [18, 18],
     popupAnchor: [0, -18],

@@ -2,8 +2,9 @@
 
 import { useMemo, useRef } from "react";
 import type L from "leaflet";
-import { MapContainer, Marker, TileLayer, useMapEvents } from "react-leaflet";
+import { MapContainer, Marker, useMapEvents } from "react-leaflet";
 
+import { BaseTileLayer } from "@/components/map/BaseTileLayer";
 import { MapController, type MapTarget } from "@/components/map/MapController";
 import { createRestroomIcon } from "@/components/map/marker-icon";
 import { MANILA_COORDS } from "@/hooks/use-geolocation";
@@ -50,10 +51,7 @@ export default function LocationPicker({ value, onChange, focus }: LocationPicke
 
   return (
     <MapContainer center={initialCenter} zoom={value ? 17 : 12} className="h-full w-full">
-      <TileLayer
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-      />
+      <BaseTileLayer />
       <ClickToPlace onChange={onChange} />
       <MapController target={focus} />
       {value && (

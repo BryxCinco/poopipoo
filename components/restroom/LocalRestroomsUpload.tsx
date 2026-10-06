@@ -89,7 +89,7 @@ export function LocalRestroomsUpload({ userId, returnUrl }: LocalRestroomsUpload
   return (
     <section
       aria-label="Mga CR sa device na ito"
-      className="flex flex-col gap-3 rounded-lg border border-amber-300 bg-amber-50 p-4 text-amber-950"
+      className="flex flex-col gap-3 rounded-lg border border-highlight/40 bg-highlight/10 p-4 text-foreground"
     >
       <div className="flex items-start gap-3">
         <Smartphone className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" />
@@ -98,7 +98,7 @@ export function LocalRestroomsUpload({ userId, returnUrl }: LocalRestroomsUpload
             May {local.length} CR ka sa device na ito.{" "}
             {userId ? "I-upload sa account mo?" : "Mag-login para i-upload sa account mo."}
           </p>
-          <p className="text-sm text-amber-900/80">
+          <p className="text-sm text-muted-foreground">
             Idinagdag mo ang mga ito bago nagkaroon ng accounts. Makikita sila ng lahat pag na-upload.
           </p>
         </div>

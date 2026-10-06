@@ -3,18 +3,8 @@
 import { useState } from "react";
 import { Loader2, Trash2 } from "lucide-react";
 
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { useToast } from "@/hooks/use-toast";
 import { removeRestroom } from "@/lib/restroom-store";
 import { cn } from "@/lib/utils";
@@ -33,7 +23,7 @@ interface DeleteRestroomButtonProps {
   className?: string;
 }
 
-/** Delete button with a confirmation dialog. Only the owner can delete (RLS). */
+/** Delete button with a confirmation modal. Only the owner can delete (RLS). */
 export function DeleteRestroomButton({
   restroom,
   variant = "icon",
@@ -44,6 +34,7 @@ export function DeleteRestroomButton({
 }: DeleteRestroomButtonProps) {
   const { toast } = useToast();
   const [deleting, setDeleting] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const handleDelete = async () => {
     setDeleting(true);
@@ -71,49 +62,43 @@ export function DeleteRestroomButton({
   );
 
   return (
-    <AlertDialog>
-      <AlertDialogTrigger asChild>
-        {variant === "icon" ? (
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            disabled={deleting}
-            aria-label={`Burahin ang ${restroom.name}`}
-            className={cn("shrink-0 text-muted-foreground hover:text-destructive", className)}
-          >
-            {icon}
-          </Button>
-        ) : (
-          <Button
-            type="button"
-            variant="outline"
-            size="lg"
-            disabled={deleting}
-            className={cn("w-full text-destructive hover:text-destructive", className)}
-          >
-            {icon}
-            {deleting ? "Binubura..." : "Burahin ang CR na ito"}
-          </Button>
-        )}
-      </AlertDialogTrigger>
-      <AlertDialogContent className="w-[calc(100%-2rem)] rounded-lg">
-        <AlertDialogHeader>
-          <AlertDialogTitle>Burahin ang CR?</AlertDialogTitle>
-          <AlertDialogDescription>
-            Mabubura ang &quot;{restroom.name}&quot; para sa lahat. Hindi na ito maibabalik.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>Huwag</AlertDialogCancel>
-          <AlertDialogAction
-            onClick={() => void handleDelete()}
-            className={buttonVariants({ variant: "destructive" })}
-          >
-            Burahin
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <>
+      {variant === "icon" ? (
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          disabled={deleting}
+          onClick={() => setConfirmOpen(true)}
+          aria-label={`Burahin ang ${restroom.name}`}
+          className={cn("shrink-0 text-muted-foreground hover:text-destructive [&_svg]:transition-transform hover:[&_svg]:scale-110", className)}
+        >
+          {icon}
+        </Button>
+      ) : (
+        <Button
+          type="button"
+          variant="outline"
+          size="lg"
+          disabled={deleting}
+          onClick={() => setConfirmOpen(true)}
+          className={cn("w-full text-destructive hover:text-destructive", className)}
+        >
+          {icon}
+          {deleting ? "Binubura..." : "Burahin ang CR na ito"}
+        </Button>
+      )}
+      <ConfirmModal
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        variant="destructive"
+        title="Burahin ang CR na ito?"
+        description={`Mabubura ang "${restroom.name}" para sa lahat ng user. Hindi na ito maibabalik.`}
+        confirmLabel="Burahin"
+        cancelLabel="Huwag"
+        // Waits for the server so the modal shows a spinner; errors are toasted in handleDelete
+        onConfirm={handleDelete}
+      />
+    </>
   );
 }

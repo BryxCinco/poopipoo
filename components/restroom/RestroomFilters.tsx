@@ -1,8 +1,10 @@
 "use client";
 
+import { motion } from "framer-motion";
 import { BadgeCheck, X, type LucideIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { SPRING } from "@/lib/animations";
 import { getAmenityIcon } from "@/lib/icons";
 import { cn } from "@/lib/utils";
 import type { Restroom } from "@/types/restroom";
@@ -65,20 +67,22 @@ interface ChipProps {
 
 function FilterChip({ label, icon: Icon, active, onClick }: ChipProps) {
   return (
-    <button
+    <motion.button
       type="button"
       onClick={onClick}
       aria-pressed={active}
+      whileTap={{ scale: 0.92 }}
+      transition={SPRING}
       className={cn(
-        "flex h-8 shrink-0 items-center gap-1.5 rounded-full border px-3 text-sm transition-colors",
+        "flex h-8 shrink-0 items-center gap-1.5 rounded-full border px-3 text-sm transition-[color,background-color,border-color,box-shadow] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
         active
-          ? "border-primary bg-primary text-primary-foreground"
-          : "bg-background text-foreground hover:bg-muted"
+          ? "border-primary bg-primary text-primary-foreground shadow-sm"
+          : "bg-card text-foreground hover:border-primary/40 hover:bg-muted"
       )}
     >
       {Icon && <Icon className="h-3.5 w-3.5" aria-hidden="true" />}
       {label}
-    </button>
+    </motion.button>
   );
 }
 

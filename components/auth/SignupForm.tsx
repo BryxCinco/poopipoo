@@ -92,7 +92,7 @@ export function SignupForm({ returnUrl }: { returnUrl: string }) {
   if (sentTo) {
     return (
       <div className="flex flex-col items-center gap-3 rounded-lg border p-6 text-center" role="status">
-        <MailCheck className="h-10 w-10 text-[#8B4513]" aria-hidden="true" />
+        <MailCheck className="h-10 w-10 text-primary" aria-hidden="true" />
         <p className="font-semibold">I-check ang email mo</p>
         <p className="text-sm text-muted-foreground">
           Nag-send kami ng confirmation link sa <span className="font-medium text-foreground">{sentTo}</span>.

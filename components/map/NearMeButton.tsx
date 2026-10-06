@@ -57,7 +57,7 @@ export function NearMeButton({ onLocate, className }: NearMeButtonProps) {
         </>
       ) : (
         <>
-          <MapPin className="text-red-600" aria-hidden="true" />
+          <MapPin className="text-destructive" aria-hidden="true" />
           Near Me
         </>
       )}

@@ -30,6 +30,7 @@ export interface SendResult {
   ok: boolean;
   error?: string;
   code?: AgentErrorResponse["code"];
+  retryAfter?: number;
 }
 
 const HISTORY_SENT = 6;
@@ -75,12 +76,12 @@ async function sendMessage(text: string, location: LatLng | null, retry = false)
     : [...state.entries, { id: nextId++, role: "user" as const, content: message }];
   setState({ entries, pending: true });
 
-  const fail = (error: string, code?: AgentErrorResponse["code"]): SendResult => {
+  const fail = (error: string, code?: AgentErrorResponse["code"], retryAfter?: number): SendResult => {
     setState({
       pending: false,
       entries: [...state.entries, { id: nextId++, role: "assistant", content: error, failed: true }],
     });
-    return { ok: false, error, code };
+    return { ok: false, error, code, retryAfter };
   };
 
   let response: Response;
@@ -100,7 +101,9 @@ async function sendMessage(text: string, location: LatLng | null, retry = false)
 
   const data: unknown = await response.json().catch(() => null);
   if (!response.ok) {
-    return isErrorResponse(data) ? fail(data.error, data.code) : fail("May error. Subukan ulit.", "upstream");
+    return isErrorResponse(data)
+      ? fail(data.error, data.code, data.retry_after)
+      : fail("May error. Subukan ulit.", "upstream");
   }
   if (!isAgentResponse(data)) return fail("Hindi maintindihan ang sagot ng server.", "upstream");
 

@@ -36,6 +36,15 @@ const config: Config = {
   				DEFAULT: 'hsl(var(--accent))',
   				foreground: 'hsl(var(--accent-foreground))'
   			},
+  			// Brand amber (stars, highlights). shadcn "accent" stays a neutral hover color.
+  			highlight: {
+  				DEFAULT: "hsl(var(--highlight))",
+  				foreground: "hsl(var(--highlight-foreground))"
+  			},
+  			success: {
+  				DEFAULT: "hsl(var(--success))",
+  				foreground: "hsl(var(--success-foreground))"
+  			},
   			destructive: {
   				DEFAULT: 'hsl(var(--destructive))',
   				foreground: 'hsl(var(--destructive-foreground))'
@@ -53,6 +62,32 @@ const config: Config = {
   		},
   		fontFamily: {
   			sans: ["var(--font-geist-sans)", "ui-sans-serif", "system-ui", "sans-serif"]
+  		},
+  		// All UI animations stay at or under 300ms (loops like shimmer excepted)
+  		keyframes: {
+  			shimmer: {
+  				"0%": { backgroundPosition: "-150% 0" },
+  				"100%": { backgroundPosition: "250% 0" }
+  			},
+  			shake: {
+  				"0%, 100%": { transform: "translateX(0)" },
+  				"20%, 60%": { transform: "translateX(-4px)" },
+  				"40%, 80%": { transform: "translateX(4px)" }
+  			},
+  			"toast-progress": {
+  				from: { transform: "scaleX(1)" },
+  				to: { transform: "scaleX(0)" }
+  			},
+  			"pulse-ring": {
+  				"0%": { transform: "scale(1)", opacity: "0.5" },
+  				"100%": { transform: "scale(1.6)", opacity: "0" }
+  			}
+  		},
+  		animation: {
+  			shimmer: "shimmer 1.4s ease-in-out infinite",
+  			shake: "shake 300ms ease-in-out",
+  			"toast-progress": "toast-progress linear forwards",
+  			"pulse-ring": "pulse-ring 2s cubic-bezier(0, 0, 0.2, 1) infinite"
   		},
   		borderRadius: {
   			lg: 'var(--radius)',

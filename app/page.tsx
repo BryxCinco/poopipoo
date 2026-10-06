@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import dynamic from "next/dynamic";
+import { AnimatePresence, motion } from "framer-motion";
 import { LocateFixed, Loader2, RefreshCw, Sparkles } from "lucide-react";
 
 import { AgentChat } from "@/components/agent/AgentChat";
@@ -12,11 +13,13 @@ import { NavigationPanel } from "@/components/navigation/NavigationPanel";
 import { RestroomSheet } from "@/components/restroom/RestroomSheet";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAgentEnabled } from "@/hooks/use-agent-enabled";
 import { useErrorToast } from "@/hooks/use-error-toast";
 import { useNavigation, useNavigationGuidance } from "@/hooks/use-navigation";
 import { useRestrooms } from "@/hooks/use-restrooms";
 import { useWatchPosition } from "@/hooks/use-watch-position";
+import { scaleIn, SPRING, tapScale } from "@/lib/animations";
 import type { Restroom } from "@/types/restroom";
 
 // Leaflet touches `window` on import, so the map must only load in the browser.
@@ -115,7 +118,7 @@ export default function HomePage() {
           className="absolute left-1/2 top-3 z-[1000] flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-background px-3 py-1.5 text-xs shadow-md"
         >
           <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
-          Kinukuha ang mga CR...
+          <span className="animate-pulse">Kinukuha ang mga CR...</span>
         </p>
       )}
       {error && !navActive && (
@@ -146,17 +149,40 @@ export default function HomePage() {
       />
 
       {/* AI assistant: hidden during navigation, or when turned off in Profile */}
-      {agentEnabled && !navActive && (
-        <Button
-          type="button"
-          size="icon"
-          onClick={() => setChatOpen(true)}
-          aria-label="Buksan ang Poopipoo Assistant"
-          className="absolute bottom-6 right-3 z-[1000] h-14 w-14 rounded-full shadow-lg [&_svg]:size-6"
-        >
-          <Sparkles aria-hidden="true" />
-        </Button>
-      )}
+      <AnimatePresence>
+        {agentEnabled && !navActive && (
+          <motion.div
+            key="agent-fab"
+            variants={scaleIn}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            className="absolute bottom-6 right-3 z-[1000]"
+          >
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <motion.button
+                  type="button"
+                  onClick={() => setChatOpen(true)}
+                  aria-label="Buksan ang Poopipoo Assistant"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={tapScale}
+                  transition={SPRING}
+                  className="group relative flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-shadow hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                >
+                  {/* Soft pulse ring to draw attention (off with reduced motion) */}
+                  <span className="absolute inset-0 animate-pulse-ring rounded-full bg-primary" aria-hidden="true" />
+                  <Sparkles
+                    className="relative h-6 w-6 transition-transform duration-200 group-hover:rotate-12 group-hover:scale-110"
+                    aria-hidden="true"
+                  />
+                </motion.button>
+              </TooltipTrigger>
+              <TooltipContent side="left">Poopipoo Assistant</TooltipContent>
+            </Tooltip>
+          </motion.div>
+        )}
+      </AnimatePresence>
       <AgentChat open={chatOpen} onOpenChange={setChatOpen} />
 
       {/* Keeps the last restroom while closing so the slide-out animation still has content */}

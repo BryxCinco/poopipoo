@@ -2,29 +2,36 @@
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, LogOut } from "lucide-react";
+import { LogOut } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
+import { AnimatedButton } from "@/components/ui/AnimatedButton";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { useToast } from "@/hooks/use-toast";
 import { createClient } from "@/lib/supabase/client";
 
 /**
- * Posts to /auth/logout (works without JavaScript). With JavaScript, signs out
- * in the browser instead so we can show a toast and stay in the app.
+ * Posts to /auth/logout (works without JavaScript). With JavaScript, asks for
+ * confirmation first, then signs out in the browser so we can show a toast
+ * and stay in the app.
  */
 export function LogoutButton() {
   const router = useRouter();
   const { toast } = useToast();
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const [pending, setPending] = useState(false);
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setConfirmOpen(true);
+  };
+
+  const logout = async () => {
     setPending(true);
     const { error } = await createClient().auth.signOut();
     if (error) {
       setPending(false);
       toast({ variant: "destructive", title: "Hindi maka-logout", description: error.message });
-      return;
+      throw error; // keeps the modal open (and shakes it)
     }
     toast({ title: "Naka-logout ka na.", description: "Hanggang sa susunod!" });
     router.replace("/");
@@ -32,11 +39,27 @@ export function LogoutButton() {
   };
 
   return (
-    <form action="/auth/logout" method="post" onSubmit={(e) => void handleSubmit(e)}>
-      <Button type="submit" variant="outline" size="lg" disabled={pending} className="w-full">
-        {pending ? <Loader2 className="animate-spin" aria-hidden="true" /> : <LogOut aria-hidden="true" />}
-        {pending ? "Nagla-logout..." : "Mag-logout"}
-      </Button>
+    <form action="/auth/logout" method="post" onSubmit={handleSubmit}>
+      <AnimatedButton
+        type="submit"
+        variant="outline"
+        size="lg"
+        loading={pending}
+        loadingText="Nagla-logout..."
+        className="w-full"
+      >
+        <LogOut aria-hidden="true" />
+        Mag-logout
+      </AnimatedButton>
+      <ConfirmModal
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        icon={LogOut}
+        title="Sigurado ka bang gusto mong mag-logout?"
+        confirmLabel="Oo, mag-logout"
+        cancelLabel="Hindi"
+        onConfirm={logout}
+      />
     </form>
   );
 }

@@ -34,7 +34,7 @@ export function UserAddedBadge({
   className?: string;
 }) {
   return (
-    <Badge className={cn("gap-1 border-transparent bg-amber-100 text-amber-900 hover:bg-amber-100", className)}>
+    <Badge className={cn("gap-1 border-transparent bg-highlight/15 text-foreground hover:bg-highlight/15", className)}>
       <UserRound className="h-3.5 w-3.5" aria-hidden="true" />
       {label}
     </Badge>

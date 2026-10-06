@@ -1,11 +1,13 @@
 "use client";
 
 import { useState, type KeyboardEvent } from "react";
-import { Loader2, Send, Star } from "lucide-react";
+import { motion } from "framer-motion";
+import { Send, Star } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
+import { AnimatedButton } from "@/components/ui/AnimatedButton";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { SPRING } from "@/lib/animations";
 import { REVIEW_COMMENT_MAX } from "@/lib/reviews/queries";
 import { cn } from "@/lib/utils";
 import type { ReviewInput } from "@/types/review";
@@ -54,7 +56,7 @@ function StarInput({ value, onChange, invalid = false, disabled = false }: StarI
         {[1, 2, 3, 4, 5].map((star) => {
           const filled = star <= shown;
           return (
-            <button
+            <motion.button
               key={star}
               type="button"
               role="radio"
@@ -65,17 +67,21 @@ function StarInput({ value, onChange, invalid = false, disabled = false }: StarI
               disabled={disabled}
               onClick={() => onChange(star)}
               onMouseEnter={() => setHovered(star)}
-              className="rounded-md p-1 transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-90 disabled:opacity-50"
+              // Grow on hover, squish on tap
+              whileHover={disabled ? undefined : { scale: 1.15 }}
+              whileTap={disabled ? undefined : { scale: 0.85 }}
+              transition={SPRING}
+              className="rounded-md p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
             >
               <Star
                 className={cn(
-                  "h-8 w-8 transition-colors",
-                  filled ? "fill-yellow-400 text-yellow-400" : "text-zinc-300",
+                  "h-8 w-8 transition-[color,fill] duration-150",
+                  filled ? "fill-highlight text-highlight" : "text-muted-foreground/30",
                   invalid && !filled && "text-destructive/50"
                 )}
                 aria-hidden="true"
               />
-            </button>
+            </motion.button>
           );
         })}
       </div>
@@ -114,7 +120,7 @@ export function ReviewForm({ value, onChange, onSubmit, onCancel, submitting, is
   const ratingInvalid = showRatingError && value.rating < 1;
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-3 rounded-lg border p-4" noValidate>
+    <form onSubmit={handleSubmit} className="flex flex-col gap-3 rounded-xl border bg-card p-4 shadow-sm" noValidate>
       <p className="font-semibold">{isEdit ? "I-edit ang review mo" : "Mag-iwan ng review"}</p>
 
       <StarInput
@@ -124,7 +130,7 @@ export function ReviewForm({ value, onChange, onSubmit, onCancel, submitting, is
         disabled={submitting}
       />
       {ratingInvalid && (
-        <p id="rating-error" role="alert" className="-mt-2 text-xs font-medium text-destructive">
+        <p id="rating-error" role="alert" className="-mt-2 animate-shake text-xs font-medium text-destructive">
           Pumili ng 1 hanggang 5 stars.
         </p>
       )}
@@ -149,14 +155,14 @@ export function ReviewForm({ value, onChange, onSubmit, onCancel, submitting, is
 
       <div className="flex gap-2">
         {onCancel && (
-          <Button type="button" variant="outline" onClick={onCancel} disabled={submitting} className="flex-1">
+          <AnimatedButton type="button" variant="outline" onClick={onCancel} disabled={submitting} className="flex-1">
             Cancel
-          </Button>
+          </AnimatedButton>
         )}
-        <Button type="submit" disabled={submitting} className="flex-1">
-          {submitting ? <Loader2 className="animate-spin" aria-hidden="true" /> : <Send aria-hidden="true" />}
-          {submitting ? "Sine-save..." : isEdit ? "I-update" : "I-post ang review"}
-        </Button>
+        <AnimatedButton type="submit" loading={submitting} loadingText="Sine-save..." className="flex-1">
+          <Send aria-hidden="true" />
+          {isEdit ? "I-update" : "I-post ang review"}
+        </AnimatedButton>
       </div>
     </form>
   );

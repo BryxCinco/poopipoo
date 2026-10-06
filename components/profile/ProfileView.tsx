@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 import {
   Award,
   ChevronRight,
@@ -11,7 +12,6 @@ import {
   LogIn,
   MapPin,
   MessageSquare,
-  Moon,
   Pencil,
   Plus,
   Toilet,
@@ -22,15 +22,20 @@ import {
 
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { AgentSettings, type AgentUsage } from "@/components/profile/AgentSettings";
+import { ThemeSetting } from "@/components/profile/ThemeSetting";
 import { DeleteRestroomButton } from "@/components/restroom/DeleteRestroomButton";
 import { DeleteReviewButton } from "@/components/restroom/DeleteReviewButton";
 import { LocalRestroomsUpload } from "@/components/restroom/LocalRestroomsUpload";
 import { StarRating } from "@/components/restroom/StarRating";
+import { AnimatedCard } from "@/components/ui/AnimatedCard";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { CountUp } from "@/components/ui/CountUp";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
+import { SPRING, staggerContainer, staggerItem, staggerItemCapped } from "@/lib/animations";
 import { loginUrl } from "@/lib/auth/return-url";
 import { formatRelativeTime } from "@/lib/relative-time";
 import { invalidateRestrooms } from "@/lib/restroom-store";
@@ -64,9 +69,9 @@ interface ProfileViewProps {
   agentUsage: AgentUsage | null;
 }
 
+// Still "Soon" (dark mode is the real ThemeSetting row)
 const SETTINGS: { label: string; icon: LucideIcon }[] = [
   { label: "Language", icon: Globe },
-  { label: "Dark mode", icon: Moon },
   { label: "About", icon: Info },
 ];
 
@@ -117,16 +122,18 @@ export function ProfileView({ account, restrooms, reviews, agentUsage }: Profile
     <div className="mx-auto flex w-full max-w-screen-md flex-col gap-6 px-4 py-5">
       {/* Identity */}
       <section className="flex items-center gap-4">
-        <Avatar className="h-16 w-16">
-          {account?.avatarUrl && <AvatarImage src={account.avatarUrl} alt="" />}
-          <AvatarFallback className="bg-muted text-muted-foreground">
-            {account ? (
-              <span className="text-xl font-semibold uppercase">{account.username.slice(0, 1)}</span>
-            ) : (
-              <User className="h-8 w-8" aria-hidden="true" />
-            )}
-          </AvatarFallback>
-        </Avatar>
+        <motion.div whileHover={{ scale: 1.06, rotate: -3 }} whileTap={{ scale: 0.96 }} transition={SPRING} className="rounded-full">
+          <Avatar className="h-16 w-16 shadow-md ring-2 ring-primary/20 ring-offset-2 ring-offset-background transition-shadow hover:ring-primary/50">
+            {account?.avatarUrl && <AvatarImage src={account.avatarUrl} alt="" />}
+            <AvatarFallback className="bg-primary/10 text-primary">
+              {account ? (
+                <span className="text-xl font-semibold uppercase">{account.username.slice(0, 1)}</span>
+              ) : (
+                <User className="h-8 w-8" aria-hidden="true" />
+              )}
+            </AvatarFallback>
+          </Avatar>
+        </motion.div>
         <div className="min-w-0 flex-1">
           <h1 className="truncate text-xl font-bold">{account ? account.username : "Guest User"}</h1>
           <p className="truncate text-sm text-muted-foreground">
@@ -143,15 +150,27 @@ export function ProfileView({ account, restrooms, reviews, agentUsage }: Profile
       ) : (
         <>
           {/* Stats */}
-          <section aria-label="Stats" className="grid grid-cols-3 gap-2">
+          <motion.section
+            aria-label="Stats"
+            className="grid grid-cols-3 gap-2"
+            variants={staggerContainer}
+            initial="hidden"
+            animate="visible"
+          >
             {stats.map(({ label, value, icon: Icon }) => (
-              <div key={label} className="flex flex-col items-center gap-1 rounded-lg border p-3 text-center">
-                <Icon className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-                <span className="text-2xl font-bold leading-none">{value}</span>
+              <motion.div
+                key={label}
+                variants={staggerItem}
+                className="flex flex-col items-center gap-1 rounded-xl border bg-card p-3 text-center shadow-sm"
+              >
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
+                  <Icon className="h-4 w-4" aria-hidden="true" />
+                </span>
+                <CountUp value={value} className="text-2xl font-bold tabular-nums leading-none" />
                 <span className="text-[11px] leading-tight text-muted-foreground">{label}</span>
-              </div>
+              </motion.div>
             ))}
-          </section>
+          </motion.section>
 
           {/* User's restrooms */}
           <section className="flex flex-col gap-2">
@@ -168,35 +187,45 @@ export function ProfileView({ account, restrooms, reviews, agentUsage }: Profile
             </div>
 
             {visibleRestrooms.length === 0 ? (
-              <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed px-4 py-8 text-center">
-                <Toilet className="h-10 w-10 text-muted-foreground" aria-hidden="true" />
-                <p className="font-medium">Wala ka pang naidagdag na CR</p>
-                <p className="text-sm text-muted-foreground">May alam kang malinis na CR? I-share mo sa iba!</p>
-                <Button asChild className="mt-2">
-                  <Link href="/add">
-                    <Plus aria-hidden="true" />
-                    Magdagdag ng CR
-                  </Link>
-                </Button>
+              <div className="rounded-xl border border-dashed">
+                <EmptyState
+                  compact
+                  icon={<Toilet />}
+                  title="Wala ka pang naidagdag na CR"
+                  description="May alam kang malinis na CR? I-share mo sa iba!"
+                  action={
+                    <Button asChild>
+                      <Link href="/add">
+                        <Plus aria-hidden="true" />
+                        Magdagdag ng CR
+                      </Link>
+                    </Button>
+                  }
+                />
               </div>
             ) : (
               <ul className="flex flex-col gap-2">
-                {visibleRestrooms.map((restroom) => (
-                  <li key={restroom.id} className="flex items-center gap-1 rounded-lg border bg-card p-1 pl-3">
-                    <Link href={`/restroom/${restroom.id}`} className="flex min-w-0 flex-1 flex-col py-2">
-                      <span className="truncate font-medium">{restroom.name}</span>
-                      <span className="flex items-center gap-1 truncate text-xs text-muted-foreground">
-                        <MapPin className="h-3 w-3 shrink-0" aria-hidden="true" />
-                        <span className="truncate">{restroom.address}</span>
-                      </span>
-                    </Link>
-                    <DeleteRestroomButton
-                      restroom={restroom}
-                      onDeleteStart={() => setHidden(restroom.id, true)}
-                      onDeleteError={() => setHidden(restroom.id, false)}
-                      onDeleted={() => router.refresh()}
-                    />
-                  </li>
+                {visibleRestrooms.map((restroom, index) => (
+                  <motion.li key={restroom.id} custom={index} variants={staggerItemCapped} initial="hidden" animate="visible">
+                    <AnimatedCard className="flex items-center gap-1 p-1 pl-3">
+                      <Link
+                        href={`/restroom/${restroom.id}`}
+                        className="flex min-w-0 flex-1 flex-col rounded-lg py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      >
+                        <span className="truncate font-medium">{restroom.name}</span>
+                        <span className="flex items-center gap-1 truncate text-xs text-muted-foreground">
+                          <MapPin className="h-3 w-3 shrink-0" aria-hidden="true" />
+                          <span className="truncate">{restroom.address}</span>
+                        </span>
+                      </Link>
+                      <DeleteRestroomButton
+                        restroom={restroom}
+                        onDeleteStart={() => setHidden(restroom.id, true)}
+                        onDeleteError={() => setHidden(restroom.id, false)}
+                        onDeleted={() => router.refresh()}
+                      />
+                    </AnimatedCard>
+                  </motion.li>
                 ))}
               </ul>
             )}
@@ -206,23 +235,35 @@ export function ProfileView({ account, restrooms, reviews, agentUsage }: Profile
           <section className="flex flex-col gap-2">
             <h2 className="font-semibold">Aking mga review</h2>
             {visibleReviews.length === 0 ? (
-              <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed px-4 py-6 text-center">
-                <MessageSquare className="h-8 w-8 text-muted-foreground" aria-hidden="true" />
-                <p className="text-sm font-medium">Wala ka pang review.</p>
-                <p className="text-xs text-muted-foreground">Nakagamit ka na ba ng CR kamakailan? I-rate mo!</p>
-                <Button asChild variant="outline" size="sm" className="mt-1">
-                  <Link href="/list">Maghanap ng CR</Link>
-                </Button>
+              <div className="rounded-xl border border-dashed">
+                <EmptyState
+                  compact
+                  icon={<MessageSquare />}
+                  title="Wala ka pang review."
+                  description="Nakagamit ka na ba ng CR kamakailan? I-rate mo!"
+                  action={
+                    <Button asChild variant="outline" size="sm">
+                      <Link href="/list">Maghanap ng CR</Link>
+                    </Button>
+                  }
+                />
               </div>
             ) : (
               <ul className="flex flex-col gap-2">
-                {visibleReviews.map((review) => (
-                  <li key={review.id} className="flex flex-col gap-1 rounded-lg border p-3">
+                {visibleReviews.map((review, index) => (
+                  <motion.li
+                    key={review.id}
+                    custom={index}
+                    variants={staggerItemCapped}
+                    initial="hidden"
+                    animate="visible"
+                    className="flex flex-col gap-1 rounded-xl border bg-card p-3 shadow-sm"
+                  >
                     <Link
                       href={`/restroom/${review.restroomId}`}
-                      className="flex items-baseline justify-between gap-2 hover:underline"
+                      className="group flex items-baseline justify-between gap-2 rounded-sm"
                     >
-                      <span className="truncate font-medium">{review.restroomName}</span>
+                      <span className="link-underline truncate font-medium">{review.restroomName}</span>
                       <time
                         dateTime={review.createdAt}
                         className="shrink-0 text-xs text-muted-foreground"
@@ -247,7 +288,7 @@ export function ProfileView({ account, restrooms, reviews, agentUsage }: Profile
                       </Button>
                       <DeleteReviewButton onConfirm={() => void handleDeleteReview(review)} />
                     </div>
-                  </li>
+                  </motion.li>
                 ))}
               </ul>
             )}
@@ -262,20 +303,26 @@ export function ProfileView({ account, restrooms, reviews, agentUsage }: Profile
       {/* Settings (placeholders) */}
       <section className="flex flex-col gap-2">
         <h2 className="font-semibold">Settings</h2>
-        <ul className="divide-y rounded-lg border">
+        <ul className="divide-y rounded-xl border bg-card shadow-sm">
+          <li>
+            <ThemeSetting />
+          </li>
           {SETTINGS.map(({ label, icon: Icon }) => (
             <li key={label}>
               <button
                 type="button"
                 onClick={() => comingSoon(label)}
-                className="flex w-full items-center gap-3 px-3 py-3 text-left text-sm hover:bg-muted/50"
+                className="group flex w-full items-center gap-3 px-3 py-3 text-left text-sm transition-colors duration-150 first:rounded-t-xl last:rounded-b-xl hover:bg-muted/50 focus-visible:bg-muted/50 focus-visible:outline-none"
               >
                 <Icon className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
                 <span className="flex-1">{label}</span>
                 <Badge variant="secondary" className="font-normal">
                   Soon
                 </Badge>
-                <ChevronRight className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+                <ChevronRight
+                  className="h-4 w-4 text-muted-foreground transition-transform duration-150 group-hover:translate-x-0.5"
+                  aria-hidden="true"
+                />
               </button>
             </li>
           ))}

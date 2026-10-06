@@ -2,8 +2,9 @@
 
 import { useEffect, useMemo } from "react";
 import L from "leaflet";
-import { MapContainer, Marker, TileLayer, useMap } from "react-leaflet";
+import { MapContainer, Marker, useMap } from "react-leaflet";
 
+import { BaseTileLayer } from "@/components/map/BaseTileLayer";
 import { createRestroomIcon } from "@/components/map/marker-icon";
 import { RouteLayer } from "@/components/map/RouteLayer";
 import { UserLocationLayer } from "@/components/map/UserLocationLayer";
@@ -49,10 +50,7 @@ export default function MiniMap({ latitude, longitude, label, route = null, orig
       dragging={!L.Browser.mobile}
       className="h-full w-full"
     >
-      <TileLayer
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-      />
+      <BaseTileLayer />
       <ResizeWatcher />
       {route && route.length > 1 && <RouteLayer coordinates={route} fit />}
       {origin && <UserLocationLayer location={origin} />}

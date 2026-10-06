@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowLeft,
   ArrowRight,
@@ -21,23 +22,18 @@ import type { MapTarget } from "@/components/map/MapController";
 import type { LatLng } from "@/components/map/LocationPicker";
 import { MiniMapLoader } from "@/components/map/MiniMapLoader";
 import { AmenityBadge, PriceBadge } from "@/components/restroom/RestroomBadges";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { AnimatedButton } from "@/components/ui/AnimatedButton";
+import { AnimatedCheck } from "@/components/ui/AnimatedCheck";
 import { Button } from "@/components/ui/button";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { useGeolocation } from "@/hooks/use-geolocation";
 import { useToast } from "@/hooks/use-toast";
+import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
+import { DURATION, EASE_OUT, scaleIn, SPRING, stepSlide, tapScale } from "@/lib/animations";
 import { reverseGeocode } from "@/lib/geocode";
 import { addRestroom } from "@/lib/restroom-store";
 import { ALL_AMENITIES, getAmenityIcon, getAmenityLabel, getDisplayAmenities } from "@/lib/icons";
@@ -56,6 +52,9 @@ const STEPS = ["Lokasyon", "Detalye", "Amenities", "I-review"] as const;
 const LAST_STEP = STEPS.length - 1;
 
 const LIMITS = { name: { min: 3, max: 80 }, address: { min: 5, max: 200 }, description: 500 };
+
+// How long the "Naidagdag!" success check stays before opening the new restroom
+const SUCCESS_HOLD_MS = 900;
 
 // "free" is chosen with the Libre / May bayad toggle instead of a checkbox.
 const AMENITY_OPTIONS = getDisplayAmenities(ALL_AMENITIES);
@@ -115,12 +114,22 @@ export function AddRestroomForm({ userId }: AddRestroomFormProps) {
   const { toast } = useToast();
   const geolocation = useGeolocation();
 
-  const [step, setStep] = useState(0);
+  const [step, setStepState] = useState(0);
+  // +1 = forward, -1 = back: steps slide in from the matching side
+  const [direction, setDirection] = useState(1);
   const [form, setForm] = useState<FormState>(INITIAL_STATE);
   const [errors, setErrors] = useState<FieldErrors>({});
+  // Bumped on every failed "Susunod" so error messages re-mount and shake again
+  const [errorAttempt, setErrorAttempt] = useState(0);
   const [focus, setFocus] = useState<MapTarget | null>(null);
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  const setStep = (next: number) => {
+    setDirection(next >= step ? 1 : -1);
+    setStepState(next);
+  };
 
   // Address auto-fill bookkeeping
   const [geocoding, setGeocoding] = useState(false);
@@ -137,6 +146,9 @@ export function AddRestroomForm({ userId }: AddRestroomFormProps) {
     form.description !== "" ||
     form.address !== "" ||
     form.amenities.length > 0;
+
+  // "May hindi ka pa na-save." when leaving via a link (not after saving)
+  useUnsavedChanges("add-restroom", isDirty && !submitting && !saved);
 
   const update = <K extends keyof FormState>(key: K, value: FormState[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -183,6 +195,7 @@ export function AddRestroomForm({ userId }: AddRestroomFormProps) {
     const stepErrors = validateStep(step, form);
     if (Object.values(stepErrors).some(Boolean)) {
       setErrors(stepErrors);
+      setErrorAttempt((n) => n + 1);
       return;
     }
     setErrors({});
@@ -195,15 +208,15 @@ export function AddRestroomForm({ userId }: AddRestroomFormProps) {
         void fillAddressFromPin(form.location);
       }
     }
-    setStep((s) => Math.min(s + 1, LAST_STEP));
+    setStep(Math.min(step + 1, LAST_STEP));
   };
 
   const goBack = () => {
     if (step > 0) {
       setErrors({});
-      setStep((s) => s - 1);
+      setStep(step - 1);
     } else {
-      leave();
+      handleCancel();
     }
   };
 
@@ -221,6 +234,7 @@ export function AddRestroomForm({ userId }: AddRestroomFormProps) {
       const stepErrors = validateStep(s, form);
       if (Object.values(stepErrors).some(Boolean)) {
         setErrors(stepErrors);
+        setErrorAttempt((n) => n + 1);
         setStep(s);
         return;
       }
@@ -242,9 +256,9 @@ export function AddRestroomForm({ userId }: AddRestroomFormProps) {
         },
         userId
       );
-      toast({ title: "Naidagdag ang CR!", description: "Salamat sa contribution." });
-      // Button stays disabled while navigating away
-      router.push(`/restroom/${restroom.id}`);
+      // Success animation, then open the new restroom (button stays disabled meanwhile)
+      setSaved(true);
+      window.setTimeout(() => router.push(`/restroom/${restroom.id}`), SUCCESS_HOLD_MS);
     } catch (error) {
       setSubmitting(false);
       toast({
@@ -284,281 +298,353 @@ export function AddRestroomForm({ userId }: AddRestroomFormProps) {
           </Button>
         </div>
         <h1 className="text-xl font-bold">Magdagdag ng CR</h1>
-        <div className="flex gap-1" aria-hidden="true">
-          {STEPS.map((label, i) => (
-            <div
-              key={label}
-              className={cn("h-1.5 flex-1 rounded-full", i <= step ? "bg-[#8B4513]" : "bg-muted")}
-            />
-          ))}
+
+        {/* Progress bar (fills smoothly) */}
+        <div
+          className="h-1.5 overflow-hidden rounded-full bg-muted"
+          role="progressbar"
+          aria-label="Progress ng form"
+          aria-valuemin={1}
+          aria-valuemax={STEPS.length}
+          aria-valuenow={step + 1}
+        >
+          <motion.div
+            className="h-full rounded-full bg-primary"
+            initial={false}
+            animate={{ width: `${((step + 1) / STEPS.length) * 100}%` }}
+            transition={{ duration: DURATION.slow, ease: EASE_OUT }}
+          />
         </div>
-        <p className="text-xs text-muted-foreground" aria-live="polite">
-          Hakbang {step + 1} ng {STEPS.length}: <span className="font-medium">{STEPS[step]}</span>
+
+        {/* Step indicators: done steps show an animated check */}
+        <ol className="grid grid-cols-4 gap-1" aria-hidden="true">
+          {STEPS.map((label, i) => {
+            const done = i < step;
+            const current = i === step;
+            return (
+              <li key={label} className="flex flex-col items-center gap-1">
+                <span
+                  className={cn(
+                    "flex h-7 w-7 items-center justify-center rounded-full border-2 text-xs font-semibold transition-colors duration-200",
+                    done && "border-primary bg-primary text-primary-foreground",
+                    current && "border-primary bg-primary/10 text-primary",
+                    !done && !current && "border-border text-muted-foreground"
+                  )}
+                >
+                  {done ? <AnimatedCheck className="h-4 w-4" /> : i + 1}
+                </span>
+                <span
+                  className={cn(
+                    "text-[11px] transition-colors duration-200",
+                    current ? "font-semibold text-foreground" : "text-muted-foreground"
+                  )}
+                >
+                  {label}
+                </span>
+              </li>
+            );
+          })}
+        </ol>
+        <p className="sr-only" aria-live="polite">
+          Hakbang {step + 1} ng {STEPS.length}: {STEPS[step]}
         </p>
       </div>
 
-      {/* Step content */}
-      <div className="flex flex-1 flex-col gap-4 px-4 py-4">
-        {step === 0 && (
-          <>
-            <p className="text-sm text-muted-foreground">
-              I-tap ang mapa kung nasaan ang CR. Pwede mo ring i-drag ang pin.
-            </p>
-            <div
-              className={cn(
-                "relative isolate h-[45dvh] min-h-64 overflow-hidden rounded-lg border",
-                errors.location && "border-destructive"
-              )}
-            >
-              <LocationPicker value={form.location} onChange={handleLocationChange} focus={focus} />
-            </div>
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="flex items-center gap-1.5 text-sm" aria-live="polite">
-                <MapPin className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-                {form.location ? (
-                  <span className="font-mono text-xs">{formatCoords(form.location)}</span>
-                ) : (
-                  <span className="text-muted-foreground">Wala pang pin</span>
-                )}
-              </p>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleUseMyLocation}
-                disabled={geolocation.loading}
-              >
-                {geolocation.loading ? (
-                  <Loader2 className="animate-spin" aria-hidden="true" />
-                ) : (
-                  <Crosshair aria-hidden="true" />
-                )}
-                Use my location
-              </Button>
-            </div>
-            {errors.location && <FieldError message={errors.location} />}
-          </>
-        )}
-
-        {step === 1 && (
-          <>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="name">Pangalan *</Label>
-              <Input
-                id="name"
-                value={form.name}
-                onChange={(e) => update("name", e.target.value)}
-                placeholder="hal. SM North EDSA 2nd floor CR"
-                maxLength={LIMITS.name.max}
-                aria-invalid={Boolean(errors.name)}
-                aria-describedby={errors.name ? "name-error" : undefined}
-                className={cn(errors.name && "border-destructive")}
-              />
-              {errors.name && <FieldError id="name-error" message={errors.name} />}
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="address">Address *</Label>
-                {form.location && (
+      {/* Step content: slides left/right depending on direction */}
+      <div className="relative flex flex-1 flex-col overflow-x-hidden">
+        <AnimatePresence mode="wait" initial={false} custom={direction}>
+          <motion.div
+            key={step}
+            custom={direction}
+            variants={stepSlide}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            className="flex flex-1 flex-col gap-4 px-4 py-4"
+          >
+            {step === 0 && (
+              <>
+                <p className="text-sm text-muted-foreground">
+                  I-tap ang mapa kung nasaan ang CR. Pwede mo ring i-drag ang pin.
+                </p>
+                <div
+                  className={cn(
+                    "relative isolate h-[45dvh] min-h-64 overflow-hidden rounded-lg border",
+                    errors.location && "border-destructive"
+                  )}
+                >
+                  <LocationPicker value={form.location} onChange={handleLocationChange} focus={focus} />
+                </div>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="flex items-center gap-1.5 text-sm" aria-live="polite">
+                    <MapPin className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                    {form.location ? (
+                      <span className="font-mono text-xs">{formatCoords(form.location)}</span>
+                    ) : (
+                      <span className="text-muted-foreground">Wala pang pin</span>
+                    )}
+                  </p>
                   <Button
                     type="button"
-                    variant="ghost"
+                    variant="outline"
                     size="sm"
-                    className="h-7 px-2 text-xs"
-                    disabled={geocoding}
-                    onClick={() => form.location && void fillAddressFromPin(form.location)}
+                    onClick={handleUseMyLocation}
+                    disabled={geolocation.loading}
                   >
-                    <Wand2 aria-hidden="true" />
-                    Kunin mula sa pin
+                    {geolocation.loading ? (
+                      <Loader2 className="animate-spin" aria-hidden="true" />
+                    ) : (
+                      <Crosshair aria-hidden="true" />
+                    )}
+                    Use my location
                   </Button>
-                )}
-              </div>
-              <div className="relative">
-                <Input
-                  id="address"
-                  value={form.address}
-                  onChange={(e) => update("address", e.target.value)}
-                  placeholder={geocoding ? "Hinahanap ang address..." : "Street, barangay, city"}
-                  maxLength={LIMITS.address.max}
-                  aria-invalid={Boolean(errors.address)}
-                  aria-describedby={errors.address ? "address-error" : undefined}
-                  className={cn("pr-9", errors.address && "border-destructive")}
-                />
-                {geocoding && (
-                  <Loader2
-                    className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground"
-                    aria-label="Hinahanap ang address"
+                </div>
+                {errors.location && <FieldError key={`location-${errorAttempt}`} message={errors.location} />}
+              </>
+            )}
+
+            {step === 1 && (
+              <>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="name">Pangalan *</Label>
+                  <Input
+                    id="name"
+                    value={form.name}
+                    onChange={(e) => update("name", e.target.value)}
+                    placeholder="hal. SM North EDSA 2nd floor CR"
+                    maxLength={LIMITS.name.max}
+                    aria-invalid={Boolean(errors.name)}
+                    aria-describedby={errors.name ? "name-error" : undefined}
+                    className={cn(errors.name && "border-destructive")}
                   />
-                )}
-              </div>
-              {errors.address ? (
-                <FieldError id="address-error" message={errors.address} />
-              ) : geocodeFailed ? (
-                <p className="text-xs text-muted-foreground">
-                  Hindi makuha ang address mula sa pin. I-type na lang.
-                </p>
-              ) : null}
-            </div>
+                  {errors.name && <FieldError key={`name-${errorAttempt}`} id="name-error" message={errors.name} />}
+                </div>
 
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="description">
-                Description <span className="font-normal text-muted-foreground">(optional)</span>
-              </Label>
-              <Textarea
-                id="description"
-                value={form.description}
-                onChange={(e) => update("description", e.target.value)}
-                placeholder="hal. Malapit sa food court, may attendant"
-                maxLength={LIMITS.description}
-                rows={4}
-              />
-              <p className="text-right text-xs text-muted-foreground">
-                {form.description.length}/{LIMITS.description}
-              </p>
-            </div>
-          </>
-        )}
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="address">Address *</Label>
+                    {form.location && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-2 text-xs"
+                        disabled={geocoding}
+                        onClick={() => form.location && void fillAddressFromPin(form.location)}
+                      >
+                        <Wand2 aria-hidden="true" />
+                        Kunin mula sa pin
+                      </Button>
+                    )}
+                  </div>
+                  <div className="relative">
+                    <Input
+                      id="address"
+                      value={form.address}
+                      onChange={(e) => update("address", e.target.value)}
+                      placeholder={geocoding ? "Hinahanap ang address..." : "Street, barangay, city"}
+                      maxLength={LIMITS.address.max}
+                      aria-invalid={Boolean(errors.address)}
+                      aria-describedby={errors.address ? "address-error" : undefined}
+                      className={cn("pr-9", errors.address && "border-destructive")}
+                    />
+                    {geocoding && (
+                      <Loader2
+                        className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground"
+                        aria-label="Hinahanap ang address"
+                      />
+                    )}
+                  </div>
+                  {errors.address ? (
+                    <FieldError key={`address-${errorAttempt}`} id="address-error" message={errors.address} />
+                  ) : geocodeFailed ? (
+                    <p className="text-xs text-muted-foreground">
+                      Hindi makuha ang address mula sa pin. I-type na lang.
+                    </p>
+                  ) : null}
+                </div>
 
-        {step === 2 && (
-          <>
-            <fieldset className="flex flex-col gap-2">
-              <legend className="mb-2 text-sm font-medium">Libre ba o may bayad?</legend>
-              <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Bayad">
-                <ChoiceButton
-                  role="radio"
-                  selected={form.isFree}
-                  onClick={() => update("isFree", true)}
-                  icon={BadgeCheck}
-                  label="Libre"
-                />
-                <ChoiceButton
-                  role="radio"
-                  selected={!form.isFree}
-                  onClick={() => update("isFree", false)}
-                  icon={CircleDollarSign}
-                  label="May bayad"
-                />
-              </div>
-            </fieldset>
-
-            <fieldset className="flex flex-col gap-2">
-              <legend className="mb-2 text-sm font-medium">
-                Ano ang meron? <span className="font-normal text-muted-foreground">(piliin lahat)</span>
-              </legend>
-              <div className="grid grid-cols-2 gap-2">
-                {AMENITY_OPTIONS.map((amenity) => (
-                  <ChoiceButton
-                    key={amenity}
-                    role="checkbox"
-                    selected={form.amenities.includes(amenity)}
-                    onClick={() => toggleAmenity(amenity)}
-                    icon={getAmenityIcon(amenity)}
-                    label={getAmenityLabel(amenity)}
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="description">
+                    Description <span className="font-normal text-muted-foreground">(optional)</span>
+                  </Label>
+                  <Textarea
+                    id="description"
+                    value={form.description}
+                    onChange={(e) => update("description", e.target.value)}
+                    placeholder="hal. Malapit sa food court, may attendant"
+                    maxLength={LIMITS.description}
+                    rows={4}
                   />
-                ))}
+                  <p className="text-right text-xs text-muted-foreground">
+                    {form.description.length}/{LIMITS.description}
+                  </p>
+                </div>
+              </>
+            )}
+
+            {step === 2 && (
+              <>
+                <fieldset className="flex flex-col gap-2">
+                  <legend className="mb-2 text-sm font-medium">Libre ba o may bayad?</legend>
+                  <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Bayad">
+                    <ChoiceButton
+                      role="radio"
+                      selected={form.isFree}
+                      onClick={() => update("isFree", true)}
+                      icon={BadgeCheck}
+                      label="Libre"
+                    />
+                    <ChoiceButton
+                      role="radio"
+                      selected={!form.isFree}
+                      onClick={() => update("isFree", false)}
+                      icon={CircleDollarSign}
+                      label="May bayad"
+                    />
+                  </div>
+                </fieldset>
+
+                <fieldset className="flex flex-col gap-2">
+                  <legend className="mb-2 text-sm font-medium">
+                    Ano ang meron? <span className="font-normal text-muted-foreground">(piliin lahat)</span>
+                  </legend>
+                  <div className="grid grid-cols-2 gap-2">
+                    {AMENITY_OPTIONS.map((amenity) => (
+                      <ChoiceButton
+                        key={amenity}
+                        role="checkbox"
+                        selected={form.amenities.includes(amenity)}
+                        onClick={() => toggleAmenity(amenity)}
+                        icon={getAmenityIcon(amenity)}
+                        label={getAmenityLabel(amenity)}
+                      />
+                    ))}
+                  </div>
+                </fieldset>
+              </>
+            )}
+
+            {step === 3 && form.location && (
+              <div className="flex flex-col gap-4">
+                <p className="text-sm text-muted-foreground">I-check kung tama ang lahat bago i-submit.</p>
+
+                <ReviewSection title="Lokasyon" onEdit={() => setStep(0)}>
+                  <div className="relative isolate h-40 overflow-hidden rounded-md border">
+                    {/* key: remount when the pin changes so the mini map recenters */}
+                    <MiniMapLoader
+                      key={locationKey(form.location)}
+                      latitude={form.location.latitude}
+                      longitude={form.location.longitude}
+                      label={form.name}
+                    />
+                  </div>
+                  <p className="font-mono text-xs text-muted-foreground">{formatCoords(form.location)}</p>
+                </ReviewSection>
+
+                <ReviewSection title="Detalye" onEdit={() => setStep(1)}>
+                  <p className="font-semibold">{form.name.trim()}</p>
+                  <p className="flex items-start gap-1.5 text-sm text-muted-foreground">
+                    <MapPin className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                    {form.address.trim()}
+                  </p>
+                  {form.description.trim() && (
+                    <p className="whitespace-pre-line text-sm">{form.description.trim()}</p>
+                  )}
+                </ReviewSection>
+
+                <ReviewSection title="Amenities" onEdit={() => setStep(2)}>
+                  <div className="flex flex-wrap gap-1.5">
+                    <PriceBadge isFree={form.isFree} />
+                    {form.amenities.map((amenity) => (
+                      <AmenityBadge key={amenity} amenity={amenity} />
+                    ))}
+                  </div>
+                  {form.amenities.length === 0 && (
+                    <p className="text-xs text-muted-foreground">Walang napiling amenities.</p>
+                  )}
+                </ReviewSection>
               </div>
-            </fieldset>
-          </>
-        )}
-
-        {step === 3 && form.location && (
-          <div className="flex flex-col gap-4">
-            <p className="text-sm text-muted-foreground">I-check kung tama ang lahat bago i-submit.</p>
-
-            <ReviewSection title="Lokasyon" onEdit={() => setStep(0)}>
-              <div className="relative isolate h-40 overflow-hidden rounded-md border">
-                {/* key: remount when the pin changes so the mini map recenters */}
-                <MiniMapLoader
-                  key={locationKey(form.location)}
-                  latitude={form.location.latitude}
-                  longitude={form.location.longitude}
-                  label={form.name}
-                />
-              </div>
-              <p className="font-mono text-xs text-muted-foreground">{formatCoords(form.location)}</p>
-            </ReviewSection>
-
-            <ReviewSection title="Detalye" onEdit={() => setStep(1)}>
-              <p className="font-semibold">{form.name.trim()}</p>
-              <p className="flex items-start gap-1.5 text-sm text-muted-foreground">
-                <MapPin className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-                {form.address.trim()}
-              </p>
-              {form.description.trim() && (
-                <p className="whitespace-pre-line text-sm">{form.description.trim()}</p>
-              )}
-            </ReviewSection>
-
-            <ReviewSection title="Amenities" onEdit={() => setStep(2)}>
-              <div className="flex flex-wrap gap-1.5">
-                <PriceBadge isFree={form.isFree} />
-                {form.amenities.map((amenity) => (
-                  <AmenityBadge key={amenity} amenity={amenity} />
-                ))}
-              </div>
-              {form.amenities.length === 0 && (
-                <p className="text-xs text-muted-foreground">Walang napiling amenities.</p>
-              )}
-            </ReviewSection>
-          </div>
-        )}
+            )}
+          </motion.div>
+        </AnimatePresence>
       </div>
 
       {/* Sticky action bar (main is the scroll container) */}
-      <div className="sticky bottom-0 z-10 flex gap-2 border-t bg-background px-4 py-3">
+      <div className="sticky bottom-0 z-10 flex gap-2 border-t bg-background/95 px-4 py-3 backdrop-blur">
         {step > 0 && (
-          <Button type="button" variant="outline" size="lg" onClick={goBack} className="flex-1">
+          <AnimatedButton type="button" variant="outline" size="lg" onClick={goBack} className="flex-1">
             <ArrowLeft aria-hidden="true" />
             Bumalik
-          </Button>
+          </AnimatedButton>
         )}
         {step < LAST_STEP ? (
-          <Button type="button" size="lg" onClick={goNext} className="flex-1">
+          <AnimatedButton type="button" size="lg" onClick={goNext} className="flex-1">
             Susunod
             <ArrowRight aria-hidden="true" />
-          </Button>
+          </AnimatedButton>
         ) : (
-          <Button
+          <AnimatedButton
             type="button"
             size="lg"
             onClick={() => void handleSubmit()}
-            disabled={submitting}
+            loading={submitting || saved}
+            loadingText="Sine-save..."
             className="flex-1"
           >
-            {submitting ? (
-              <Loader2 className="animate-spin" aria-hidden="true" />
-            ) : (
-              <Check aria-hidden="true" />
-            )}
-            {submitting ? "Sine-save..." : "I-submit"}
-          </Button>
+            <Check aria-hidden="true" />
+            I-submit
+          </AnimatedButton>
         )}
       </div>
 
-      <AlertDialog open={confirmCancel} onOpenChange={setConfirmCancel}>
-        <AlertDialogContent className="w-[calc(100%-2rem)] rounded-lg">
-          <AlertDialogHeader>
-            <AlertDialogTitle>Itigil ang pagdagdag?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Mawawala ang mga nailagay mo na sa form na ito.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Ituloy ang pagdagdag</AlertDialogCancel>
-            <AlertDialogAction onClick={leave}>Itigil</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmModal
+        open={confirmCancel}
+        onOpenChange={setConfirmCancel}
+        variant="destructive"
+        icon={X}
+        title="Itigil ang pagdagdag?"
+        description="Mawawala ang mga nailagay mo na sa form na ito."
+        confirmLabel="Itigil"
+        cancelLabel="Ituloy"
+        onConfirm={leave}
+      />
+
+      {/* Success: animated check, then the new restroom's page opens */}
+      <AnimatePresence>
+        {saved && (
+          <motion.div
+            className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-background/90 backdrop-blur-sm"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: DURATION.base }}
+            role="status"
+          >
+            <motion.span
+              variants={scaleIn}
+              initial="hidden"
+              animate="visible"
+              transition={SPRING}
+              className="flex h-20 w-20 items-center justify-center rounded-full bg-success text-success-foreground shadow-lg"
+            >
+              <AnimatedCheck className="h-10 w-10" strokeWidth={3} />
+            </motion.span>
+            <p className="text-lg font-semibold">Naidagdag ang CR!</p>
+            <p className="text-sm text-muted-foreground">Salamat sa contribution mo.</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
 
 // ---------- small presentational helpers ----------
 
+/** Validation message; shakes when it appears (re-mount it with a new key to shake again). */
 function FieldError({ id, message }: { id?: string; message: string }) {
   return (
-    <p id={id} className="text-xs font-medium text-destructive" role="alert">
+    <p id={id} className="animate-shake text-xs font-medium text-destructive" role="alert">
       {message}
     </p>
   );
@@ -575,22 +661,33 @@ interface ChoiceButtonProps {
 /** Big tappable toggle used for amenities (checkbox) and Libre/May bayad (radio). */
 function ChoiceButton({ role, selected, onClick, icon: Icon, label }: ChoiceButtonProps) {
   return (
-    <button
+    <motion.button
       type="button"
       role={role}
       aria-checked={selected}
       onClick={onClick}
+      whileTap={tapScale}
+      transition={SPRING}
       className={cn(
-        "flex min-h-11 items-center gap-2 rounded-md border px-3 py-2 text-left text-sm transition-colors",
+        "flex min-h-11 items-center gap-2 rounded-lg border px-3 py-2 text-left text-sm transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
         selected
-          ? "border-[#8B4513] bg-[#8B4513]/10 font-medium text-[#8B4513]"
-          : "bg-background hover:bg-muted"
+          ? "border-primary bg-primary/10 font-medium text-primary"
+          : "bg-card hover:border-primary/30 hover:bg-muted"
       )}
     >
       <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
       <span className="flex-1">{label}</span>
-      {selected && <Check className="h-4 w-4 shrink-0" aria-hidden="true" />}
-    </button>
+      {/* Check box with an animated tick */}
+      <span
+        className={cn(
+          "flex h-5 w-5 shrink-0 items-center justify-center border transition-colors duration-150",
+          role === "radio" ? "rounded-full" : "rounded-md",
+          selected ? "border-primary bg-primary text-primary-foreground" : "border-input"
+        )}
+      >
+        {selected && <AnimatedCheck className="h-3.5 w-3.5" strokeWidth={3} />}
+      </span>
+    </motion.button>
   );
 }
 

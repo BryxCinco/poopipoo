@@ -1,19 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import { Trash2 } from "lucide-react";
 
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { cn } from "@/lib/utils";
 
 interface DeleteReviewButtonProps {
@@ -23,36 +14,33 @@ interface DeleteReviewButtonProps {
   className?: string;
 }
 
-/** Small delete button with a confirmation dialog, for the user's own review. */
+/** Small delete button with a confirmation modal, for the user's own review. */
 export function DeleteReviewButton({ onConfirm, disabled = false, className }: DeleteReviewButtonProps) {
+  const [open, setOpen] = useState(false);
+
   return (
-    <AlertDialog>
-      <AlertDialogTrigger asChild>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          disabled={disabled}
-          className={cn("h-8 px-2 text-muted-foreground hover:text-destructive", className)}
-        >
-          <Trash2 aria-hidden="true" />
-          Burahin
-        </Button>
-      </AlertDialogTrigger>
-      <AlertDialogContent className="w-[calc(100%-2rem)] rounded-lg">
-        <AlertDialogHeader>
-          <AlertDialogTitle>Burahin ang review mo?</AlertDialogTitle>
-          <AlertDialogDescription>
-            Mawawala ang rating at comment mo, at mababago ang rating ng CR.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>Huwag</AlertDialogCancel>
-          <AlertDialogAction onClick={onConfirm} className={buttonVariants({ variant: "destructive" })}>
-            Burahin
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <>
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        disabled={disabled}
+        onClick={() => setOpen(true)}
+        className={cn("h-8 px-2 text-muted-foreground hover:text-destructive", className)}
+      >
+        <Trash2 aria-hidden="true" />
+        Burahin
+      </Button>
+      <ConfirmModal
+        open={open}
+        onOpenChange={setOpen}
+        variant="destructive"
+        title="Burahin ang review na ito?"
+        description="Mawawala ang rating at comment mo, at mababago ang rating ng CR."
+        confirmLabel="Burahin"
+        cancelLabel="Huwag"
+        onConfirm={onConfirm}
+      />
+    </>
   );
 }

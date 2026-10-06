@@ -5,7 +5,10 @@ import "./globals.css";
 
 import { BottomNav } from "@/components/layout/BottomNav";
 import { Header } from "@/components/layout/Header";
+import { Providers } from "@/components/layout/Providers";
+import { UnsavedChangesGuard } from "@/components/layout/UnsavedChangesGuard";
 import { Toaster } from "@/components/ui/toaster";
+import { THEME_INIT_SCRIPT } from "@/lib/theme";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -38,18 +41,26 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="fil">
+    // suppressHydrationWarning: the theme script may add the "dark" class before React hydrates
+    <html lang="fil" suppressHydrationWarning>
+      <head>
+        {/* Sets light/dark before the first paint (no flash). See lib/theme.ts */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+      </head>
       <body
         className={`${geistSans.variable} flex h-dvh flex-col font-sans antialiased`}
       >
-        <Header />
-        {/* Fills the space between header and bottom nav; pages scroll inside it.
-            Full width so the map can go edge to edge; pages set their own max-width. */}
-        <main className="flex min-h-0 w-full flex-1 flex-col overflow-y-auto">
-          {children}
-        </main>
-        <BottomNav />
-        <Toaster />
+        <Providers>
+          <Header />
+          {/* Fills the space between header and bottom nav; pages scroll inside it.
+              Full width so the map can go edge to edge; pages set their own max-width. */}
+          <main className="flex min-h-0 w-full flex-1 flex-col overflow-y-auto">
+            {children}
+          </main>
+          <BottomNav />
+          <Toaster />
+          <UnsavedChangesGuard />
+        </Providers>
       </body>
     </html>
   );

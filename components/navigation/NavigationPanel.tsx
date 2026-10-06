@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { motion } from "framer-motion";
 import {
   AlertTriangle,
   Car,
@@ -77,8 +78,12 @@ export function NavigationPanel({
     navigating && progress && route && progress.nextStepIndex !== null ? route.steps[progress.nextStepIndex] : null;
 
   return (
-    <section
+    <motion.section
       aria-label="Navigation"
+      // Slides up when navigation starts
+      initial={{ y: 32, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
       className={cn(
         "flex max-h-[60dvh] flex-col rounded-t-2xl border-t bg-background shadow-[0_-4px_20px_rgba(0,0,0,0.15)]",
         className
@@ -88,7 +93,7 @@ export function NavigationPanel({
 
       {/* Destination + close */}
       <div className="flex shrink-0 items-center gap-2 px-4 pb-2 pt-1">
-        <Flag className="h-4 w-4 shrink-0 text-[#8B4513]" aria-hidden="true" />
+        <Flag className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
         <p className="min-w-0 flex-1 truncate text-sm font-semibold">{destination.name}</p>
         <Button
           type="button"
@@ -105,7 +110,7 @@ export function NavigationPanel({
       <div className="flex min-h-0 flex-col gap-3 overflow-y-auto px-4 pb-4">
         {/* Upcoming maneuver (big banner while navigating) */}
         {navigating && (
-          <div className="flex items-center gap-3 rounded-lg bg-[#8B4513] p-3 text-white" aria-live="polite">
+          <div className="flex items-center gap-3 rounded-lg bg-primary p-3 text-white" aria-live="polite">
             {gpsLoading && !progress ? (
               <>
                 <Loader2 className="h-7 w-7 shrink-0 animate-spin" aria-hidden="true" />
@@ -126,7 +131,7 @@ export function NavigationPanel({
         )}
 
         {status === "arrived" && (
-          <div className="flex items-center gap-3 rounded-lg bg-green-600 p-3 text-white" role="status">
+          <div className="flex items-center gap-3 rounded-lg bg-success p-3 text-success-foreground" role="status">
             <Flag className="h-7 w-7 shrink-0" aria-hidden="true" />
             <p className="font-semibold">Nakarating ka na!</p>
           </div>
@@ -157,7 +162,7 @@ export function NavigationPanel({
           <>
             {/* Summary: time, distance, arrival */}
             <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-              <p className="flex items-center gap-1.5 text-xl font-bold text-[#8B4513]">
+              <p className="flex items-center gap-1.5 text-xl font-bold text-primary">
                 <Clock className="h-5 w-5" aria-hidden="true" />
                 {formatDuration(remainingDuration)}
               </p>
@@ -193,7 +198,7 @@ export function NavigationPanel({
                     className={cn(
                       "flex h-10 items-center justify-center gap-2 rounded-md border text-sm transition-colors",
                       nav.profile === value
-                        ? "border-[#8B4513] bg-[#8B4513]/10 font-semibold text-[#8B4513]"
+                        ? "border-primary bg-primary/10 font-semibold text-primary"
                         : "hover:bg-muted"
                     )}
                   >
@@ -228,11 +233,11 @@ export function NavigationPanel({
                       aria-current={i === currentStep ? "step" : undefined}
                       className={cn(
                         "flex items-center gap-3 px-3 py-2 text-sm",
-                        i === currentStep && "bg-[#8B4513]/10 font-semibold",
+                        i === currentStep && "bg-primary/10 font-semibold",
                         i < currentStep && "text-muted-foreground line-through"
                       )}
                     >
-                      <ManeuverIcon maneuver={step.maneuver} className="text-[#8B4513]" />
+                      <ManeuverIcon maneuver={step.maneuver} className="text-primary" />
                       <span className="min-w-0 flex-1">{step.instruction}</span>
                       {step.distance > 0 && step.maneuver !== "arrive" && (
                         <span className="shrink-0 text-xs text-muted-foreground">{formatMeters(step.distance)}</span>
@@ -292,6 +297,6 @@ export function NavigationPanel({
           )}
         </div>
       </div>
-    </section>
+    </motion.section>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { motion } from "framer-motion";
 import { CloudOff, Loader2, LocateOff, Plus, RefreshCw, SearchX, Toilet } from "lucide-react";
 
 import {
@@ -11,10 +12,12 @@ import {
 } from "@/components/restroom/RestroomFilters";
 import { RestroomListItem } from "@/components/restroom/RestroomListItem";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useErrorToast } from "@/hooks/use-error-toast";
 import { useGeolocation } from "@/hooks/use-geolocation";
 import { useRestrooms } from "@/hooks/use-restrooms";
+import { staggerItemCapped } from "@/lib/animations";
 import { calculateDistance } from "@/lib/distance";
 import type { Restroom } from "@/types/restroom";
 
@@ -95,15 +98,19 @@ export function RestroomList() {
 
       {dataError && restrooms.length === 0 ? (
         // Error with nothing cached: full error state with retry
-        <div className="flex flex-col items-center gap-2 py-12 text-center text-muted-foreground" role="alert">
-          <CloudOff className="h-10 w-10" aria-hidden="true" />
-          <p className="font-medium text-foreground">Hindi makuha ang mga CR</p>
-          <p className="text-sm">I-check ang internet connection mo.</p>
-          <Button variant="outline" size="sm" className="mt-2" onClick={() => void retry()}>
-            <RefreshCw aria-hidden="true" />
-            Subukan ulit
-          </Button>
-        </div>
+        <EmptyState
+          icon={<CloudOff />}
+          tone="error"
+          role="alert"
+          title="Hindi makuha ang mga CR"
+          description="I-check ang internet connection mo."
+          action={
+            <Button variant="outline" size="sm" onClick={() => void retry()}>
+              <RefreshCw aria-hidden="true" />
+              Subukan ulit
+            </Button>
+          }
+        />
       ) : loading ? (
         <ul className="flex flex-col gap-2" aria-busy="true" aria-label="Naglo-load">
           {Array.from({ length: 4 }, (_, i) => (
@@ -113,36 +120,41 @@ export function RestroomList() {
           ))}
         </ul>
       ) : restrooms.length === 0 ? (
-        <div className="flex flex-col items-center gap-2 py-12 text-center text-muted-foreground">
-          <Toilet className="h-10 w-10" aria-hidden="true" />
-          <p className="font-medium text-foreground">Wala pang CR dito. Mag-add ka!</p>
-          <p className="text-sm">Ikaw ang unang tumulong sa komunidad.</p>
-          <Button asChild size="sm" className="mt-2">
-            <Link href="/add">
-              <Plus aria-hidden="true" />
-              Magdagdag ng CR
-            </Link>
-          </Button>
-        </div>
+        <EmptyState
+          icon={<Toilet />}
+          title="Wala pang CR dito. Mag-add ka!"
+          description="Ikaw ang unang tumulong sa komunidad."
+          action={
+            <Button asChild size="sm">
+              <Link href="/add">
+                <Plus aria-hidden="true" />
+                Magdagdag ng CR
+              </Link>
+            </Button>
+          }
+        />
       ) : items.length === 0 ? (
-        <div className="flex flex-col items-center gap-2 py-12 text-center text-muted-foreground">
-          <SearchX className="h-10 w-10" aria-hidden="true" />
-          <p className="font-medium text-foreground">Walang CR na tugma</p>
-          <p className="text-sm">Subukang bawasan ang mga filter.</p>
-          <Button variant="outline" size="sm" className="mt-2" onClick={() => setActiveFilters([])}>
-            Clear all filters
-          </Button>
-        </div>
+        <EmptyState
+          icon={<SearchX />}
+          title="Walang CR na tugma"
+          description="Subukang bawasan ang mga filter."
+          action={
+            <Button variant="outline" size="sm" onClick={() => setActiveFilters([])}>
+              Clear all filters
+            </Button>
+          }
+        />
       ) : (
         <ul className="flex flex-col gap-2">
-          {items.map(({ restroom, distanceKm }) => (
-            <li key={restroom.id}>
+          {items.map(({ restroom, distanceKm }, index) => (
+            // Staggered entrance (capped so long lists appear quickly); items shown by a filter change animate in too
+            <motion.li key={restroom.id} custom={index} variants={staggerItemCapped} initial="hidden" animate="visible">
               <RestroomListItem
                 restroom={restroom}
                 distanceKm={distanceKm}
                 isUserAdded={isUserAdded(restroom)}
               />
-            </li>
+            </motion.li>
           ))}
         </ul>
       )}

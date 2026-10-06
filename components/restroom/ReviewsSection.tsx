@@ -3,12 +3,15 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { AnimatePresence, motion } from "framer-motion";
 import { LogIn } from "lucide-react";
 
 import { ReviewForm } from "@/components/restroom/ReviewForm";
 import { ReviewItem, ReviewList } from "@/components/restroom/ReviewList";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
+import { DURATION, EASE_OUT } from "@/lib/animations";
 import { loginUrl } from "@/lib/auth/return-url";
 import { invalidateRestrooms } from "@/lib/restroom-store";
 import {
@@ -185,6 +188,14 @@ export function ReviewsSection({
   const total = othersTotal + (myReview ? 1 : 0);
   const showForm = viewer !== null && (myReview === null || editing);
 
+  // A typed-but-unsaved review counts as unsaved changes (confirm before leaving)
+  const draftChanged =
+    draft.rating !== (myReview?.rating ?? 0) || draft.comment.trim() !== (myReview?.comment ?? "").trim();
+  useUnsavedChanges("review", showForm && draftChanged && !submitting);
+
+  // Which block shows in "#iyong-review"; changing it animates the height
+  const mode = !viewer ? "login" : showForm ? "form" : myReview ? "mine" : "none";
+
   return (
     <section id="reviews" aria-labelledby="reviews-heading" className="flex scroll-mt-4 flex-col gap-3">
       <h2 id="reviews-heading" className="font-semibold">
@@ -192,37 +203,49 @@ export function ReviewsSection({
       </h2>
 
       <div id="iyong-review" className="scroll-mt-4">
-        {!viewer ? (
-          <div className="flex flex-col items-center gap-2 rounded-lg border p-4 text-center">
-            <p className="text-sm text-muted-foreground">Ginamit mo na ba ang CR na ito? Ibahagi ang karanasan mo.</p>
-            <Button asChild className="w-full">
-              <Link href={loginUrl(`/restroom/${restroomId}#reviews`)}>
-                <LogIn aria-hidden="true" />
-                Mag-login para mag-review
-              </Link>
-            </Button>
-          </div>
-        ) : showForm ? (
-          <ReviewForm
-            value={draft}
-            onChange={setDraft}
-            onSubmit={() => void handleSubmit()}
-            onCancel={myReview ? () => setEditing(false) : undefined}
-            submitting={submitting}
-            isEdit={myReview !== null}
-          />
-        ) : myReview ? (
-          <div className="flex flex-col gap-1.5">
-            <p className="text-sm font-medium text-muted-foreground">Iyong review</p>
-            <ReviewItem
-              review={myReview}
-              pending={myPending}
-              onEdit={handleEdit}
-              onDelete={() => void handleDelete()}
-              className="border-[#8B4513]/30 bg-[#8B4513]/5"
-            />
-          </div>
-        ) : null}
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={mode}
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: DURATION.slow, ease: EASE_OUT }}
+            // Clip during the height animation, with a margin so focus rings aren't cut off
+            style={{ overflow: "clip", overflowClipMargin: 4 }}
+          >
+            {!viewer ? (
+              <div className="flex flex-col items-center gap-2 rounded-lg border p-4 text-center">
+                <p className="text-sm text-muted-foreground">Ginamit mo na ba ang CR na ito? Ibahagi ang karanasan mo.</p>
+                <Button asChild className="w-full">
+                  <Link href={loginUrl(`/restroom/${restroomId}#reviews`)}>
+                    <LogIn aria-hidden="true" />
+                    Mag-login para mag-review
+                  </Link>
+                </Button>
+              </div>
+            ) : showForm ? (
+              <ReviewForm
+                value={draft}
+                onChange={setDraft}
+                onSubmit={() => void handleSubmit()}
+                onCancel={myReview ? () => setEditing(false) : undefined}
+                submitting={submitting}
+                isEdit={myReview !== null}
+              />
+            ) : myReview ? (
+              <div className="flex flex-col gap-1.5">
+                <p className="text-sm font-medium text-muted-foreground">Iyong review</p>
+                <ReviewItem
+                  review={myReview}
+                  pending={myPending}
+                  onEdit={handleEdit}
+                  onDelete={() => void handleDelete()}
+                  className="border-primary/30 bg-primary/5"
+                />
+              </div>
+            ) : null}
+          </motion.div>
+        </AnimatePresence>
       </div>
 
       <ReviewList

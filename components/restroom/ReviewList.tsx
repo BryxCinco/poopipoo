@@ -1,12 +1,15 @@
 "use client";
 
+import { motion } from "framer-motion";
 import { ChevronDown, CloudOff, Loader2, MessageSquare, Pencil, RefreshCw } from "lucide-react";
 
 import { DeleteReviewButton } from "@/components/restroom/DeleteReviewButton";
 import { StarRating } from "@/components/restroom/StarRating";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { Skeleton } from "@/components/ui/skeleton";
+import { staggerItemCapped } from "@/lib/animations";
 import { formatAbsoluteDate, formatRelativeTime } from "@/lib/relative-time";
 import { cn } from "@/lib/utils";
 import type { Review } from "@/types/review";
@@ -26,7 +29,7 @@ interface ReviewItemProps {
 export function ReviewItem({ review, onEdit, onDelete, pending = false, className }: ReviewItemProps) {
   return (
     <article
-      className={cn("flex gap-3 rounded-lg border p-3 transition-opacity", pending && "opacity-60", className)}
+      className={cn("flex gap-3 rounded-xl border bg-card p-3 shadow-sm transition-opacity duration-200", pending && "opacity-60", className)}
       aria-busy={pending}
     >
       <Avatar className="h-9 w-9 shrink-0">
@@ -72,7 +75,7 @@ export function ReviewItem({ review, onEdit, onDelete, pending = false, classNam
 
 export function ReviewItemSkeleton() {
   return (
-    <div className="flex gap-3 rounded-lg border p-3" aria-hidden="true">
+    <div className="flex gap-3 rounded-xl border bg-card p-3" aria-hidden="true">
       <Skeleton className="h-9 w-9 shrink-0 rounded-full" />
       <div className="flex flex-1 flex-col gap-2">
         <Skeleton className="h-4 w-1/3" />
@@ -126,22 +129,28 @@ export function ReviewList({
 
   if (error && reviews.length === 0) {
     return (
-      <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed px-4 py-6 text-center" role="alert">
-        <CloudOff className="h-8 w-8 text-muted-foreground" aria-hidden="true" />
-        <p className="text-sm font-medium">Hindi ma-load ang mga review</p>
-        <Button variant="outline" size="sm" onClick={onRetry}>
-          <RefreshCw aria-hidden="true" />
-          Subukan ulit
-        </Button>
+      <div className="rounded-xl border border-dashed">
+        <EmptyState
+          compact
+          icon={<CloudOff />}
+          tone="error"
+          role="alert"
+          title="Hindi ma-load ang mga review"
+          action={
+            <Button variant="outline" size="sm" onClick={onRetry}>
+              <RefreshCw aria-hidden="true" />
+              Subukan ulit
+            </Button>
+          }
+        />
       </div>
     );
   }
 
   if (reviews.length === 0) {
     return (
-      <div className="flex flex-col items-center gap-1 rounded-lg border border-dashed px-4 py-6 text-center">
-        <MessageSquare className="h-8 w-8 text-muted-foreground" aria-hidden="true" />
-        <p className="text-sm font-medium">{emptyText}</p>
+      <div className="rounded-xl border border-dashed">
+        <EmptyState compact icon={<MessageSquare />} title={emptyText} />
       </div>
     );
   }
@@ -151,16 +160,23 @@ export function ReviewList({
   return (
     <div className="flex flex-col gap-2">
       <ul className="flex flex-col gap-2">
-        {reviews.map((review) => {
+        {reviews.map((review, index) => {
           const isOwn = currentUserId !== null && review.userId === currentUserId;
           return (
-            <li key={review.id}>
+            // Stagger in; "Tingnan pa" pages animate in as they're added
+            <motion.li
+              key={review.id}
+              custom={index % 10}
+              variants={staggerItemCapped}
+              initial="hidden"
+              animate="visible"
+            >
               <ReviewItem
                 review={review}
                 onEdit={isOwn && onEdit ? () => onEdit(review) : undefined}
                 onDelete={isOwn && onDelete ? () => onDelete(review) : undefined}
               />
-            </li>
+            </motion.li>
           );
         })}
       </ul>

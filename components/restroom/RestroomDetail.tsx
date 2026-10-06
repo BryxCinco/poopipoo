@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { MapPin, Navigation } from "lucide-react";
+import { motion, useTransform } from "framer-motion";
+import { MapPin, Navigation, Toilet } from "lucide-react";
 
 import { MiniMapLoader } from "@/components/map/MiniMapLoader";
 import { NavigateButton } from "@/components/navigation/NavigateButton";
@@ -15,7 +16,9 @@ import { RestroomRating } from "@/components/restroom/RestroomRating";
 import { ReviewsSection, type ReviewViewer } from "@/components/restroom/ReviewsSection";
 import { ShareButton } from "@/components/restroom/ShareButton";
 import { Button } from "@/components/ui/button";
+import { useMainScrollY } from "@/hooks/use-main-scroll";
 import { useNavigation } from "@/hooks/use-navigation";
+import { slideUp, staggerContainer, staggerItem } from "@/lib/animations";
 import {
   ALL_AMENITIES,
   getAmenityIcon,
@@ -48,6 +51,11 @@ export function RestroomDetail({ restroom, isOwner, reviews }: RestroomDetailPro
   const router = useRouter();
   const nav = useNavigation();
 
+  // Hero parallax: the decorative layer drifts down and fades as the page scrolls
+  const scrollY = useMainScrollY();
+  const decoY = useTransform(scrollY, [0, 240], [0, 72]);
+  const decoOpacity = useTransform(scrollY, [0, 200], [1, 0]);
+
   // Navigation state that belongs to this restroom
   const navHere = nav.destination?.id === restroom.id ? nav.status : "idle";
   const planning = navHere === "routing" || navHere === "preview" || navHere === "error";
@@ -75,27 +83,42 @@ export function RestroomDetail({ restroom, isOwner, reviews }: RestroomDetailPro
     >
       <BackButton />
 
-      <header className="flex flex-col gap-2">
-        {isOwner && <UserAddedBadge label="Iyong contribution" className="w-fit" />}
-        <h1 className="text-2xl font-bold leading-tight">{restroom.name}</h1>
-        <div className="flex flex-wrap items-center gap-2">
-          <a href="#reviews" className="rounded-sm hover:underline">
-            <RestroomRating rating={restroom.rating} reviewCount={restroom.reviewCount} />
-          </a>
-          <PriceBadge isFree={restroom.isFree} />
-        </div>
-        <p className="flex items-start gap-1.5 text-sm text-muted-foreground">
-          <MapPin className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-          {restroom.address}
-        </p>
-        <DistanceFromUser latitude={restroom.latitude} longitude={restroom.longitude} />
+      {/* Hero: gradient card with a parallax toilet mark behind the title */}
+      <header className="relative isolate overflow-hidden rounded-2xl border bg-gradient-to-br from-primary/15 via-primary/5 to-highlight/10 p-5 shadow-sm">
+        <motion.div
+          style={{ y: decoY, opacity: decoOpacity }}
+          className="pointer-events-none absolute -right-6 -top-6 -z-10 text-primary/10"
+          aria-hidden="true"
+        >
+          <Toilet className="h-40 w-40" strokeWidth={1.5} />
+        </motion.div>
+        <motion.div
+          variants={slideUp}
+          initial="hidden"
+          animate="visible"
+          className="flex flex-col gap-2"
+        >
+          {isOwner && <UserAddedBadge label="Iyong contribution" className="w-fit" />}
+          <h1 className="text-2xl font-bold leading-tight">{restroom.name}</h1>
+          <div className="flex flex-wrap items-center gap-2">
+            <a href="#reviews" className="link-underline rounded-sm">
+              <RestroomRating rating={restroom.rating} reviewCount={restroom.reviewCount} />
+            </a>
+            <PriceBadge isFree={restroom.isFree} />
+          </div>
+          <p className="flex items-start gap-1.5 text-sm text-muted-foreground">
+            <MapPin className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+            {restroom.address}
+          </p>
+          <DistanceFromUser latitude={restroom.latitude} longitude={restroom.longitude} />
+        </motion.div>
       </header>
 
       {/* `isolate` keeps Leaflet's z-indexes from covering the header/nav/toasts */}
       {/* Grows to show the route preview */}
       <div
         className={cn(
-          "relative isolate overflow-hidden rounded-lg border transition-[height]",
+          "relative isolate overflow-hidden rounded-xl border shadow-sm transition-[height] duration-300 ease-out",
           planning && nav.route ? "h-72" : "h-48"
         )}
       >
@@ -117,7 +140,7 @@ export function RestroomDetail({ restroom, isOwner, reviews }: RestroomDetailPro
             </Link>
           </Button>
         ) : (
-          <NavigateButton destination={destination} />
+          <NavigateButton destination={destination} pulse />
         )}
         <ShareButton />
       </div>
@@ -125,30 +148,36 @@ export function RestroomDetail({ restroom, isOwner, reviews }: RestroomDetailPro
       <section className="flex flex-col gap-2">
         <h2 className="font-semibold">Amenities</h2>
         {/* Shows every amenity type so it's clear what's missing too (e.g. walang bidet) */}
-        <ul className="grid grid-cols-2 gap-2">
+        <motion.ul
+          className="grid grid-cols-2 gap-2"
+          variants={staggerContainer}
+          initial="hidden"
+          animate="visible"
+        >
           {getDisplayAmenities(ALL_AMENITIES).map((amenity) => {
             const Icon = getAmenityIcon(amenity);
             const available = restroom.amenities.includes(amenity);
             return (
-              <li
+              <motion.li
                 key={amenity}
+                variants={staggerItem}
                 className={cn(
-                  "flex items-center gap-2 rounded-md border px-3 py-2 text-sm",
+                  "flex items-center gap-2 rounded-lg border px-3 py-2 text-sm",
                   available
-                    ? "border-[#8B4513]/30 bg-[#8B4513]/5"
+                    ? "border-primary/30 bg-primary/5"
                     : "text-muted-foreground opacity-60"
                 )}
               >
                 <Icon
-                  className={cn("h-4 w-4 shrink-0", available && "text-[#8B4513]")}
+                  className={cn("h-4 w-4 shrink-0", available && "text-primary")}
                   aria-hidden="true"
                 />
                 <span className={cn(!available && "line-through")}>{getAmenityLabel(amenity)}</span>
                 <span className="sr-only">{available ? "(meron)" : "(wala)"}</span>
-              </li>
+              </motion.li>
             );
           })}
-        </ul>
+        </motion.ul>
       </section>
 
       {restroom.description && (

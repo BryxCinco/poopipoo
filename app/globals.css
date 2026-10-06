@@ -2,60 +2,74 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Poopipoo design tokens (HSL, shadcn/ui format).
+ * Light: warm stone neutrals + brown primary, amber highlight, emerald success.
+ *   primary   #8B4513   highlight #F59E0B   success #10B981   destructive #EF4444
+ *   background #FAFAF9  foreground #1C1917  muted #F5F5F4      border #E7E5E4
+ * `accent` stays a neutral hover surface (shadcn uses it for ghost/outline hovers);
+ * the amber brand accent is `highlight`.
+ */
 @layer base {
-  /* shadcn/ui Zinc theme (HSL values, Tailwind v3 format) */
   :root {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
+    --background: 60 9% 98%;
+    --foreground: 24 10% 10%;
     --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
+    --card-foreground: 24 10% 10%;
     --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-    --primary: 240 5.9% 10%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 240 10% 3.9%;
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
+    --popover-foreground: 24 10% 10%;
+    --primary: 25 76% 31%;
+    --primary-foreground: 60 9% 98%;
+    --secondary: 60 5% 96%;
+    --secondary-foreground: 24 10% 10%;
+    --muted: 60 5% 96%;
+    --muted-foreground: 25 5% 45%;
+    --accent: 60 5% 96%;
+    --accent-foreground: 24 10% 10%;
+    --highlight: 38 92% 50%;
+    --highlight-foreground: 26 83% 14%;
+    --success: 160 84% 39%;
+    --success-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 20 6% 90%;
+    --input: 20 6% 90%;
+    --ring: 25 76% 31%;
+    --chart-1: 25 76% 31%;
+    --chart-2: 38 92% 50%;
+    --chart-3: 160 84% 39%;
+    --chart-4: 0 84% 60%;
+    --chart-5: 25 5% 45%;
     --radius: 0.5rem;
+    color-scheme: light;
   }
+
   .dark {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 240 5.9% 10%;
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 240 4.9% 83.9%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
+    --background: 24 10% 7%;
+    --foreground: 60 9% 96%;
+    --card: 24 9% 10%;
+    --card-foreground: 60 9% 96%;
+    --popover: 24 9% 10%;
+    --popover-foreground: 60 9% 96%;
+    /* Lighter brown so it reads on a dark background */
+    --primary: 25 62% 52%;
+    --primary-foreground: 24 10% 7%;
+    --secondary: 12 6% 15%;
+    --secondary-foreground: 60 9% 96%;
+    --muted: 12 6% 15%;
+    --muted-foreground: 24 5% 64%;
+    --accent: 12 6% 15%;
+    --accent-foreground: 60 9% 96%;
+    --highlight: 38 92% 55%;
+    --highlight-foreground: 26 83% 14%;
+    --success: 160 70% 42%;
+    --success-foreground: 0 0% 100%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 12 6% 18%;
+    --input: 12 6% 20%;
+    --ring: 25 62% 52%;
+    color-scheme: dark;
   }
 }
 
@@ -63,7 +77,135 @@
   * {
     @apply border-border;
   }
+  html {
+    scroll-behavior: smooth;
+  }
   body {
     @apply bg-background text-foreground;
+  }
+  /* Main scrolls (not the window), so smooth-scroll there too (e.g. #reviews links) */
+  main {
+    scroll-behavior: smooth;
+  }
+  /* Smooth light/dark switch, only while toggling (see lib/theme.ts) */
+  .theme-transition,
+  .theme-transition * {
+    transition:
+      background-color 200ms ease,
+      border-color 200ms ease,
+      color 200ms ease !important;
+  }
+}
+
+@layer utilities {
+  /* Link underline that grows from the left on hover/focus */
+  .link-underline {
+    background-image: linear-gradient(currentColor, currentColor);
+    background-position: 0 100%;
+    background-repeat: no-repeat;
+    background-size: 0% 1px;
+    transition: background-size 200ms ease;
+  }
+  .link-underline:hover,
+  .link-underline:focus-visible {
+    background-size: 100% 1px;
+  }
+
+  /* Skeleton shimmer: a light band sweeping across a muted block. Use with animate-shimmer. */
+  .shimmer {
+    background-color: hsl(var(--muted));
+    background-image: linear-gradient(
+      90deg,
+      transparent 0%,
+      hsl(var(--background) / 0.6) 50%,
+      transparent 100%
+    );
+    background-size: 200% 100%;
+    background-repeat: no-repeat;
+    /* the movement comes from Tailwind `animate-shimmer` (keyframes live in tailwind.config.ts) */
+  }
+}
+
+/* ---------- Leaflet: modern controls, popups and attribution ---------- */
+.leaflet-bar,
+.leaflet-touch .leaflet-bar {
+  border: 1px solid hsl(var(--border)) !important;
+  border-radius: 0.75rem !important;
+  overflow: hidden;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+.leaflet-bar a,
+.leaflet-touch .leaflet-bar a {
+  background-color: hsl(var(--card));
+  color: hsl(var(--foreground));
+  border-bottom-color: hsl(var(--border));
+  transition: background-color 150ms ease;
+}
+.leaflet-bar a:hover,
+.leaflet-bar a:focus-visible {
+  background-color: hsl(var(--muted));
+}
+.leaflet-bar a:first-child,
+.leaflet-bar a:last-child {
+  border-radius: 0 !important;
+}
+.leaflet-popup-content-wrapper {
+  border-radius: 1rem;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.15), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+.leaflet-popup-content {
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+}
+.leaflet-control-attribution {
+  font-size: 10px;
+  line-height: 1.4;
+  border-radius: 0.5rem 0 0 0;
+  background-color: hsl(var(--card) / 0.8) !important;
+  backdrop-filter: blur(4px);
+}
+.leaflet-left .leaflet-control-attribution {
+  border-radius: 0 0.5rem 0 0;
+}
+/* Full-screen map: lift the bottom-left attribution above the raised Add button */
+.restroom-map .leaflet-bottom.leaflet-left {
+  margin-bottom: 1.75rem;
+}
+
+/* Leaflet controls and popups follow the theme */
+.dark .leaflet-bar a,
+.dark .leaflet-popup-content-wrapper,
+.dark .leaflet-popup-tip {
+  background-color: hsl(var(--card));
+  color: hsl(var(--card-foreground));
+  border-color: hsl(var(--border));
+}
+.dark .leaflet-control-attribution {
+  background-color: hsl(var(--card) / 0.8) !important;
+  color: hsl(var(--muted-foreground));
+}
+.dark .leaflet-control-attribution a {
+  color: hsl(var(--primary));
+}
+.leaflet-container {
+  background-color: hsl(var(--muted));
+}
+/* Dark mode without a CARTO key: darken the OpenStreetMap tiles (see BaseTileLayer) */
+.map-tiles-dark {
+  filter: invert(1) hue-rotate(180deg) brightness(0.9) contrast(0.9);
+}
+
+/* Accessibility: honour "reduce motion" for CSS animations/transitions too
+   (Framer Motion is handled by <MotionConfig reducedMotion="user">). */
+@media (prefers-reduced-motion: reduce) {
+  html,
+  main {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

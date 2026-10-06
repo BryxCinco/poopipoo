@@ -42,8 +42,11 @@ const bodySchema = z
 
 type ErrorCode = "unauthorized" | "invalid" | "rate_limited" | "ai_busy" | "upstream" | "config";
 
-function errorResponse(status: number, code: ErrorCode, error: string, headers?: HeadersInit) {
-  return NextResponse.json({ error, code }, { status, headers });
+function errorResponse(status: number, code: ErrorCode, error: string, retryAfter?: number) {
+  return NextResponse.json(
+    { error, code, ...(retryAfter ? { retry_after: retryAfter } : {}) },
+    { status, headers: retryAfter ? { "Retry-After": String(retryAfter) } : undefined }
+  );
 }
 
 export async function POST(request: Request) {
@@ -79,7 +82,7 @@ export async function POST(request: Request) {
       429,
       "rate_limited",
       `Sobrang dami ng tanong. Subukan ulit pagkalipas ng ${retryAfter} segundo.`,
-      { "Retry-After": String(retryAfter) }
+      retryAfter
     );
   }
 
@@ -103,7 +106,7 @@ export async function POST(request: Request) {
     if (error instanceof AgentError) {
       switch (error.kind) {
         case "rate-limit":
-          return errorResponse(429, "ai_busy", error.message, { "Retry-After": "60" });
+          return errorResponse(429, "ai_busy", error.message, 60);
         case "timeout":
           return errorResponse(504, "upstream", error.message);
         case "config":

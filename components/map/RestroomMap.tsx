@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo } from "react";
-import { MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
+import { useEffect, useMemo } from "react";
+import { MapContainer, Marker, Popup, useMap } from "react-leaflet";
 
+import { BaseTileLayer } from "@/components/map/BaseTileLayer";
 import { MapController, type MapTarget } from "@/components/map/MapController";
 import { createRestroomIcon } from "@/components/map/marker-icon";
 import { RouteLayer } from "@/components/map/RouteLayer";
@@ -59,6 +60,19 @@ function RestroomPopupContent({ restroom, onSelectRestroom }: RestroomPopupConte
   );
 }
 
+/**
+ * On the full-screen map the bottom-right has the AI button and the raised Add
+ * button overlaps the bottom edge, so the attribution goes bottom-left and is
+ * lifted a little (see .restroom-map in globals.css). It must stay visible.
+ */
+function AttributionBottomLeft() {
+  const map = useMap();
+  useEffect(() => {
+    map.attributionControl?.setPosition("bottomleft");
+  }, [map]);
+  return null;
+}
+
 export default function RestroomMap({
   restrooms,
   onSelectRestroom,
@@ -77,12 +91,10 @@ export default function RestroomMap({
     <MapContainer
       center={[MANILA_COORDS.latitude, MANILA_COORDS.longitude]}
       zoom={DEFAULT_ZOOM}
-      className="h-full w-full"
+      className="restroom-map h-full w-full"
     >
-      <TileLayer
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-      />
+      <BaseTileLayer />
+      <AttributionBottomLeft />
 
       <MapController target={flyTo} />
 
