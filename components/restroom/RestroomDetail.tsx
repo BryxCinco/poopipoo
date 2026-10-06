@@ -9,6 +9,7 @@ import { DeleteRestroomButton } from "@/components/restroom/DeleteRestroomButton
 import { DistanceFromUser } from "@/components/restroom/DistanceFromUser";
 import { PriceBadge, UserAddedBadge } from "@/components/restroom/RestroomBadges";
 import { RestroomRating } from "@/components/restroom/RestroomRating";
+import { ReviewsSection, type ReviewViewer } from "@/components/restroom/ReviewsSection";
 import { ShareButton } from "@/components/restroom/ShareButton";
 import { Button } from "@/components/ui/button";
 import { getDirectionsUrl } from "@/lib/directions";
@@ -20,18 +21,27 @@ import {
 } from "@/lib/icons";
 import { cn } from "@/lib/utils";
 import type { Restroom } from "@/types/restroom";
+import type { Review } from "@/types/review";
 
 interface RestroomDetailProps {
   restroom: Restroom;
   /** Decided on the server from the validated session. */
   isOwner: boolean;
+  /** Initial review data, loaded on the server. */
+  reviews: {
+    viewer: ReviewViewer | null;
+    initialMyReview: Review | null;
+    initialReviews: Review[] | null;
+    initialTotal: number;
+    startEditing: boolean;
+  };
 }
 
 /**
  * Restroom detail view. Data is loaded on the server (app/restroom/[id]/page.tsx);
  * this is a Client Component only for the interactive bits (delete, router).
  */
-export function RestroomDetail({ restroom, isOwner }: RestroomDetailProps) {
+export function RestroomDetail({ restroom, isOwner, reviews }: RestroomDetailProps) {
   const router = useRouter();
 
   return (
@@ -42,7 +52,9 @@ export function RestroomDetail({ restroom, isOwner }: RestroomDetailProps) {
         {isOwner && <UserAddedBadge label="Iyong contribution" className="w-fit" />}
         <h1 className="text-2xl font-bold leading-tight">{restroom.name}</h1>
         <div className="flex flex-wrap items-center gap-2">
-          <RestroomRating rating={restroom.rating} reviewCount={restroom.reviewCount} />
+          <a href="#reviews" className="rounded-sm hover:underline">
+            <RestroomRating rating={restroom.rating} reviewCount={restroom.reviewCount} />
+          </a>
           <PriceBadge isFree={restroom.isFree} />
         </div>
         <p className="flex items-start gap-1.5 text-sm text-muted-foreground">
@@ -59,6 +71,20 @@ export function RestroomDetail({ restroom, isOwner }: RestroomDetailProps) {
           longitude={restroom.longitude}
           label={restroom.name}
         />
+      </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        <Button asChild size="lg" className="w-full">
+          <a
+            href={getDirectionsUrl(restroom.latitude, restroom.longitude)}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Navigation aria-hidden="true" />
+            Get Directions
+          </a>
+        </Button>
+        <ShareButton />
       </div>
 
       <section className="flex flex-col gap-2">
@@ -97,19 +123,7 @@ export function RestroomDetail({ restroom, isOwner }: RestroomDetailProps) {
         </section>
       )}
 
-      <div className="grid grid-cols-2 gap-2">
-        <Button asChild size="lg" className="w-full">
-          <a
-            href={getDirectionsUrl(restroom.latitude, restroom.longitude)}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Navigation aria-hidden="true" />
-            Get Directions
-          </a>
-        </Button>
-        <ShareButton />
-      </div>
+      <ReviewsSection restroomId={restroom.id} {...reviews} />
 
       {isOwner && (
         <DeleteRestroomButton

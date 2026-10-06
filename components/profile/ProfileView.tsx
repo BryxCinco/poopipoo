@@ -12,6 +12,7 @@ import {
   MapPin,
   MessageSquare,
   Moon,
+  Pencil,
   Plus,
   Toilet,
   User,
@@ -21,6 +22,7 @@ import {
 
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { DeleteRestroomButton } from "@/components/restroom/DeleteRestroomButton";
+import { DeleteReviewButton } from "@/components/restroom/DeleteReviewButton";
 import { LocalRestroomsUpload } from "@/components/restroom/LocalRestroomsUpload";
 import { StarRating } from "@/components/restroom/StarRating";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -29,6 +31,10 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { loginUrl } from "@/lib/auth/return-url";
+import { formatRelativeTime } from "@/lib/relative-time";
+import { invalidateRestrooms } from "@/lib/restroom-store";
+import { deleteReview } from "@/lib/reviews/queries";
+import { createClient } from "@/lib/supabase/client";
 import type { Restroom } from "@/types/restroom";
 
 export interface ProfileAccount {
@@ -68,6 +74,7 @@ export function ProfileView({ account, restrooms, reviews }: ProfileViewProps) {
   const [hiddenIds, setHiddenIds] = useState<ReadonlySet<string>>(new Set());
 
   const visibleRestrooms = restrooms.filter((restroom) => !hiddenIds.has(restroom.id));
+  const visibleReviews = reviews.filter((review) => !hiddenIds.has(review.id));
 
   const setHidden = (id: string, hidden: boolean) =>
     setHiddenIds((prev) => {
@@ -77,12 +84,29 @@ export function ProfileView({ account, restrooms, reviews }: ProfileViewProps) {
       return next;
     });
 
+  const handleDeleteReview = async (review: ProfileReview) => {
+    setHidden(review.id, true);
+    try {
+      await deleteReview(createClient(), review.id);
+      toast({ title: "Nabura ang review mo.", description: review.restroomName });
+      invalidateRestrooms(); // the restroom's rating changed
+      router.refresh();
+    } catch (error) {
+      setHidden(review.id, false);
+      toast({
+        variant: "destructive",
+        title: "Hindi mabura ang review",
+        description: error instanceof Error ? error.message : "Subukan ulit mamaya.",
+      });
+    }
+  };
+
   const comingSoon = (title: string) =>
     toast({ title, description: "Malapit na ito sa susunod na update." });
 
   const stats: { label: string; value: number; icon: LucideIcon }[] = [
     { label: "Mga naidagdag na CR", value: visibleRestrooms.length, icon: Toilet },
-    { label: "Mga review", value: reviews.length, icon: MessageSquare },
+    { label: "Mga review", value: visibleReviews.length, icon: MessageSquare },
     { label: "Points", value: account?.points ?? 0, icon: Award },
   ];
 
@@ -178,26 +202,48 @@ export function ProfileView({ account, restrooms, reviews }: ProfileViewProps) {
           {/* User's reviews (writing reviews comes in Phase 6) */}
           <section className="flex flex-col gap-2">
             <h2 className="font-semibold">Aking mga review</h2>
-            {reviews.length === 0 ? (
-              <div className="flex flex-col items-center gap-1 rounded-lg border border-dashed px-4 py-6 text-center">
+            {visibleReviews.length === 0 ? (
+              <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed px-4 py-6 text-center">
                 <MessageSquare className="h-8 w-8 text-muted-foreground" aria-hidden="true" />
-                <p className="text-sm font-medium">Wala ka pang review</p>
-                <p className="text-xs text-muted-foreground">Malapit nang makapag-review ng mga CR.</p>
+                <p className="text-sm font-medium">Wala ka pang review.</p>
+                <p className="text-xs text-muted-foreground">Nakagamit ka na ba ng CR kamakailan? I-rate mo!</p>
+                <Button asChild variant="outline" size="sm" className="mt-1">
+                  <Link href="/list">Maghanap ng CR</Link>
+                </Button>
               </div>
             ) : (
               <ul className="flex flex-col gap-2">
-                {reviews.map((review) => (
-                  <li key={review.id}>
+                {visibleReviews.map((review) => (
+                  <li key={review.id} className="flex flex-col gap-1 rounded-lg border p-3">
                     <Link
                       href={`/restroom/${review.restroomId}`}
-                      className="flex flex-col gap-1 rounded-lg border p-3 hover:bg-muted/50"
+                      className="flex items-baseline justify-between gap-2 hover:underline"
                     >
-                      <span className="font-medium">{review.restroomName}</span>
-                      <StarRating rating={review.rating} />
-                      {review.comment && (
-                        <span className="line-clamp-2 text-sm text-muted-foreground">{review.comment}</span>
-                      )}
+                      <span className="truncate font-medium">{review.restroomName}</span>
+                      <time
+                        dateTime={review.createdAt}
+                        className="shrink-0 text-xs text-muted-foreground"
+                        suppressHydrationWarning
+                      >
+                        {formatRelativeTime(review.createdAt)}
+                      </time>
                     </Link>
+                    <StarRating rating={review.rating} />
+                    {review.comment && (
+                      <p className="line-clamp-3 whitespace-pre-line break-words text-sm text-muted-foreground">
+                        {review.comment}
+                      </p>
+                    )}
+                    <div className="-ml-2 flex gap-1">
+                      <Button asChild variant="ghost" size="sm" className="h-8 px-2">
+                        {/* Opens the restroom page with this review's edit form */}
+                        <Link href={`/restroom/${review.restroomId}?review=edit#iyong-review`}>
+                          <Pencil aria-hidden="true" />
+                          I-edit
+                        </Link>
+                      </Button>
+                      <DeleteReviewButton onConfirm={() => void handleDeleteReview(review)} />
+                    </div>
                   </li>
                 ))}
               </ul>

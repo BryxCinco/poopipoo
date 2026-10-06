@@ -33,8 +33,7 @@ async function main(): Promise<void> {
       amenities: r.amenities,
       is_free: r.isFree,
       images: r.images,
-      rating: r.rating,
-      review_count: r.reviewCount,
+      // rating/review_count are computed from real reviews by a trigger (0002_reviews.sql)
       created_by: null,
       created_at: r.createdAt,
     })

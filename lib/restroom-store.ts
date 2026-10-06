@@ -78,6 +78,14 @@ export function ensureFreshRestrooms(): void {
   }
 }
 
+/**
+ * Marks the cache stale so the map/list refetch on their next visit
+ * (e.g. after a review changed a restroom's rating on the server).
+ */
+export function invalidateRestrooms(): void {
+  fetchedAt = 0;
+}
+
 export function getAllRestrooms(): Restroom[] {
   return state.restrooms;
 }

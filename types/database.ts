@@ -54,9 +54,8 @@ export type RestroomInsert = {
   is_free?: boolean;
   images?: string[];
   created_by: string | null;
-  // Writable by the secret (admin) key only, used by the seed script
-  rating?: number;
-  review_count?: number;
+  // Writable by the secret (admin) key only, used by the seed script.
+  // rating/review_count are maintained by the reviews trigger.
   created_at?: string;
 };
 
