@@ -11,8 +11,9 @@ import { SPRING } from "@/lib/animations";
 import { REVIEW_COMMENT_MAX } from "@/lib/reviews/queries";
 import { cn } from "@/lib/utils";
 import type { ReviewInput } from "@/types/review";
+import { useI18n } from "@/hooks/use-i18n";
+import { format } from "@/lib/i18n/format";
 
-const RATING_LABELS = ["", "Napakapangit", "Pangit", "Okay lang", "Maganda", "Napakaganda"] as const;
 
 // ---------- interactive stars ----------
 
@@ -29,6 +30,7 @@ interface StarInputProps {
  */
 function StarInput({ value, onChange, invalid = false, disabled = false }: StarInputProps) {
   const [hovered, setHovered] = useState(0);
+  const { t } = useI18n();
   const shown = hovered || value;
 
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
@@ -46,7 +48,7 @@ function StarInput({ value, onChange, invalid = false, disabled = false }: StarI
     <div className="flex flex-col gap-1">
       <div
         role="radiogroup"
-        aria-label="Rating"
+        aria-label={t.reviews.form.ratingLabel}
         aria-invalid={invalid}
         aria-describedby={invalid ? "rating-error" : undefined}
         onKeyDown={handleKeyDown}
@@ -61,7 +63,7 @@ function StarInput({ value, onChange, invalid = false, disabled = false }: StarI
               type="button"
               role="radio"
               aria-checked={value === star}
-              aria-label={`${star} star — ${RATING_LABELS[star]}`}
+              aria-label={format(t.reviews.form.starLabel, { star, label: t.reviews.form.ratingLabels[star] })}
               // Roving focus: only the selected star (or the first) is tabbable
               tabIndex={value === star || (value === 0 && star === 1) ? 0 : -1}
               disabled={disabled}
@@ -86,7 +88,7 @@ function StarInput({ value, onChange, invalid = false, disabled = false }: StarI
         })}
       </div>
       <p className="h-5 text-sm text-muted-foreground" aria-live="polite">
-        {shown > 0 ? RATING_LABELS[shown] : "Pumili ng rating"}
+        {shown > 0 ? t.reviews.form.ratingLabels[shown] : t.reviews.form.pickRating}
       </p>
     </div>
   );
@@ -107,6 +109,7 @@ interface ReviewFormProps {
 
 export function ReviewForm({ value, onChange, onSubmit, onCancel, submitting, isEdit }: ReviewFormProps) {
   const [showRatingError, setShowRatingError] = useState(false);
+  const { t } = useI18n();
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -121,7 +124,7 @@ export function ReviewForm({ value, onChange, onSubmit, onCancel, submitting, is
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-3 rounded-xl border bg-card p-4 shadow-sm" noValidate>
-      <p className="font-semibold">{isEdit ? "I-edit ang review mo" : "Mag-iwan ng review"}</p>
+      <p className="font-semibold">{isEdit ? t.reviews.form.editTitle : t.reviews.form.newTitle}</p>
 
       <StarInput
         value={value.rating}
@@ -131,19 +134,19 @@ export function ReviewForm({ value, onChange, onSubmit, onCancel, submitting, is
       />
       {ratingInvalid && (
         <p id="rating-error" role="alert" className="-mt-2 animate-shake text-xs font-medium text-destructive">
-          Pumili ng 1 hanggang 5 stars.
+          {t.reviews.form.ratingError}
         </p>
       )}
 
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="review-comment">
-          Comment <span className="font-normal text-muted-foreground">(optional)</span>
+          {t.reviews.form.comment} <span className="font-normal text-muted-foreground">{t.reviews.form.optional}</span>
         </Label>
         <Textarea
           id="review-comment"
           value={value.comment}
           onChange={(e) => onChange({ ...value, comment: e.target.value })}
-          placeholder="Malinis ba? May tubig at tissue? Mahaba ang pila?"
+          placeholder={t.reviews.form.commentPlaceholder}
           maxLength={REVIEW_COMMENT_MAX}
           rows={3}
           disabled={submitting}
@@ -156,12 +159,12 @@ export function ReviewForm({ value, onChange, onSubmit, onCancel, submitting, is
       <div className="flex gap-2">
         {onCancel && (
           <AnimatedButton type="button" variant="outline" onClick={onCancel} disabled={submitting} className="flex-1">
-            Cancel
+            {t.common.cancel}
           </AnimatedButton>
         )}
-        <AnimatedButton type="submit" loading={submitting} loadingText="Sine-save..." className="flex-1">
+        <AnimatedButton type="submit" loading={submitting} loadingText={t.reviews.saving} className="flex-1">
           <Send aria-hidden="true" />
-          {isEdit ? "I-update" : "I-post ang review"}
+          {isEdit ? t.reviews.form.update : t.reviews.form.post}
         </AnimatedButton>
       </div>
     </form>

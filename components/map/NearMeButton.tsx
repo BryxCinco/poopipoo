@@ -4,7 +4,9 @@ import { Loader2, MapPin } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { useGeolocation } from "@/hooks/use-geolocation";
+import { useI18n } from "@/hooks/use-i18n";
 import { useToast } from "@/hooks/use-toast";
+import { format } from "@/lib/i18n/format";
 import { cn } from "@/lib/utils";
 
 export interface LocateResult {
@@ -22,6 +24,7 @@ interface NearMeButtonProps {
 export function NearMeButton({ onLocate, className }: NearMeButtonProps) {
   const { loading, requestLocation } = useGeolocation();
   const { toast } = useToast();
+  const { t } = useI18n();
 
   const handleClick = async () => {
     const result = await requestLocation();
@@ -29,8 +32,8 @@ export function NearMeButton({ onLocate, className }: NearMeButtonProps) {
     if (result.error) {
       toast({
         variant: "destructive",
-        title: "Hindi makuha ang location",
-        description: `${result.error} Ipinapakita muna ang Manila.`,
+        title: t.map.locationErrorTitle,
+        description: format(t.map.showingManila, { error: result.error }),
       });
     }
 
@@ -53,12 +56,12 @@ export function NearMeButton({ onLocate, className }: NearMeButtonProps) {
       {loading ? (
         <>
           <Loader2 className="animate-spin" aria-hidden="true" />
-          Hinahanap...
+          {t.map.locating}
         </>
       ) : (
         <>
           <MapPin className="text-destructive" aria-hidden="true" />
-          Near Me
+          {t.map.nearMe}
         </>
       )}
     </Button>

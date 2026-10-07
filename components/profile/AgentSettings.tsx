@@ -3,6 +3,7 @@
 import { CalendarDays, MessageCircleQuestion, Sparkles } from "lucide-react";
 
 import { useAgentEnabled } from "@/hooks/use-agent-enabled";
+import { useI18n } from "@/hooks/use-i18n";
 import { cn } from "@/lib/utils";
 
 export interface AgentUsage {
@@ -18,25 +19,26 @@ interface AgentSettingsProps {
 /** Settings → "AI Agent": show/hide the assistant button, plus usage stats. */
 export function AgentSettings({ usage }: AgentSettingsProps) {
   const [enabled, setEnabled] = useAgentEnabled();
+  const { t } = useI18n();
 
   const stats = [
-    { label: "Lahat ng tanong", value: usage?.total, icon: MessageCircleQuestion },
-    { label: "Ngayong araw", value: usage?.today, icon: CalendarDays },
+    { label: t.agent.totalQuestions, value: usage?.total, icon: MessageCircleQuestion },
+    { label: t.agent.today, value: usage?.today, icon: CalendarDays },
   ];
 
   return (
     <section className="flex flex-col gap-2" aria-labelledby="ai-agent-heading">
       <h2 id="ai-agent-heading" className="font-semibold">
-        AI Agent
+        {t.agent.settingsHeading}
       </h2>
       <div className="flex flex-col gap-3 rounded-lg border p-3">
         <div className="flex items-center gap-3">
           <Sparkles className="h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
           <div className="min-w-0 flex-1">
             <p id="ai-agent-toggle-label" className="text-sm font-medium">
-              Poopipoo Assistant
+              {t.agent.title}
             </p>
-            <p className="text-xs text-muted-foreground">Ipakita ang AI button sa mapa (sa device na ito)</p>
+            <p className="text-xs text-muted-foreground">{t.agent.toggleDescription}</p>
           </div>
           {/* Switch built on a button (no extra package): role="switch" + aria-checked */}
           <button
@@ -71,7 +73,7 @@ export function AgentSettings({ usage }: AgentSettingsProps) {
             </div>
           ))}
         </div>
-        <p className="text-xs text-muted-foreground">Hanggang 10 tanong bawat minuto.</p>
+        <p className="text-xs text-muted-foreground">{t.agent.rateLimitNote}</p>
       </div>
     </section>
   );

@@ -34,10 +34,12 @@ import { Button } from "@/components/ui/button";
 import { CountUp } from "@/components/ui/CountUp";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Separator } from "@/components/ui/separator";
+import { useI18n } from "@/hooks/use-i18n";
 import { useToast } from "@/hooks/use-toast";
 import { SPRING, staggerContainer, staggerItem, staggerItemCapped } from "@/lib/animations";
 import { loginUrl } from "@/lib/auth/return-url";
 import { BADGES, type BadgeId, type BadgeStats } from "@/lib/badges";
+import { errorText } from "@/lib/i18n/errors";
 import { formatRelativeTime } from "@/lib/relative-time";
 import { invalidateRestrooms } from "@/lib/restroom-store";
 import { deleteReview } from "@/lib/reviews/queries";
@@ -61,7 +63,8 @@ export interface ProfileAccount {
 export interface ProfileReview {
   id: string;
   restroomId: string;
-  restroomName: string;
+  /** null when the restroom was deleted */
+  restroomName: string | null;
   rating: number;
   comment: string;
   createdAt: string;
@@ -74,15 +77,17 @@ interface ProfileViewProps {
   reviews: ProfileReview[];
 }
 
-const LINKS: { href: string; label: string; description: string; icon: LucideIcon }[] = [
-  { href: "/leaderboard", label: "Leaderboard", description: "Top contributors", icon: Trophy },
-  { href: "/settings", label: "Settings", description: "Account, dark mode, AI agent, data", icon: Settings },
-  { href: "/about", label: "About", description: "Tungkol sa Poopipoo at credits", icon: Info },
+// key = entry in t.profile.links
+const LINKS: { href: string; key: "leaderboard" | "settings" | "about"; icon: LucideIcon }[] = [
+  { href: "/leaderboard", key: "leaderboard", icon: Trophy },
+  { href: "/settings", key: "settings", icon: Settings },
+  { href: "/about", key: "about", icon: Info },
 ];
 
 export function ProfileView({ account, restrooms, reviews }: ProfileViewProps) {
   const router = useRouter();
   const { toast } = useToast();
+  const { t, locale } = useI18n();
   // Restrooms hidden right away while their delete is in flight (optimistic UI)
   const [hiddenIds, setHiddenIds] = useState<ReadonlySet<string>>(new Set());
 
@@ -101,15 +106,15 @@ export function ProfileView({ account, restrooms, reviews }: ProfileViewProps) {
     setHidden(review.id, true);
     try {
       await deleteReview(createClient(), review.id);
-      toast({ title: "Nabura ang review mo.", description: review.restroomName });
+      toast({ title: t.profile.reviewDeleted, description: review.restroomName ?? t.profile.deletedRestroom });
       invalidateRestrooms(); // the restroom's rating changed
       router.refresh();
     } catch (error) {
       setHidden(review.id, false);
       toast({
         variant: "destructive",
-        title: "Hindi mabura ang review",
-        description: error instanceof Error ? error.message : "Subukan ulit mamaya.",
+        title: t.profile.reviewDeleteFailed,
+        description: errorText(error, t),
       });
     }
   };
@@ -120,14 +125,14 @@ export function ProfileView({ account, restrooms, reviews }: ProfileViewProps) {
   useEffect(() => {
     if (celebrated.current || !newBadges || newBadges.length === 0) return;
     celebrated.current = true;
-    const names = BADGES.filter((badge) => newBadges.includes(badge.id)).map((badge) => badge.name);
-    toast({ title: newBadges.length === 1 ? "Bagong badge!" : "Mga bagong badge!", description: names.join(", ") });
-  }, [newBadges, toast]);
+    const names = BADGES.filter((badge) => newBadges.includes(badge.id)).map((badge) => t.badges.items[badge.id].name);
+    toast({ title: newBadges.length === 1 ? t.profile.newBadge : t.profile.newBadges, description: names.join(", ") });
+  }, [newBadges, toast, t]);
 
   const stats: { label: string; value: number; icon: LucideIcon }[] = [
-    { label: "Mga naidagdag na CR", value: visibleRestrooms.length, icon: Toilet },
-    { label: "Mga review", value: visibleReviews.length, icon: MessageSquare },
-    { label: "Helpful votes", value: account?.stats.helpfulVotesReceived ?? 0, icon: ThumbsUp },
+    { label: t.profile.statRestrooms, value: visibleRestrooms.length, icon: Toilet },
+    { label: t.profile.statReviews, value: visibleReviews.length, icon: MessageSquare },
+    { label: t.profile.statHelpful, value: account?.stats.helpfulVotesReceived ?? 0, icon: ThumbsUp },
   ];
 
   return (
@@ -147,9 +152,9 @@ export function ProfileView({ account, restrooms, reviews }: ProfileViewProps) {
           </Avatar>
         </motion.div>
         <div className="min-w-0 flex-1">
-          <h1 className="truncate text-xl font-bold">{account ? account.username : "Guest User"}</h1>
+          <h1 className="truncate text-xl font-bold">{account ? account.username : t.profile.guest}</h1>
           <p className="truncate text-sm text-muted-foreground">
-            {account ? account.email : "Hindi pa naka-login"}
+            {account ? account.email : t.profile.notLoggedIn}
           </p>
         </div>
       </section>
@@ -165,7 +170,7 @@ export function ProfileView({ account, restrooms, reviews }: ProfileViewProps) {
 
           {/* Stats */}
           <motion.section
-            aria-label="Stats"
+            aria-label={t.profile.statsLabel}
             className="grid grid-cols-3 gap-2"
             variants={staggerContainer}
             initial="hidden"
@@ -191,12 +196,12 @@ export function ProfileView({ account, restrooms, reviews }: ProfileViewProps) {
           {/* User's restrooms */}
           <section className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
-              <h2 className="font-semibold">Aking mga CR</h2>
+              <h2 className="font-semibold">{t.profile.myRestrooms}</h2>
               {visibleRestrooms.length > 0 && (
                 <Button asChild variant="ghost" size="sm" className="h-8 px-2">
                   <Link href="/add">
                     <Plus aria-hidden="true" />
-                    Magdagdag
+                    {t.profile.add}
                   </Link>
                 </Button>
               )}
@@ -207,13 +212,13 @@ export function ProfileView({ account, restrooms, reviews }: ProfileViewProps) {
                 <EmptyState
                   compact
                   icon={<Toilet />}
-                  title="Wala ka pang naidagdag na CR"
-                  description="May alam kang malinis na CR? I-share mo sa iba!"
+                  title={t.profile.noRestroomsTitle}
+                  description={t.profile.noRestroomsDescription}
                   action={
                     <Button asChild>
                       <Link href="/add">
                         <Plus aria-hidden="true" />
-                        Magdagdag ng CR
+                        {t.profile.addRestroom}
                       </Link>
                     </Button>
                   }
@@ -249,17 +254,17 @@ export function ProfileView({ account, restrooms, reviews }: ProfileViewProps) {
 
           {/* User's reviews (writing reviews comes in Phase 6) */}
           <section className="flex flex-col gap-2">
-            <h2 className="font-semibold">Aking mga review</h2>
+            <h2 className="font-semibold">{t.profile.myReviews}</h2>
             {visibleReviews.length === 0 ? (
               <div className="rounded-xl border border-dashed">
                 <EmptyState
                   compact
                   icon={<MessageSquare />}
-                  title="Wala ka pang review."
-                  description="Nakagamit ka na ba ng CR kamakailan? I-rate mo!"
+                  title={t.profile.noReviewsTitle}
+                  description={t.profile.noReviewsDescription}
                   action={
                     <Button asChild variant="outline" size="sm">
-                      <Link href="/list">Maghanap ng CR</Link>
+                      <Link href="/list">{t.profile.findRestroom}</Link>
                     </Button>
                   }
                 />
@@ -279,13 +284,13 @@ export function ProfileView({ account, restrooms, reviews }: ProfileViewProps) {
                       href={`/restroom/${review.restroomId}`}
                       className="group flex items-baseline justify-between gap-2 rounded-sm"
                     >
-                      <span className="link-underline truncate font-medium">{review.restroomName}</span>
+                      <span className="link-underline truncate font-medium">{review.restroomName ?? t.profile.deletedRestroom}</span>
                       <time
                         dateTime={review.createdAt}
                         className="shrink-0 text-xs text-muted-foreground"
                         suppressHydrationWarning
                       >
-                        {formatRelativeTime(review.createdAt)}
+                        {formatRelativeTime(review.createdAt, locale)}
                       </time>
                     </Link>
                     <StarRating rating={review.rating} />
@@ -299,7 +304,7 @@ export function ProfileView({ account, restrooms, reviews }: ProfileViewProps) {
                         {/* Opens the restroom page with this review's edit form */}
                         <Link href={`/restroom/${review.restroomId}?review=edit#iyong-review`}>
                           <Pencil aria-hidden="true" />
-                          I-edit
+                          {t.common.edit}
                         </Link>
                       </Button>
                       <DeleteReviewButton onConfirm={() => void handleDeleteReview(review)} />
@@ -318,10 +323,10 @@ export function ProfileView({ account, restrooms, reviews }: ProfileViewProps) {
       {/* More: leaderboard, settings, about */}
       <section className="flex flex-col gap-2" aria-labelledby="more-heading">
         <h2 id="more-heading" className="font-semibold">
-          Iba pa
+          {t.profile.more}
         </h2>
         <ul className="divide-y overflow-hidden rounded-xl border bg-card shadow-sm">
-          {LINKS.map(({ href, label, description, icon: Icon }) => (
+          {LINKS.map(({ href, key, icon: Icon }) => (
             <li key={href}>
               <Link
                 href={href}
@@ -331,8 +336,8 @@ export function ProfileView({ account, restrooms, reviews }: ProfileViewProps) {
                   <Icon className="h-4 w-4" aria-hidden="true" />
                 </span>
                 <span className="flex min-w-0 flex-1 flex-col">
-                  <span className="font-medium">{label}</span>
-                  <span className="truncate text-xs text-muted-foreground">{description}</span>
+                  <span className="font-medium">{t.profile.links[key].label}</span>
+                  <span className="truncate text-xs text-muted-foreground">{t.profile.links[key].description}</span>
                 </span>
                 <ChevronRight
                   className="h-4 w-4 text-muted-foreground transition-transform duration-150 group-hover:translate-x-0.5"
@@ -350,23 +355,22 @@ export function ProfileView({ account, restrooms, reviews }: ProfileViewProps) {
 }
 
 function GuestPrompt() {
+  const { t } = useI18n();
   return (
     <section className="flex flex-col items-center gap-3 rounded-lg border p-6 text-center">
-      <p className="font-semibold">Mag-login para makapag-ambag</p>
-      <p className="text-sm text-muted-foreground">
-        Kailangan ng account para makapag-add ng CR at makita ang mga contribution mo.
-      </p>
+      <p className="font-semibold">{t.profile.guestTitle}</p>
+      <p className="text-sm text-muted-foreground">{t.profile.guestDescription}</p>
       <div className="flex w-full flex-col gap-2">
         <Button asChild size="lg">
           <Link href={loginUrl("/profile")}>
             <LogIn aria-hidden="true" />
-            Mag-login
+            {t.common.login}
           </Link>
         </Button>
         <Button asChild size="lg" variant="outline">
           <Link href={`/auth/signup?returnUrl=${encodeURIComponent("/profile")}`}>
             <UserPlus aria-hidden="true" />
-            Gumawa ng account
+            {t.common.signup}
           </Link>
         </Button>
       </div>

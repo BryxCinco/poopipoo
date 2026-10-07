@@ -10,6 +10,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
+import type { Locale } from "@/lib/i18n/config";
+import { getDictionary } from "@/lib/i18n/dictionaries";
 import type { Amenity } from "@/types/restroom";
 
 const AMENITY_ICONS: Record<Amenity, LucideIcon> = {
@@ -21,18 +23,6 @@ const AMENITY_ICONS: Record<Amenity, LucideIcon> = {
   shower: ShowerHead,
   "air-conditioned": Snowflake,
   free: BadgeCheck,
-};
-
-// Filipino (or common Taglish) labels shown in the UI.
-const AMENITY_LABELS: Record<Amenity, string> = {
-  bidet: "Bidet",
-  tissue: "Tissue",
-  soap: "Sabon",
-  wheelchair: "PWD accessible",
-  "baby-changing": "Palitan ng diaper",
-  shower: "Shower",
-  "air-conditioned": "Aircon",
-  free: "Libre",
 };
 
 /** Every amenity type, in display order. */
@@ -60,8 +50,9 @@ export function getAmenityIcon(amenity: Amenity): LucideIcon {
   return AMENITY_ICONS[amenity];
 }
 
-export function getAmenityLabel(amenity: Amenity): string {
-  return AMENITY_LABELS[amenity];
+/** Label in the given language (labels live in t.amenities). */
+export function getAmenityLabel(amenity: Amenity, locale: Locale): string {
+  return getDictionary(locale).amenities[amenity];
 }
 
 /**

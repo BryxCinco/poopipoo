@@ -4,16 +4,16 @@ import { ProfileView, type ProfileAccount, type ProfileReview } from "@/componen
 import type { BadgeStats } from "@/lib/badges";
 import { getCurrentUser } from "@/lib/auth/server";
 import { syncBadges } from "@/lib/gamification/server";
+import { getT } from "@/lib/i18n/server";
 import { calculateLevel } from "@/lib/levels";
 import { pageMetadata } from "@/lib/metadata";
 import { RESTROOM_COLUMNS, rowToRestroom } from "@/lib/restrooms/mappers";
 import { createClient } from "@/lib/supabase/server";
 
-export const metadata: Metadata = pageMetadata({
-  title: "Profile",
-  description: "Ang iyong level, points, badges at mga naidagdag na CR at review sa Poopipoo.",
-  path: "/profile",
-});
+export function generateMetadata(): Metadata {
+  const { title, description } = getT().meta.profile;
+  return pageMetadata({ title, description, path: "/profile" });
+}
 
 export default async function ProfilePage() {
   const user = await getCurrentUser();
@@ -67,7 +67,7 @@ export default async function ProfilePage() {
   const account: ProfileAccount = {
     id: user.id,
     email: user.email ?? "",
-    username: profile?.username ?? user.email?.split("@")[0] ?? "User",
+    username: profile?.username ?? user.email?.split("@")[0] ?? getT().common.user,
     avatarUrl: profile?.avatar_url ?? null,
     points,
     stats,
@@ -78,7 +78,7 @@ export default async function ProfilePage() {
   const reviews: ProfileReview[] = reviewsResult.data.map((review) => ({
     id: review.id,
     restroomId: review.restroom_id,
-    restroomName: names.get(review.restroom_id) ?? "Naburang CR",
+    restroomName: names.get(review.restroom_id) ?? null,
     rating: review.rating,
     comment: review.comment,
     createdAt: review.created_at,

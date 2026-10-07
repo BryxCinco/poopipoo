@@ -8,6 +8,7 @@ import { BaseTileLayer } from "@/components/map/BaseTileLayer";
 import { MapController, type MapTarget } from "@/components/map/MapController";
 import { createRestroomIcon } from "@/components/map/marker-icon";
 import { MANILA_COORDS } from "@/hooks/use-geolocation";
+import { useI18n } from "@/hooks/use-i18n";
 
 export interface LatLng {
   latitude: number;
@@ -33,6 +34,7 @@ function ClickToPlace({ onChange }: { onChange: (value: LatLng) => void }) {
 export default function LocationPicker({ value, onChange, focus }: LocationPickerProps) {
   const icon = useMemo(() => createRestroomIcon(), []);
   const markerRef = useRef<L.Marker>(null);
+  const { t } = useI18n();
 
   // Only used for the first render; later moves go through `focus`.
   const initialCenter: [number, number] = value
@@ -61,7 +63,7 @@ export default function LocationPicker({ value, onChange, focus }: LocationPicke
           icon={icon}
           draggable
           eventHandlers={markerHandlers}
-          title="Lokasyon ng CR (i-drag para ilipat)"
+          title={t.map.pickerMarker}
         />
       )}
     </MapContainer>

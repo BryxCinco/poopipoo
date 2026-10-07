@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { RestroomDetail } from "@/components/restroom/RestroomDetail";
 import type { ReviewViewer } from "@/components/restroom/ReviewsSection";
 import { getCurrentUser } from "@/lib/auth/server";
+import { getT } from "@/lib/i18n/server";
 import { pageMetadata } from "@/lib/metadata";
 import { getRestroomByIdServer } from "@/lib/restrooms/server";
 import { fetchReviewsPage, fetchUserReview } from "@/lib/reviews/queries";
@@ -21,7 +22,7 @@ export async function generateMetadata({ params }: RestroomPageProps): Promise<M
   return pageMetadata({
     title: restroom.name,
     description:
-      [restroom.description, restroom.address].filter(Boolean).join(" ") || "CR details, rating at reviews sa Poopipoo.",
+      [restroom.description, restroom.address].filter(Boolean).join(" ") || getT().meta.restroomFallbackDescription,
     path: `/restroom/${restroom.id}`,
   });
 }

@@ -1,7 +1,8 @@
 import { formatDistance } from "@/lib/distance";
+import { INTL_LOCALE, type Locale } from "@/lib/i18n/config";
 
 /**
- * Turns OSRM maneuvers into short Filipino instructions.
+ * Turns OSRM maneuvers into short instructions in Tagalog or English.
  * OSRM docs: https://project-osrm.org/docs/v5.24.0/api/#stepmaneuver-object
  */
 
@@ -63,54 +64,99 @@ export function toManeuver({ type, modifier }: OsrmManeuverInput): Maneuver {
   }
 }
 
-const VERBS: Record<Exclude<Maneuver, "depart" | "arrive" | "roundabout">, string> = {
-  "turn-left": "Kumaliwa",
-  "turn-right": "Kumanan",
-  "slight-left": "Bahagyang kumaliwa",
-  "slight-right": "Bahagyang kumanan",
-  "sharp-left": "Kumaliwa nang todo",
-  "sharp-right": "Kumanan nang todo",
-  uturn: "Mag-U-turn",
-  continue: "Diretso lang",
-  "keep-left": "Manatili sa kaliwa",
-  "keep-right": "Manatili sa kanan",
+type TurnManeuver = Exclude<Maneuver, "depart" | "arrive" | "roundabout">;
+
+const VERBS: Record<Locale, Record<TurnManeuver, string>> = {
+  tl: {
+    "turn-left": "Kumaliwa",
+    "turn-right": "Kumanan",
+    "slight-left": "Bahagyang kumaliwa",
+    "slight-right": "Bahagyang kumanan",
+    "sharp-left": "Kumaliwa nang todo",
+    "sharp-right": "Kumanan nang todo",
+    uturn: "Mag-U-turn",
+    continue: "Diretso lang",
+    "keep-left": "Manatili sa kaliwa",
+    "keep-right": "Manatili sa kanan",
+  },
+  en: {
+    "turn-left": "Turn left",
+    "turn-right": "Turn right",
+    "slight-left": "Bear left",
+    "slight-right": "Bear right",
+    "sharp-left": "Turn sharp left",
+    "sharp-right": "Turn sharp right",
+    uturn: "Make a U-turn",
+    continue: "Continue straight",
+    "keep-left": "Keep left",
+    "keep-right": "Keep right",
+  },
+};
+
+const HEADINGS: Record<Locale, string[]> = {
+  tl: ["pahilaga", "pahilagang-silangan", "pasilangan", "patimog-silangan", "patimog", "patimog-kanluran", "pakanluran", "pahilagang-kanluran"],
+  en: ["north", "northeast", "east", "southeast", "south", "southwest", "west", "northwest"],
 };
 
 /** Compass direction from a bearing in degrees (0 = north). */
-function heading(bearing: number): string {
-  const directions = ["pahilaga", "pahilagang-silangan", "pasilangan", "patimog-silangan", "patimog", "patimog-kanluran", "pakanluran", "pahilagang-kanluran"];
-  return directions[Math.round((((bearing % 360) + 360) % 360) / 45) % 8];
+function heading(bearing: number, locale: Locale): string {
+  return HEADINGS[locale][Math.round((((bearing % 360) + 360) % 360) / 45) % 8];
 }
 
-/** Ordinal for roundabout exits: 1 → "una", 2 → "ikalawa", ... */
-function ordinal(n: number): string {
+/** Ordinal for roundabout exits: 1 → "una" / "1st", 2 → "ikalawa" / "2nd", ... */
+function ordinal(n: number, locale: Locale): string {
+  if (locale === "en") {
+    const suffix = n % 100 >= 11 && n % 100 <= 13 ? "th" : ({ 1: "st", 2: "nd", 3: "rd" } as Record<number, string>)[n % 10] ?? "th";
+    return `${n}${suffix}`;
+  }
   const words = ["", "una", "ikalawa", "ikatlo", "ikaapat", "ikalima", "ikaanim", "ikapito", "ikawalo"];
   return words[n] ?? `ika-${n}`;
 }
 
-/** e.g. "Kumanan sa Ayala Avenue", "Diretso lang", "Nakarating ka na (nasa kanan mo)". */
-export function translateInstruction(input: OsrmManeuverInput, streetName: string, profile: RouteProfile): string {
+/**
+ * One OSRM step as a short instruction in the given language, e.g.
+ * "Kumanan sa Ayala Avenue" / "Turn right onto Ayala Avenue".
+ */
+export function translateInstruction(
+  input: OsrmManeuverInput,
+  streetName: string,
+  profile: RouteProfile,
+  locale: Locale
+): string {
   const maneuver = toManeuver(input);
   const street = streetName.trim();
-  const onStreet = street ? ` sa ${street}` : "";
+  const en = locale === "en";
 
   switch (maneuver) {
     case "depart": {
-      const verb = profile === "foot" ? "Maglakad" : "Magmaneho";
-      const direction = input.bearingAfter !== undefined ? ` ${heading(input.bearingAfter)}` : "";
-      return `${verb}${direction}${onStreet}`;
+      const verb = en ? (profile === "foot" ? "Walk" : "Drive") : profile === "foot" ? "Maglakad" : "Magmaneho";
+      const direction = input.bearingAfter !== undefined ? ` ${heading(input.bearingAfter, locale)}` : "";
+      const on = street ? (en ? ` on ${street}` : ` sa ${street}`) : "";
+      return `${verb}${direction}${on}`;
     }
     case "arrive": {
+      if (en) {
+        if (input.modifier?.includes("left")) return "You've arrived. The restroom is on your left";
+        if (input.modifier?.includes("right")) return "You've arrived. The restroom is on your right";
+        return "You've arrived";
+      }
       if (input.modifier?.includes("left")) return "Nakarating ka na. Nasa kaliwa mo ang CR";
       if (input.modifier?.includes("right")) return "Nakarating ka na. Nasa kanan mo ang CR";
       return "Nakarating ka na";
     }
     case "roundabout": {
-      const exit = input.exit ? `lumabas sa ${ordinal(input.exit)} exit` : "lumabas";
+      if (en) {
+        const exit = input.exit ? `take the ${ordinal(input.exit, locale)} exit` : "exit";
+        return `At the roundabout, ${exit}${street ? ` onto ${street}` : ""}`;
+      }
+      const exit = input.exit ? `lumabas sa ${ordinal(input.exit, locale)} exit` : "lumabas";
       return `Sa rotonda, ${exit}${street ? ` papuntang ${street}` : ""}`;
     }
-    default:
-      return `${VERBS[maneuver]}${onStreet}`;
+    default: {
+      // "Continue on X" vs "Turn left onto X"
+      const on = street ? (en ? (maneuver === "continue" ? ` on ${street}` : ` onto ${street}`) : ` sa ${street}`) : "";
+      return `${VERBS[locale][maneuver]}${on}`;
+    }
   }
 }
 
@@ -121,30 +167,34 @@ export function formatMeters(meters: number): string {
   return formatDistance(meters / 1000);
 }
 
-/** For voice: "200 metro" / "1.2 kilometro" */
-export function formatSpokenMeters(meters: number): string {
-  if (meters < 1000) return `${Math.max(10, Math.round(meters / 10) * 10)} metro`;
-  return `${(meters / 1000).toFixed(1)} kilometro`;
+/** For voice: "200 metro" / "200 meters", "1.2 kilometro" / "1.2 kilometers" */
+export function formatSpokenMeters(meters: number, locale: Locale): string {
+  const en = locale === "en";
+  if (meters < 1000) return `${Math.max(10, Math.round(meters / 10) * 10)} ${en ? "meters" : "metro"}`;
+  return `${(meters / 1000).toFixed(1)} ${en ? "kilometers" : "kilometro"}`;
 }
 
-/** "wala pang 1 minuto" / "5 minuto" / "1 oras 10 minuto" */
-export function formatDuration(seconds: number): string {
+/** "wala pang 1 minuto" / "5 minuto" / "1 oras 10 minuto" (English: "under 1 min", "5 min", "1 hr 10 min") */
+export function formatDuration(seconds: number, locale: Locale): string {
+  const en = locale === "en";
   const minutes = Math.round(seconds / 60);
-  if (minutes < 1) return "wala pang 1 minuto";
-  if (minutes < 60) return `${minutes} minuto`;
+  if (minutes < 1) return en ? "under 1 min" : "wala pang 1 minuto";
+  const min = en ? "min" : "minuto";
+  const hr = en ? "hr" : "oras";
+  if (minutes < 60) return `${minutes} ${min}`;
   const hours = Math.floor(minutes / 60);
   const rest = minutes % 60;
-  return rest === 0 ? `${hours} oras` : `${hours} oras ${rest} minuto`;
+  return rest === 0 ? `${hours} ${hr}` : `${hours} ${hr} ${rest} ${min}`;
 }
 
 /** Clock time of arrival, e.g. "3:45 PM". */
-export function formatArrivalTime(secondsFromNow: number, now: number = Date.now()): string {
-  return new Intl.DateTimeFormat("en-PH", { hour: "numeric", minute: "2-digit" }).format(
+export function formatArrivalTime(secondsFromNow: number, locale: Locale, now: number = Date.now()): string {
+  return new Intl.DateTimeFormat(INTL_LOCALE[locale], { hour: "numeric", minute: "2-digit" }).format(
     new Date(now + secondsFromNow * 1000)
   );
 }
 
-/** Lowercases the first letter so an instruction can follow "Sa loob ng 200 metro, ...". */
+/** Lowercases the first letter so an instruction can follow "Sa loob ng 200 metro, ..." / "In 200 meters, ...". */
 export function lowerFirst(text: string): string {
   return text.charAt(0).toLowerCase() + text.slice(1);
 }

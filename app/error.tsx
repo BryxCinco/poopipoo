@@ -6,6 +6,7 @@ import { AlertTriangle, Home, RefreshCw } from "lucide-react";
 
 import { StatusScreen } from "@/components/layout/StatusScreen";
 import { Button } from "@/components/ui/button";
+import { useI18n } from "@/hooks/use-i18n";
 
 /** Error boundary for every page under the root layout (header/nav stay visible). */
 export default function Error({
@@ -15,6 +16,7 @@ export default function Error({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const { t } = useI18n();
   useEffect(() => {
     console.error(error);
   }, [error]);
@@ -24,18 +26,18 @@ export default function Error({
       code="Oops"
       tone="error"
       icon={<AlertTriangle />}
-      title="May nangyaring mali"
-      description="Hindi ma-load ang page na ito. Baka may problema sa internet o sa server. Subukan ulit."
+      title={t.status.errorTitle}
+      description={t.status.errorDescription}
       actions={
         <>
           <Button size="lg" onClick={reset}>
             <RefreshCw aria-hidden="true" />
-            Subukan ulit
+            {t.common.retry}
           </Button>
           <Button asChild size="lg" variant="outline">
             <Link href="/">
               <Home aria-hidden="true" />
-              Bumalik sa home
+              {t.status.backHome}
             </Link>
           </Button>
         </>

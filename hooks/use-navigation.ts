@@ -3,7 +3,9 @@
 import { useEffect, useMemo, useRef, useSyncExternalStore } from "react";
 import { distance, point } from "@turf/turf";
 
+import { useI18n } from "@/hooks/use-i18n";
 import type { WatchedPosition } from "@/hooks/use-watch-position";
+import { format } from "@/lib/i18n/format";
 import { computeProgress, type NavigationProgress } from "@/lib/navigation-progress";
 import {
   getServerSnapshot,
@@ -20,7 +22,7 @@ import {
   subscribe,
   type NavigationState,
 } from "@/lib/navigation-store";
-import type { Route } from "@/lib/routing";
+import { stepInstruction, type Route } from "@/lib/routing";
 import { formatSpokenMeters, lowerFirst } from "@/lib/routing-translations";
 import { speak } from "@/lib/voice";
 
@@ -64,6 +66,8 @@ export function useNavigationGuidance(
   position: WatchedPosition
 ): NavigationProgress | null {
   const { route, destination, origin, status, voiceEnabled } = nav;
+  const { t, locale } = useI18n();
+  const spoken = t.navigation.spoken;
   const active = status === "navigating";
 
   // OSRM starts the route at the nearest road/path, which can be tens of meters
@@ -102,12 +106,12 @@ export function useNavigationGuidance(
     const say = (key: string, text: string) => {
       if (announced.current.keys.has(key)) return;
       announced.current.keys.add(key);
-      if (voiceEnabled) speak(text);
+      if (voiceEnabled) speak(text, locale);
     };
 
     // 1. Arrival
     if (usable && (progress.distanceToDestination <= ARRIVE_WITHIN_METERS || progress.remainingDistance <= 15)) {
-      say("arrive", `Nakarating ka na sa ${destination.name}`);
+      say("arrive", format(spoken.arrivedAt, { name: destination.name }));
       markArrived();
       return;
     }
@@ -120,7 +124,7 @@ export function useNavigationGuidance(
       if (offRouteCount.current >= OFF_ROUTE_CONFIRMATIONS && now - lastRerouteAt.current > REROUTE_COOLDOWN_MS) {
         lastRerouteAt.current = now;
         offRouteCount.current = 0;
-        if (voiceEnabled) speak("Naliligaw ka. Hinahanap ang bagong daan.");
+        if (voiceEnabled) speak(spoken.offRoute, locale);
         if (position.latitude !== null && position.longitude !== null) {
           void reroute({ latitude: position.latitude, longitude: position.longitude });
         }
@@ -130,20 +134,28 @@ export function useNavigationGuidance(
     offRouteCount.current = 0;
 
     // 3. Voice: first instruction, then each maneuver ahead of time and when it's due
-    say("start", route.steps[0]?.instruction ?? "Simulan ang biyahe");
+    const first = route.steps[0];
+    say("start", first ? stepInstruction(first, route.profile, locale) : spoken.startTrip);
     const next = progress.nextStepIndex !== null ? route.steps[progress.nextStepIndex] : null;
     if (next && next.maneuver !== "arrive") {
+      const nextText = stepInstruction(next, route.profile, locale);
       const d = progress.distanceToNextManeuver;
       if (d <= ANNOUNCE_NOW_METERS) {
-        say(`${progress.nextStepIndex}:now`, next.instruction);
+        say(`${progress.nextStepIndex}:now`, nextText);
       } else if (d <= ANNOUNCE_AHEAD_METERS) {
-        say(`${progress.nextStepIndex}:ahead`, `Sa loob ng ${formatSpokenMeters(d)}, ${lowerFirst(next.instruction)}`);
+        say(
+          `${progress.nextStepIndex}:ahead`,
+          format(spoken.inDistance, {
+            distance: formatSpokenMeters(d, locale),
+            instruction: lowerFirst(nextText),
+          })
+        );
       }
     }
     if (progress.remainingDistance <= ANNOUNCE_ARRIVING_METERS) {
-      say("arriving", `Malapit ka na. ${formatSpokenMeters(progress.remainingDistance)} na lang.`);
+      say("arriving", format(spoken.almostThere, { distance: formatSpokenMeters(progress.remainingDistance, locale) }));
     }
-  }, [active, progress, route, destination, voiceEnabled, startGap, position.accuracy, position.latitude, position.longitude]);
+  }, [active, progress, route, destination, voiceEnabled, startGap, position.accuracy, position.latitude, position.longitude, locale, spoken]);
 
   // Turning voice on mid-trip: say the upcoming direction right away
   // (earlier announcements were skipped while voice was off).
@@ -153,8 +165,14 @@ export function useNavigationGuidance(
     prevVoice.current = voiceEnabled;
     if (!turnedOn || !active || !progress || !route || progress.nextStepIndex === null) return;
     const next = route.steps[progress.nextStepIndex];
-    speak(`Sa loob ng ${formatSpokenMeters(progress.distanceToNextManeuver)}, ${lowerFirst(next.instruction)}`);
-  }, [voiceEnabled, active, progress, route]);
+    speak(
+      format(spoken.inDistance, {
+        distance: formatSpokenMeters(progress.distanceToNextManeuver, locale),
+        instruction: lowerFirst(stepInstruction(next, route.profile, locale)),
+      }),
+      locale
+    );
+  }, [voiceEnabled, active, progress, route, locale, spoken]);
 
   return progress;
 }

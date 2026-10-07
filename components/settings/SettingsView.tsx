@@ -4,6 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { Bell, Languages, LogIn, UserX } from "lucide-react";
 
+import { LanguageSwitch } from "@/components/i18n/LanguageSwitch";
+
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { AgentSettings, type AgentUsage } from "@/components/profile/AgentSettings";
 import { ThemeSetting } from "@/components/profile/ThemeSetting";
@@ -12,8 +14,10 @@ import { DataSettings } from "@/components/settings/DataSettings";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { useI18n } from "@/hooks/use-i18n";
 import { useToast } from "@/hooks/use-toast";
 import { loginUrl } from "@/lib/auth/return-url";
+import { format } from "@/lib/i18n/format";
 
 export interface SettingsAccount {
   id: string;
@@ -28,22 +32,20 @@ interface SettingsViewProps {
   agentUsage: AgentUsage | null;
 }
 
-/** Not built yet: shown with a "Soon" badge. */
-const PLACEHOLDERS = [
-  { label: "Language", description: "Filipino / English", icon: Languages },
-  { label: "Notifications", description: "PWA push notifications", icon: Bell },
-] as const;
 
 export function SettingsView({ account, agentUsage }: SettingsViewProps) {
   const { toast } = useToast();
+  const { t } = useI18n();
   const [deleteOpen, setDeleteOpen] = useState(false);
+  // Not built yet: shown with a "Soon" badge
+  const placeholders = [{ label: t.settings.notifications, description: t.settings.notificationsDescription, icon: Bell }];
 
   return (
     <>
       {/* Account */}
       <section className="flex flex-col gap-2" aria-labelledby="account-heading">
         <h2 id="account-heading" className="font-semibold">
-          Account
+          {t.settings.account}
         </h2>
         {account ? (
           <AccountSettings
@@ -54,11 +56,11 @@ export function SettingsView({ account, agentUsage }: SettingsViewProps) {
           />
         ) : (
           <div className="flex flex-col items-center gap-3 rounded-xl border p-5 text-center">
-            <p className="text-sm text-muted-foreground">Mag-login para ma-edit ang username at photo mo.</p>
+            <p className="text-sm text-muted-foreground">{t.settings.loginPrompt}</p>
             <Button asChild className="w-full">
               <Link href={loginUrl("/settings")}>
                 <LogIn aria-hidden="true" />
-                Mag-login
+                {t.common.login}
               </Link>
             </Button>
           </div>
@@ -68,18 +70,29 @@ export function SettingsView({ account, agentUsage }: SettingsViewProps) {
       {/* Preferences */}
       <section className="flex flex-col gap-2" aria-labelledby="preferences-heading">
         <h2 id="preferences-heading" className="font-semibold">
-          Preferences
+          {t.settings.preferences}
         </h2>
         <ul className="divide-y overflow-hidden rounded-xl border bg-card shadow-sm">
+          {/* Language: Tagalog / English (saved in a cookie, applies right away) */}
+          <li className="flex flex-col gap-2 px-3 py-3">
+            <div className="flex items-center gap-3 text-sm">
+              <Languages className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+              <span className="flex flex-1 flex-col">
+                <span id="language-label">{t.settings.language}</span>
+                <span className="text-xs text-muted-foreground">{t.settings.languageDescription}</span>
+              </span>
+            </div>
+            <LanguageSwitch labelledBy="language-label" />
+          </li>
           <li>
             <ThemeSetting />
           </li>
-          {PLACEHOLDERS.map(({ label, description, icon: Icon }) => (
+          {placeholders.map(({ label, description, icon: Icon }) => (
             <li key={label}>
               <button
                 type="button"
-                onClick={() => toast({ title: label, description: "Malapit na ito sa susunod na update." })}
-                aria-label={`${label} (malapit na)`}
+                onClick={() => toast({ title: label, description: t.common.comingSoon })}
+                aria-label={format(t.settings.soonLabel, { label })}
                 className="flex w-full items-center gap-3 px-3 py-3 text-left text-sm transition-colors duration-150 hover:bg-muted/50 focus-visible:bg-muted/50 focus-visible:outline-none"
               >
                 <Icon className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
@@ -88,7 +101,7 @@ export function SettingsView({ account, agentUsage }: SettingsViewProps) {
                   <span className="text-xs text-muted-foreground">{description}</span>
                 </span>
                 <Badge variant="secondary" className="font-normal">
-                  Soon
+                  {t.common.soon}
                 </Badge>
               </button>
             </li>
@@ -102,26 +115,26 @@ export function SettingsView({ account, agentUsage }: SettingsViewProps) {
       <DataSettings account={account ? { id: account.id, email: account.email } : null} />
 
       {account && (
-        <section className="flex flex-col gap-2" aria-label="Logout at pag-delete ng account">
+        <section className="flex flex-col gap-2" aria-label={t.settings.accountActions}>
           <LogoutButton />
           <Button
             type="button"
             variant="ghost"
             onClick={() => setDeleteOpen(true)}
-            aria-label="I-delete ang account"
+            aria-label={t.settings.deleteAccount}
             className="text-destructive hover:bg-destructive/10 hover:text-destructive"
           >
             <UserX aria-hidden="true" />
-            I-delete ang account
+            {t.settings.deleteAccount}
           </Button>
           {/* Placeholder: deleting accounts isn't available yet */}
           <ConfirmModal
             open={deleteOpen}
             onOpenChange={setDeleteOpen}
             icon={UserX}
-            title="I-delete ang account?"
-            description="Hindi pa ito available. Sa susunod na update, permanenteng mabubura rito ang account mo, kasama ang mga review at points mo. Pwede mo munang i-export ang data mo sa itaas."
-            confirmLabel="Okay"
+            title={t.settings.deleteTitle}
+            description={t.settings.deleteDescription}
+            confirmLabel={t.common.okay}
             onConfirm={() => undefined}
           />
         </section>

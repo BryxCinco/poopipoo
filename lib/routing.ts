@@ -1,7 +1,9 @@
+import type { Locale } from "@/lib/i18n/config";
 import {
   toManeuver,
   translateInstruction,
   type Maneuver,
+  type OsrmManeuverInput,
   type RouteProfile,
 } from "@/lib/routing-translations";
 import type { LatLng } from "@/types/geo";
@@ -24,8 +26,8 @@ const ENDPOINTS: Record<RouteProfile, string> = {
 };
 
 export interface RouteStep {
-  /** Filipino instruction, e.g. "Kumanan sa Ayala Avenue" */
-  instruction: string;
+  /** Raw OSRM maneuver; turn it into text with stepInstruction() (in the current language) */
+  input: OsrmManeuverInput;
   /** Meters from this maneuver to the next one */
   distance: number;
   /** Seconds from this maneuver to the next one */
@@ -58,6 +60,11 @@ const ERROR_MESSAGES: Record<RoutingErrorKind, string> = {
   "no-route": "Walang mahanap na daan papunta sa CR na ito.",
   unknown: "Hindi makuha ang ruta. Subukan ulit.",
 };
+
+/** A step's instruction in the given language, e.g. "Kumanan sa Ayala Avenue" / "Turn right onto Ayala Avenue". */
+export function stepInstruction(step: RouteStep, profile: RouteProfile, locale: Locale): string {
+  return translateInstruction(step.input, step.name, profile, locale);
+}
 
 export class RoutingError extends Error {
   constructor(public readonly kind: RoutingErrorKind) {
@@ -125,7 +132,7 @@ function toRoute(osrm: OsrmRoute, profile: RouteProfile): Route {
       };
       const name = typeof step.name === "string" ? step.name : "";
       return {
-        instruction: translateInstruction(input, name, profile),
+        input,
         distance: step.distance,
         duration: step.duration,
         maneuver: toManeuver(input),

@@ -2,6 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 
+import { useI18n } from "@/hooks/use-i18n";
+import type { Dictionary } from "@/lib/i18n/dictionaries";
+
 export interface WatchedPosition {
   latitude: number | null;
   longitude: number | null;
@@ -31,16 +34,16 @@ const INITIAL: WatchedPosition = {
 const MIN_UPDATE_MS = 1000;
 const MIN_MOVE_METERS = 5;
 
-function messageFor(error: GeolocationPositionError): string {
+function messageFor(error: GeolocationPositionError, t: Dictionary["geo"]): string {
   switch (error.code) {
     case error.PERMISSION_DENIED:
-      return "Hindi pinayagan ang location access. Buksan ito sa browser settings para sa navigation.";
+      return t.gpsDenied;
     case error.POSITION_UNAVAILABLE:
-      return "Hindi makuha ang GPS signal.";
+      return t.gpsUnavailable;
     case error.TIMEOUT:
-      return "Natagalan ang GPS. Sinusubukan ulit...";
+      return t.gpsTimeout;
     default:
-      return "May problema sa GPS.";
+      return t.gpsGeneric;
   }
 }
 
@@ -59,6 +62,10 @@ function metersBetween(lat1: number, lon1: number, lat2: number, lon2: number): 
 export function useWatchPosition({ enabled }: { enabled: boolean }): WatchedPosition {
   const [state, setState] = useState<WatchedPosition>(INITIAL);
   const last = useRef<{ at: number; lat: number; lon: number } | null>(null);
+  // Messages in the current language; a ref so the watch isn't restarted on a language switch
+  const { t } = useI18n();
+  const geoText = useRef(t.geo);
+  geoText.current = t.geo;
 
   useEffect(() => {
     if (!enabled) {
@@ -67,7 +74,7 @@ export function useWatchPosition({ enabled }: { enabled: boolean }): WatchedPosi
       return;
     }
     if (typeof navigator === "undefined" || !("geolocation" in navigator)) {
-      setState({ ...INITIAL, error: "Hindi supported ng browser ang GPS." });
+      setState({ ...INITIAL, error: geoText.current.gpsUnsupported });
       return;
     }
 
@@ -92,7 +99,7 @@ export function useWatchPosition({ enabled }: { enabled: boolean }): WatchedPosi
       },
       (error) => {
         // Keep the last known position; just surface the error
-        setState((prev) => ({ ...prev, error: messageFor(error), loading: false }));
+        setState((prev) => ({ ...prev, error: messageFor(error, geoText.current), loading: false }));
       },
       { enableHighAccuracy: true, maximumAge: 2000, timeout: 20_000 }
     );

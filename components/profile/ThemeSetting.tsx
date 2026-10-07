@@ -3,15 +3,17 @@
 import { motion } from "framer-motion";
 import { Monitor, Moon, Sun, type LucideIcon } from "lucide-react";
 
+import { useI18n } from "@/hooks/use-i18n";
 import { useTheme } from "@/hooks/use-theme";
 import { SPRING } from "@/lib/animations";
 import type { ThemePreference } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
-const OPTIONS: { value: ThemePreference; label: string; icon: LucideIcon }[] = [
-  { value: "light", label: "Maliwanag", icon: Sun },
-  { value: "dark", label: "Madilim", icon: Moon },
-  { value: "system", label: "Auto", icon: Monitor },
+// The value is also the label's key in t.theme
+const OPTIONS: { value: ThemePreference; icon: LucideIcon }[] = [
+  { value: "light", icon: Sun },
+  { value: "dark", icon: Moon },
+  { value: "system", icon: Monitor },
 ];
 
 /**
@@ -20,13 +22,14 @@ const OPTIONS: { value: ThemePreference; label: string; icon: LucideIcon }[] = [
  */
 export function ThemeSetting() {
   const { preference, setTheme } = useTheme();
+  const { t } = useI18n();
 
   return (
     <div className="flex flex-col gap-2 px-3 py-3">
       <div className="flex items-center gap-3 text-sm">
         <Moon className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
         <span id="theme-label" className="flex-1">
-          Dark mode
+          {t.theme.label}
         </span>
       </div>
       <div
@@ -34,7 +37,7 @@ export function ThemeSetting() {
         aria-labelledby="theme-label"
         className="grid grid-cols-3 gap-1 rounded-lg bg-muted p-1"
       >
-        {OPTIONS.map(({ value, label, icon: Icon }) => {
+        {OPTIONS.map(({ value, icon: Icon }) => {
           const selected = preference === value;
           return (
             <button
@@ -57,7 +60,7 @@ export function ThemeSetting() {
                 />
               )}
               <Icon className="relative h-3.5 w-3.5" aria-hidden="true" />
-              <span className="relative">{label}</span>
+              <span className="relative">{t.theme[value]}</span>
             </button>
           );
         })}

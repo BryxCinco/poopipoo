@@ -3,7 +3,9 @@
 import { motion } from "framer-motion";
 import { Star } from "lucide-react";
 
+import { useI18n } from "@/hooks/use-i18n";
 import { DURATION, EASE_OUT } from "@/lib/animations";
+import { format } from "@/lib/i18n/format";
 import { cn } from "@/lib/utils";
 
 interface StarRatingProps {
@@ -17,11 +19,12 @@ interface StarRatingProps {
  * part fills in left to right, one star after another, when it appears.
  */
 export function StarRating({ rating, className }: StarRatingProps) {
+  const { t } = useI18n();
   return (
     <div
       className={cn("flex items-center gap-0.5", className)}
       role="img"
-      aria-label={`${rating.toFixed(1)} out of 5 stars`}
+      aria-label={format(t.restroom.starsLabel, { rating: rating.toFixed(1) })}
     >
       {Array.from({ length: 5 }, (_, i) => {
         const fill = Math.min(Math.max(rating - i, 0), 1);

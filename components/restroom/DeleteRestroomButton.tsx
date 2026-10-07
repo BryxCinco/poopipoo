@@ -9,6 +9,9 @@ import { useToast } from "@/hooks/use-toast";
 import { removeRestroom } from "@/lib/restroom-store";
 import { cn } from "@/lib/utils";
 import type { Restroom } from "@/types/restroom";
+import { useI18n } from "@/hooks/use-i18n";
+import { errorText } from "@/lib/i18n/errors";
+import { format } from "@/lib/i18n/format";
 
 interface DeleteRestroomButtonProps {
   restroom: Pick<Restroom, "id" | "name">;
@@ -35,20 +38,21 @@ export function DeleteRestroomButton({
   const { toast } = useToast();
   const [deleting, setDeleting] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const { t } = useI18n();
 
   const handleDelete = async () => {
     setDeleting(true);
     onDeleteStart?.();
     try {
       await removeRestroom(restroom.id);
-      toast({ title: "Naburang CR.", description: restroom.name });
+      toast({ title: t.restroom.deleted, description: restroom.name });
       onDeleted?.();
     } catch (error) {
       onDeleteError?.();
       toast({
         variant: "destructive",
-        title: "Hindi mabura ang CR",
-        description: error instanceof Error ? error.message : "Subukan ulit mamaya.",
+        title: t.restroom.deleteFailed,
+        description: errorText(error, t),
       });
     } finally {
       setDeleting(false);
@@ -70,7 +74,7 @@ export function DeleteRestroomButton({
           size="icon"
           disabled={deleting}
           onClick={() => setConfirmOpen(true)}
-          aria-label={`Burahin ang ${restroom.name}`}
+          aria-label={format(t.restroom.deleteLabel, { name: restroom.name })}
           className={cn("shrink-0 text-muted-foreground hover:text-destructive [&_svg]:transition-transform hover:[&_svg]:scale-110", className)}
         >
           {icon}
@@ -85,17 +89,17 @@ export function DeleteRestroomButton({
           className={cn("w-full text-destructive hover:text-destructive", className)}
         >
           {icon}
-          {deleting ? "Binubura..." : "Burahin ang CR na ito"}
+          {deleting ? t.restroom.deleting : t.restroom.deleteThis}
         </Button>
       )}
       <ConfirmModal
         open={confirmOpen}
         onOpenChange={setConfirmOpen}
         variant="destructive"
-        title="Burahin ang CR na ito?"
-        description={`Mabubura ang "${restroom.name}" para sa lahat ng user. Hindi na ito maibabalik.`}
-        confirmLabel="Burahin"
-        cancelLabel="Huwag"
+        title={t.restroom.deleteTitle}
+        description={format(t.restroom.deleteDescription, { name: restroom.name })}
+        confirmLabel={t.restroom.deleteConfirm}
+        cancelLabel={t.restroom.deleteCancel}
         // Waits for the server so the modal shows a spinner; errors are toasted in handleDelete
         onConfirm={handleDelete}
       />

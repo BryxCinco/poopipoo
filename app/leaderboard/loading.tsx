@@ -1,9 +1,10 @@
 import { Skeleton } from "@/components/ui/skeleton";
+import { getT } from "@/lib/i18n/server";
 
 /** Matches the leaderboard layout: title, subtitle, ranked rows. */
 export default function Loading() {
   return (
-    <div className="mx-auto flex w-full max-w-screen-md flex-col gap-4 px-4 py-5" aria-busy="true" aria-label="Naglo-load">
+    <div className="mx-auto flex w-full max-w-screen-md flex-col gap-4 px-4 py-5" aria-busy="true" aria-label={getT().common.loading}>
       <div className="flex flex-col gap-2">
         <Skeleton className="h-7 w-40" />
         <Skeleton className="h-4 w-full max-w-sm" />

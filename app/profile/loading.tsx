@@ -1,9 +1,10 @@
 import { Skeleton } from "@/components/ui/skeleton";
+import { getT } from "@/lib/i18n/server";
 
 /** Matches the profile layout: identity, level card, stats, badges, lists. */
 export default function Loading() {
   return (
-    <div className="mx-auto flex w-full max-w-screen-md flex-col gap-6 px-4 py-5" aria-busy="true" aria-label="Naglo-load">
+    <div className="mx-auto flex w-full max-w-screen-md flex-col gap-6 px-4 py-5" aria-busy="true" aria-label={getT().common.loading}>
       <div className="flex items-center gap-4">
         <Skeleton className="h-16 w-16 rounded-full" />
         <div className="flex flex-1 flex-col gap-2">

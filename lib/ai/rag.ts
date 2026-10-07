@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { EmbeddingError, generateEmbedding } from "@/lib/ai/embeddings";
 import { PLACE_ALIASES } from "@/lib/ai/restroom-document";
 import { calculateDistance, formatDistance } from "@/lib/distance";
+import type { Locale } from "@/lib/i18n/config";
 import { getAmenityLabel, getDisplayAmenities } from "@/lib/icons";
 import { RESTROOM_COLUMNS, rowToRestroom } from "@/lib/restrooms/mappers";
 import { createClient } from "@/lib/supabase/server";
@@ -175,12 +176,12 @@ async function findNearestRestrooms(
  * Formats restrooms as compact text for the LLM (the "A" in RAG).
  * Includes the id so the model can call get_distance / start_navigation.
  */
-export function buildContext(restrooms: RankedRestroom[]): string {
+export function buildContext(restrooms: RankedRestroom[], locale: Locale = "tl"): string {
   if (restrooms.length === 0) return "Walang nahanap na CR na tugma. Sabihin ito sa user; huwag mag-imbento ng CR.";
 
   const list = restrooms
     .map((restroom, index) => {
-      const amenities = getDisplayAmenities(restroom.amenities).map(getAmenityLabel);
+      const amenities = getDisplayAmenities(restroom.amenities).map((amenity) => getAmenityLabel(amenity, locale));
       const parts = [
         `${index + 1}. ${restroom.name} (id: ${restroom.id})`,
         `Address: ${restroom.address}`,

@@ -4,6 +4,7 @@ import { Navigation } from "lucide-react";
 
 import { AnimatedButton } from "@/components/ui/AnimatedButton";
 import { useGeolocation } from "@/hooks/use-geolocation";
+import { useI18n } from "@/hooks/use-i18n";
 import { useNavigation } from "@/hooks/use-navigation";
 import { useToast } from "@/hooks/use-toast";
 import type { NavigationDestination } from "@/lib/navigation-store";
@@ -26,6 +27,7 @@ export function NavigateButton({ destination, onPlanned, pulse = false, classNam
   const { toast } = useToast();
   const { loading, requestLocation } = useGeolocation();
   const nav = useNavigation();
+  const { t } = useI18n();
   const busy = loading || (nav.status === "routing" && nav.destination?.id === destination.id);
 
   const handleClick = async () => {
@@ -33,8 +35,8 @@ export function NavigateButton({ destination, onPlanned, pulse = false, classNam
     if (!location.hasLocation) {
       toast({
         variant: "destructive",
-        title: "Kailangan ang location mo",
-        description: location.error ?? "Payagan ang location access para makapag-navigate.",
+        title: t.navigation.locationNeeded,
+        description: location.error ?? t.navigation.allowLocation,
       });
       return;
     }
@@ -52,11 +54,11 @@ export function NavigateButton({ destination, onPlanned, pulse = false, classNam
         size="lg"
         onClick={() => void handleClick()}
         loading={busy}
-        loadingText={loading ? "Hinahanap ka..." : "Navigate"}
+        loadingText={loading ? t.navigation.findingYou : t.navigation.navigate}
         className="relative w-full"
       >
         <Navigation aria-hidden="true" />
-        Navigate
+        {t.navigation.navigate}
       </AnimatedButton>
     </span>
   );

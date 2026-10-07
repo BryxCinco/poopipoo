@@ -1,4 +1,4 @@
-import { getRoute, RoutingError, type Route, type RouteProfile } from "@/lib/routing";
+import { getRoute, RoutingError, type Route, type RouteProfile, type RoutingErrorKind } from "@/lib/routing";
 import { stopSpeaking } from "@/lib/voice";
 import type { LatLng } from "@/types/geo";
 
@@ -26,7 +26,8 @@ export interface NavigationState {
   origin: LatLng | null;
   profile: RouteProfile;
   route: Route | null;
-  error: string | null;
+  /** Why routing failed (the UI shows the message in the current language) */
+  error: RoutingErrorKind | null;
   /** Recalculating after going off-route (keeps showing the old route meanwhile) */
   rerouting: boolean;
   voiceEnabled: boolean;
@@ -55,8 +56,7 @@ function setState(partial: Partial<NavigationState>): void {
   listeners.forEach((listener) => listener());
 }
 
-const messageFor = (error: unknown) =>
-  error instanceof RoutingError ? error.message : "Hindi makuha ang ruta. Subukan ulit.";
+const kindOf = (error: unknown): RoutingErrorKind => (error instanceof RoutingError ? error.kind : "unknown");
 
 // ---------- actions ----------
 
@@ -70,7 +70,7 @@ export async function planRoute(destination: NavigationDestination, origin: LatL
     setState({ status: "preview", route });
   } catch (error) {
     if (id !== requestId) return;
-    setState({ status: "error", error: messageFor(error) });
+    setState({ status: "error", error: kindOf(error) });
   }
 }
 

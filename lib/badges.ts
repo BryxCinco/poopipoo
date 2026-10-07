@@ -24,10 +24,8 @@ export interface BadgeStats {
 }
 
 export interface BadgeDef {
+  /** Also the key of its name/description in t.badges.items */
   id: BadgeId;
-  name: string;
-  /** How to earn it (Filipino) */
-  description: string;
   icon: LucideIcon;
   /** Progress toward the badge: [current, goal] */
   progress: (stats: BadgeStats) => [number, number];
@@ -36,43 +34,31 @@ export interface BadgeDef {
 export const BADGES: readonly BadgeDef[] = [
   {
     id: "first-cr",
-    name: "First CR",
-    description: "Mag-add ng unang CR",
     icon: Flag,
     progress: (s) => [s.restroomsAdded, 1],
   },
   {
     id: "reviewer",
-    name: "Reviewer",
-    description: "Mag-review ng 5 CR",
     icon: MessageSquareText,
     progress: (s) => [s.reviewsWritten, 5],
   },
   {
     id: "explorer",
-    name: "Explorer",
-    description: "Mag-add ng 10 CR",
     icon: Compass,
     progress: (s) => [s.restroomsAdded, 10],
   },
   {
     id: "top-reviewer",
-    name: "Top Reviewer",
-    description: "Mag-review ng 20 CR",
     icon: MessagesSquare,
     progress: (s) => [s.reviewsWritten, 20],
   },
   {
     id: "helpful",
-    name: "Helpful",
-    description: "Makatanggap ng 10 helpful votes",
     icon: ThumbsUp,
     progress: (s) => [s.helpfulVotesReceived, 10],
   },
   {
     id: "legend",
-    name: "Legend",
-    description: `Umabot sa Level ${MAX_LEVEL}`,
     icon: Crown,
     progress: (s) => [s.level, MAX_LEVEL],
   },

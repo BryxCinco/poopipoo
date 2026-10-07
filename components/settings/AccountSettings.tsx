@@ -9,9 +9,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useI18n } from "@/hooks/use-i18n";
 import { useToast } from "@/hooks/use-toast";
 import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
 import { AVATAR_TYPES, removeAvatar, uploadAvatar } from "@/lib/avatar";
+import { errorText } from "@/lib/i18n/errors";
+import { format } from "@/lib/i18n/format";
 import { createClient } from "@/lib/supabase/client";
 
 const USERNAME_MIN = 3;
@@ -29,6 +32,8 @@ export function AccountSettings({ userId, email, username: initialUsername, avat
   const router = useRouter();
   const { toast } = useToast();
   const fileRef = useRef<HTMLInputElement>(null);
+  const { t } = useI18n();
+  const ts = t.settings;
 
   const [username, setUsername] = useState(initialUsername);
   const [savedUsername, setSavedUsername] = useState(initialUsername);
@@ -46,7 +51,7 @@ export function AccountSettings({ userId, email, username: initialUsername, avat
   const saveUsername = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (trimmed.length < USERNAME_MIN || trimmed.length > USERNAME_MAX) {
-      setUsernameError(`${USERNAME_MIN} hanggang ${USERNAME_MAX} characters ang username.`);
+      setUsernameError(format(ts.username.lengthError, { min: USERNAME_MIN, max: USERNAME_MAX }));
       return;
     }
     setUsernameError(null);
@@ -54,12 +59,12 @@ export function AccountSettings({ userId, email, username: initialUsername, avat
     const { error } = await createClient().from("profiles").update({ username: trimmed }).eq("id", userId);
     setSaving(false);
     if (error) {
-      toast({ variant: "destructive", title: "Hindi ma-save ang username", description: error.message });
+      toast({ variant: "destructive", title: ts.username.saveFailed, description: error.message });
       return;
     }
     setSavedUsername(trimmed);
     setUsername(trimmed);
-    toast({ title: "Na-save ang username!" });
+    toast({ title: ts.username.saved });
     router.refresh();
   };
 
@@ -71,13 +76,13 @@ export function AccountSettings({ userId, email, username: initialUsername, avat
     try {
       const url = await uploadAvatar(createClient(), userId, file);
       setAvatarUrl(url);
-      toast({ title: "Na-update ang photo mo!" });
+      toast({ title: ts.photo.updated });
       router.refresh();
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Hindi ma-upload ang photo",
-        description: error instanceof Error ? error.message : "Subukan ulit.",
+        title: ts.photo.uploadFailed,
+        description: errorText(error, t),
       });
     } finally {
       setAvatarBusy(false);
@@ -89,13 +94,13 @@ export function AccountSettings({ userId, email, username: initialUsername, avat
     try {
       await removeAvatar(createClient(), userId);
       setAvatarUrl(null);
-      toast({ title: "Inalis ang photo." });
+      toast({ title: ts.photo.removed });
       router.refresh();
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Hindi maalis ang photo",
-        description: error instanceof Error ? error.message : "Subukan ulit.",
+        title: ts.photo.removeFailed,
+        description: errorText(error, t),
       });
     } finally {
       setAvatarBusy(false);
@@ -116,7 +121,7 @@ export function AccountSettings({ userId, email, username: initialUsername, avat
           {avatarBusy && (
             <span className="absolute inset-0 flex items-center justify-center rounded-full bg-background/70">
               <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
-              <span className="sr-only">Ina-upload...</span>
+              <span className="sr-only">{ts.photo.uploading}</span>
             </span>
           )}
         </div>
@@ -128,7 +133,7 @@ export function AccountSettings({ userId, email, username: initialUsername, avat
             accept={AVATAR_TYPES.join(",")}
             className="sr-only"
             onChange={(event) => void handleFile(event)}
-            aria-label="Pumili ng profile photo"
+            aria-label={ts.photo.choose}
           />
           <Button
             type="button"
@@ -136,10 +141,10 @@ export function AccountSettings({ userId, email, username: initialUsername, avat
             size="sm"
             disabled={avatarBusy}
             onClick={() => fileRef.current?.click()}
-            aria-label={avatarUrl ? "Palitan ang profile photo" : "Mag-upload ng profile photo"}
+            aria-label={avatarUrl ? ts.photo.changeLabel : ts.photo.uploadLabel}
           >
             <Camera aria-hidden="true" />
-            {avatarUrl ? "Palitan" : "Mag-upload"}
+            {avatarUrl ? ts.photo.change : ts.photo.upload}
           </Button>
           {avatarUrl && (
             <Button
@@ -148,19 +153,19 @@ export function AccountSettings({ userId, email, username: initialUsername, avat
               size="sm"
               disabled={avatarBusy}
               onClick={() => void handleRemove()}
-              aria-label="Alisin ang profile photo"
+              aria-label={ts.photo.removeLabel}
             >
               <Trash2 aria-hidden="true" />
-              Alisin
+              {ts.photo.remove}
             </Button>
           )}
-          <p className="w-full text-xs text-muted-foreground">JPG, PNG o WebP. Ika-crop sa square.</p>
+          <p className="w-full text-xs text-muted-foreground">{ts.photo.hint}</p>
         </div>
       </div>
 
       {/* Username */}
       <form onSubmit={(event) => void saveUsername(event)} className="flex flex-col gap-1.5" noValidate>
-        <Label htmlFor="settings-username">Username</Label>
+        <Label htmlFor="settings-username">{ts.username.label}</Label>
         <div className="flex gap-2">
           <Input
             id="settings-username"
@@ -174,8 +179,8 @@ export function AccountSettings({ userId, email, username: initialUsername, avat
             aria-invalid={usernameError !== null}
             aria-describedby={usernameError ? "settings-username-error" : "settings-username-hint"}
           />
-          <AnimatedButton type="submit" disabled={!changed} loading={saving} aria-label="I-save ang username">
-            I-save
+          <AnimatedButton type="submit" disabled={!changed} loading={saving} aria-label={ts.username.saveLabel}>
+            {t.common.save}
           </AnimatedButton>
         </div>
         {usernameError ? (
@@ -184,14 +189,14 @@ export function AccountSettings({ userId, email, username: initialUsername, avat
           </p>
         ) : (
           <p id="settings-username-hint" className="text-xs text-muted-foreground">
-            Makikita ito sa reviews at sa leaderboard.
+            {ts.username.hint}
           </p>
         )}
       </form>
 
       {/* Email (read-only) */}
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="settings-email">Email</Label>
+        <Label htmlFor="settings-email">{t.auth.email}</Label>
         <Input id="settings-email" value={email} readOnly aria-readonly="true" className="bg-muted/50 text-muted-foreground" />
       </div>
     </div>

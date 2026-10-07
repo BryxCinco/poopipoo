@@ -1,3 +1,5 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
 import { ChevronRight, MapPin, Toilet } from "lucide-react";
@@ -10,7 +12,9 @@ import {
 import { RestroomRating } from "@/components/restroom/RestroomRating";
 import { AnimatedCard } from "@/components/ui/AnimatedCard";
 import { Badge } from "@/components/ui/badge";
+import { useI18n } from "@/hooks/use-i18n";
 import { formatDistance } from "@/lib/distance";
+import { format } from "@/lib/i18n/format";
 import { getDisplayAmenities } from "@/lib/icons";
 import type { Restroom } from "@/types/restroom";
 
@@ -32,6 +36,7 @@ export function RestroomListItem({
   const shownAmenities = amenities.slice(0, MAX_AMENITY_BADGES);
   const hiddenCount = amenities.length - shownAmenities.length;
   const thumbnail = restroom.images[0];
+  const { t } = useI18n();
 
   return (
     <AnimatedCard interactive className="group">
@@ -78,7 +83,7 @@ export function RestroomListItem({
             ))}
             {hiddenCount > 0 && (
               <Badge variant="secondary" className="px-1.5 py-0 text-[11px] font-normal">
-                +{hiddenCount} more
+                {format(t.list.moreAmenities, { count: hiddenCount })}
               </Badge>
             )}
           </div>

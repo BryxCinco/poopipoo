@@ -18,6 +18,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAgentEnabled } from "@/hooks/use-agent-enabled";
 import { useErrorToast } from "@/hooks/use-error-toast";
+import { useI18n } from "@/hooks/use-i18n";
 import { useNavigation, useNavigationGuidance } from "@/hooks/use-navigation";
 import { useRestrooms } from "@/hooks/use-restrooms";
 import { useWatchPosition } from "@/hooks/use-watch-position";
@@ -39,6 +40,7 @@ export default function HomePage() {
   const [nearMeLocation, setNearMeLocation] = useState<LocateResult | null>(null);
   const [chatOpen, setChatOpen] = useState(false);
   const [agentEnabled] = useAgentEnabled();
+  const { t } = useI18n();
 
   // ---- navigation ----
   const nav = useNavigation();
@@ -53,7 +55,7 @@ export default function HomePage() {
     if (nav.status === "navigating") setFollow(true);
   }, [nav.status]);
 
-  useErrorToast(error, "Hindi makuha ang mga CR", retry);
+  useErrorToast(error, t.home.loadError, retry);
 
   const handleSelectRestroom = useCallback((restroom: Restroom) => {
     setSelectedRestroom(restroom);
@@ -135,7 +137,7 @@ export default function HomePage() {
           className="absolute right-3 top-3 z-[1000] rounded-full bg-background shadow-lg hover:bg-muted"
         >
           <LocateFixed aria-hidden="true" />
-          I-center
+          {t.home.recenter}
         </Button>
       )}
 
@@ -146,7 +148,7 @@ export default function HomePage() {
           className="absolute left-14 top-[4.75rem] z-[1000] flex items-center gap-1.5 rounded-full bg-background px-3 py-1.5 text-xs shadow-md"
         >
           <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
-          <span className="animate-pulse">Kinukuha ang mga CR...</span>
+          <span className="animate-pulse">{t.home.loadingPins}</span>
         </p>
       )}
       {error && !navActive && (
@@ -159,7 +161,7 @@ export default function HomePage() {
           className={`absolute left-1/2 z-[1000] -translate-x-1/2 rounded-full shadow-lg ${agentEnabled ? "bottom-24" : "bottom-8"}`}
         >
           <RefreshCw aria-hidden="true" />
-          Hindi makuha ang mga CR. Subukan ulit
+          {t.home.loadErrorRetry}
         </Button>
       )}
 
@@ -192,7 +194,7 @@ export default function HomePage() {
                 <motion.button
                   type="button"
                   onClick={() => setChatOpen(true)}
-                  aria-label="Buksan ang Poopipoo Assistant"
+                  aria-label={t.home.openAssistant}
                   whileHover={{ scale: 1.05 }}
                   whileTap={tapScale}
                   transition={SPRING}
@@ -206,7 +208,7 @@ export default function HomePage() {
                   />
                 </motion.button>
               </TooltipTrigger>
-              <TooltipContent side="left">Poopipoo Assistant</TooltipContent>
+              <TooltipContent side="left">{t.home.assistant}</TooltipContent>
             </Tooltip>
           </motion.div>
         )}

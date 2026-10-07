@@ -4,6 +4,9 @@ import { z } from "zod";
 import { AgentError, runAgent } from "@/lib/ai/agent";
 import { embedMissingRestrooms } from "@/lib/ai/restroom-document";
 import { getCurrentUser } from "@/lib/auth/server";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { format } from "@/lib/i18n/format";
+import { getLocale } from "@/lib/i18n/server";
 import { createClient } from "@/lib/supabase/server";
 
 /**
@@ -11,7 +14,8 @@ import { createClient } from "@/lib/supabase/server";
  *
  * Body: { message, user_lat?, user_lng?, history? }
  * 200:  { message, restrooms?, action? }
- * Errors: { error: string (Filipino, for the UI), code }
+ * Errors: { error: string (in the visitor's language, for the UI), code }
+ * Language: the app's language cookie (or Accept-Language); the answer uses it too.
  *   401 unauthorized · 400 invalid · 429 rate_limited / ai_busy · 502/503/504 upstream
  */
 
@@ -50,11 +54,13 @@ function errorResponse(status: number, code: ErrorCode, error: string, retryAfte
 }
 
 export async function POST(request: Request) {
+  const locale = getLocale();
+  const errors = getDictionary(locale).agent.errors;
   const user = await getCurrentUser();
-  if (!user) return errorResponse(401, "unauthorized", "Mag-login muna para magamit ang AI assistant.");
+  if (!user) return errorResponse(401, "unauthorized", errors.unauthorized);
 
   const parsed = bodySchema.safeParse(await request.json().catch(() => null));
-  if (!parsed.success) return errorResponse(400, "invalid", "Hindi valid ang request.");
+  if (!parsed.success) return errorResponse(400, "invalid", errors.invalid);
   const { message, user_lat, user_lng, history } = parsed.data;
 
   const supabase = createClient();
@@ -73,7 +79,7 @@ export async function POST(request: Request) {
     .limit(RATE_LIMIT);
   if (recentError) {
     console.error("agent rate limit check failed", recentError.message);
-    return errorResponse(503, "upstream", "May problema sa server. Subukan ulit.");
+    return errorResponse(503, "upstream", errors.server);
   }
   if (recent.length >= RATE_LIMIT) {
     const oldest = new Date(recent[0].created_at).getTime();
@@ -81,7 +87,7 @@ export async function POST(request: Request) {
     return errorResponse(
       429,
       "rate_limited",
-      `Sobrang dami ng tanong. Subukan ulit pagkalipas ng ${retryAfter} segundo.`,
+      format(errors.rateLimited, { seconds: retryAfter }),
       retryAfter
     );
   }
@@ -100,23 +106,24 @@ export async function POST(request: Request) {
       history,
       location: user_lat !== undefined && user_lng !== undefined ? { latitude: user_lat, longitude: user_lng } : null,
       client: supabase,
+      locale,
     });
     return NextResponse.json(result);
   } catch (error) {
     if (error instanceof AgentError) {
       switch (error.kind) {
         case "rate-limit":
-          return errorResponse(429, "ai_busy", error.message, 60);
+          return errorResponse(429, "ai_busy", errors.busy, 60);
         case "timeout":
-          return errorResponse(504, "upstream", error.message);
+          return errorResponse(504, "upstream", errors.timeout);
         case "config":
           console.error("agent config error:", error.message);
-          return errorResponse(503, "config", "Hindi pa naka-setup ang AI assistant.");
+          return errorResponse(503, "config", errors.config);
         default:
-          return errorResponse(502, "upstream", error.message);
+          return errorResponse(502, "upstream", errors.upstream);
       }
     }
     console.error("agent failed", error);
-    return errorResponse(500, "upstream", "May hindi inaasahang error. Subukan ulit.");
+    return errorResponse(500, "upstream", errors.unexpected);
   }
 }

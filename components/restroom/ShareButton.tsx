@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Check, Share2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { useI18n } from "@/hooks/use-i18n";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
@@ -11,6 +12,7 @@ import { cn } from "@/lib/utils";
 export function ShareButton({ className }: { className?: string }) {
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
+  const { t } = useI18n();
 
   // Reset the "copied" checkmark after a moment.
   useEffect(() => {
@@ -24,12 +26,12 @@ export function ShareButton({ className }: { className?: string }) {
       // Clipboard API only exists on secure origins (HTTPS or localhost).
       await navigator.clipboard.writeText(window.location.href);
       setCopied(true);
-      toast({ title: "Na-copy ang link", description: "I-paste para i-share ang CR na ito." });
+      toast({ title: t.restroom.linkCopied, description: t.restroom.linkCopiedDescription });
     } catch {
       toast({
         variant: "destructive",
-        title: "Hindi ma-copy ang link",
-        description: "I-copy na lang mula sa address bar.",
+        title: t.restroom.copyFailed,
+        description: t.restroom.copyFailedDescription,
       });
     }
   };
@@ -43,7 +45,7 @@ export function ShareButton({ className }: { className?: string }) {
       className={cn("w-full", className)}
     >
       {copied ? <Check aria-hidden="true" /> : <Share2 aria-hidden="true" />}
-      {copied ? "Na-copy!" : "Share"}
+      {copied ? t.restroom.copied : t.restroom.share}
     </Button>
   );
 }

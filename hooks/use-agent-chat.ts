@@ -57,7 +57,19 @@ function isAgentResponse(value: unknown): value is AgentResponse {
  * Sends `text` to /api/agent. With `retry`, re-sends after a failed attempt
  * (the user's message is already in the list; the error bubble is replaced).
  */
-async function sendMessage(text: string, location: LatLng | null, retry = false): Promise<SendResult> {
+/** Messages for errors that happen before the server answers (in the current language). */
+export interface ClientErrorText {
+  offline: string;
+  generic: string;
+  badResponse: string;
+}
+
+async function sendMessage(
+  text: string,
+  location: LatLng | null,
+  errorText: ClientErrorText,
+  retry = false
+): Promise<SendResult> {
   const message = text.trim();
   if (!message || state.pending) return { ok: false };
 
@@ -96,16 +108,16 @@ async function sendMessage(text: string, location: LatLng | null, retry = false)
       }),
     });
   } catch {
-    return fail("Walang internet o hindi maabot ang server.", "upstream");
+    return fail(errorText.offline, "upstream");
   }
 
   const data: unknown = await response.json().catch(() => null);
   if (!response.ok) {
     return isErrorResponse(data)
       ? fail(data.error, data.code, data.retry_after)
-      : fail("May error. Subukan ulit.", "upstream");
+      : fail(errorText.generic, "upstream");
   }
-  if (!isAgentResponse(data)) return fail("Hindi maintindihan ang sagot ng server.", "upstream");
+  if (!isAgentResponse(data)) return fail(errorText.badResponse, "upstream");
 
   setState({
     pending: false,

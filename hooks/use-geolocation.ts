@@ -1,6 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+
+import { useI18n } from "@/hooks/use-i18n";
+import type { Dictionary } from "@/lib/i18n/dictionaries";
 
 // Fallback location when geolocation is denied, unavailable, or fails.
 export const MANILA_COORDS = { latitude: 14.5995, longitude: 120.9842 } as const;
@@ -23,16 +26,16 @@ interface UseGeolocationOptions {
   requestOnMount?: boolean;
 }
 
-function getErrorMessage(error: GeolocationPositionError): string {
+function getErrorMessage(error: GeolocationPositionError, t: Dictionary["geo"]): string {
   switch (error.code) {
     case error.PERMISSION_DENIED:
-      return "Hindi pinayagan ang location access.";
+      return t.denied;
     case error.POSITION_UNAVAILABLE:
-      return "Hindi makuha ang iyong location.";
+      return t.unavailable;
     case error.TIMEOUT:
-      return "Natagalan ang pagkuha ng location.";
+      return t.timeout;
     default:
-      return "May error sa pagkuha ng location.";
+      return t.generic;
   }
 }
 
@@ -47,6 +50,10 @@ function getErrorMessage(error: GeolocationPositionError): string {
  * act on the result immediately.
  */
 export function useGeolocation({ requestOnMount = false }: UseGeolocationOptions = {}) {
+  // Messages in the current language; a ref so requestLocation stays stable
+  const { t } = useI18n();
+  const geoText = useRef(t.geo);
+  geoText.current = t.geo;
   const [state, setState] = useState<GeolocationState>({
     ...MANILA_COORDS,
     error: null,
@@ -72,7 +79,7 @@ export function useGeolocation({ requestOnMount = false }: UseGeolocationOptions
       if (typeof navigator === "undefined" || !("geolocation" in navigator)) {
         finish({
           ...MANILA_COORDS,
-          error: "Hindi supported ng browser ang geolocation.",
+          error: geoText.current.unsupported,
           loading: false,
           hasLocation: false,
         });
@@ -88,7 +95,7 @@ export function useGeolocation({ requestOnMount = false }: UseGeolocationOptions
         () =>
           finish({
             ...MANILA_COORDS,
-            error: "Natagalan ang pagkuha ng location.",
+            error: geoText.current.timeout,
             loading: false,
             hasLocation: false,
           }),
@@ -107,7 +114,7 @@ export function useGeolocation({ requestOnMount = false }: UseGeolocationOptions
         (error) =>
           finish({
             ...MANILA_COORDS,
-            error: getErrorMessage(error),
+            error: getErrorMessage(error, geoText.current),
             loading: false,
             hasLocation: false,
           }),

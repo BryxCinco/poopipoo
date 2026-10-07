@@ -4,9 +4,12 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { ArrowRight, MapPin, MessageSquarePlus, Sparkles, Toilet, type LucideIcon } from "lucide-react";
 
+import { LanguageSwitch } from "@/components/i18n/LanguageSwitch";
 import { AnimatedButton } from "@/components/ui/AnimatedButton";
 import { Modal } from "@/components/ui/Modal";
+import { useI18n } from "@/hooks/use-i18n";
 import { stepSlide } from "@/lib/animations";
+import { format } from "@/lib/i18n/format";
 import { cn } from "@/lib/utils";
 
 /**
@@ -17,39 +20,15 @@ import { cn } from "@/lib/utils";
 
 export const ONBOARDING_KEY = "poopipoo:onboarding-done";
 
-interface Slide {
-  icon: LucideIcon;
-  title: string;
-  description: string;
-}
-
-const SLIDES: readonly Slide[] = [
-  {
-    icon: Toilet,
-    title: "Hanapin ang pinakamalapit na CR",
-    description: "Ang Poopipoo ang \"Waze ng CR\" sa Pilipinas. Makikita mo sa mapa ang mga CR na malapit sa'yo.",
-  },
-  {
-    icon: MapPin,
-    title: "I-tap ang pin para sa detalye",
-    description: "Makikita mo ang rating, amenities (bidet, tissue, PWD), at pwede kang magpa-direksyon papunta roon.",
-  },
-  {
-    icon: MessageSquarePlus,
-    title: "Mag-add ng CR, mag-review",
-    description: "Tulungan ang iba: magdagdag ng CR at mag-iwan ng review. May points at badges ka pa!",
-  },
-  {
-    icon: Sparkles,
-    title: "Tanungin ang AI agent",
-    description: "I-tap ang sparkle button sa mapa at itanong, halimbawa: \"May malinis bang CR na may bidet sa BGC?\"",
-  },
-];
+// Icons per slide; the text is in t.onboarding.slides (same order)
+const SLIDE_ICONS: readonly LucideIcon[] = [Toilet, MapPin, MessageSquarePlus, Sparkles];
 
 export function Onboarding() {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(0);
   const [direction, setDirection] = useState(1);
+  const { t } = useI18n();
+  const slides = t.onboarding.slides;
 
   // Only check after mount: localStorage doesn't exist during the server render
   useEffect(() => {
@@ -74,9 +53,9 @@ export function Onboarding() {
     setStep(next);
   };
 
-  const last = step === SLIDES.length - 1;
-  const slide = SLIDES[step];
-  const Icon = slide.icon;
+  const last = step === slides.length - 1;
+  const slide = slides[step];
+  const Icon = SLIDE_ICONS[step];
 
   // Each slide's content re-mounts (key) and slides in from the direction of travel
   const animated = (content: string) => (
@@ -110,18 +89,18 @@ export function Onboarding() {
       footer={
         <>
           {!last && (
-            <AnimatedButton type="button" variant="ghost" size="lg" onClick={finish} aria-label="Laktawan ang intro" className="w-full sm:w-auto">
-              Skip
+            <AnimatedButton type="button" variant="ghost" size="lg" onClick={finish} aria-label={t.onboarding.skipLabel} className="w-full sm:w-auto">
+              {t.onboarding.skip}
             </AnimatedButton>
           )}
           <AnimatedButton
             type="button"
             size="lg"
             onClick={() => (last ? finish() : go(step + 1))}
-            aria-label={last ? "Simulan ang paggamit ng Poopipoo" : "Susunod na slide"}
+            aria-label={last ? t.onboarding.startLabel : t.onboarding.nextLabel}
             className="w-full sm:w-auto"
           >
-            {last ? "Simulan na" : "Next"}
+            {last ? t.onboarding.start : t.onboarding.next}
             <ArrowRight aria-hidden="true" />
           </AnimatedButton>
         </>
@@ -129,12 +108,12 @@ export function Onboarding() {
     >
       {/* Progress dots (also buttons, to jump to a slide) */}
       <div className="flex items-center justify-center gap-2">
-        {SLIDES.map((item, index) => (
+        {slides.map((_, index) => (
           <button
-            key={item.title}
+            key={index}
             type="button"
             onClick={() => go(index)}
-            aria-label={`Slide ${index + 1} ng ${SLIDES.length}`}
+            aria-label={format(t.onboarding.slideLabel, { current: index + 1, total: slides.length })}
             aria-current={index === step ? "step" : undefined}
             className="flex h-6 items-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
@@ -147,6 +126,16 @@ export function Onboarding() {
           </button>
         ))}
       </div>
+
+      {/* First slide: pick the language (the default follows the browser) */}
+      {step === 0 && (
+        <div className="flex flex-col gap-1.5">
+          <span id="onboarding-language" className="text-center text-xs font-medium text-muted-foreground">
+            {t.onboarding.language}
+          </span>
+          <LanguageSwitch labelledBy="onboarding-language" />
+        </div>
+      )}
     </Modal>
   );
 }

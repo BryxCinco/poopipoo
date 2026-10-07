@@ -28,6 +28,7 @@ import {
 import { cn } from "@/lib/utils";
 import type { Restroom } from "@/types/restroom";
 import type { Review } from "@/types/review";
+import { useI18n } from "@/hooks/use-i18n";
 
 interface RestroomDetailProps {
   restroom: Restroom;
@@ -50,6 +51,7 @@ interface RestroomDetailProps {
 export function RestroomDetail({ restroom, isOwner, reviews }: RestroomDetailProps) {
   const router = useRouter();
   const nav = useNavigation();
+  const { t, locale } = useI18n();
 
   // Hero parallax: the decorative layer drifts down and fades as the page scrolls
   const scrollY = useMainScrollY();
@@ -98,7 +100,7 @@ export function RestroomDetail({ restroom, isOwner, reviews }: RestroomDetailPro
           animate="visible"
           className="flex flex-col gap-2"
         >
-          {isOwner && <UserAddedBadge label="Iyong contribution" className="w-fit" />}
+          {isOwner && <UserAddedBadge label={t.restroom.yourContribution} className="w-fit" />}
           <h1 className="text-2xl font-bold leading-tight">{restroom.name}</h1>
           <div className="flex flex-wrap items-center gap-2">
             <a href="#reviews" className="link-underline rounded-sm">
@@ -136,7 +138,7 @@ export function RestroomDetail({ restroom, isOwner, reviews }: RestroomDetailPro
           <Button asChild size="lg" className="w-full">
             <Link href="/">
               <Navigation aria-hidden="true" />
-              Bumalik sa navigation
+              {t.restroom.backToNavigation}
             </Link>
           </Button>
         ) : (
@@ -146,7 +148,7 @@ export function RestroomDetail({ restroom, isOwner, reviews }: RestroomDetailPro
       </div>
 
       <section className="flex flex-col gap-2">
-        <h2 className="font-semibold">Amenities</h2>
+        <h2 className="font-semibold">{t.restroom.amenities}</h2>
         {/* Shows every amenity type so it's clear what's missing too (e.g. walang bidet) */}
         <motion.ul
           className="grid grid-cols-2 gap-2"
@@ -172,8 +174,8 @@ export function RestroomDetail({ restroom, isOwner, reviews }: RestroomDetailPro
                   className={cn("h-4 w-4 shrink-0", available && "text-primary")}
                   aria-hidden="true"
                 />
-                <span className={cn(!available && "line-through")}>{getAmenityLabel(amenity)}</span>
-                <span className="sr-only">{available ? "(meron)" : "(wala)"}</span>
+                <span className={cn(!available && "line-through")}>{getAmenityLabel(amenity, locale)}</span>
+                <span className="sr-only">{available ? t.restroom.available : t.restroom.unavailable}</span>
               </motion.li>
             );
           })}
@@ -182,7 +184,7 @@ export function RestroomDetail({ restroom, isOwner, reviews }: RestroomDetailPro
 
       {restroom.description && (
         <section className="flex flex-col gap-2">
-          <h2 className="font-semibold">Description</h2>
+          <h2 className="font-semibold">{t.restroom.description}</h2>
           <p className="whitespace-pre-line text-sm leading-relaxed">{restroom.description}</p>
         </section>
       )}

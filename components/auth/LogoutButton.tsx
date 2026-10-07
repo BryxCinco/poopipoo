@@ -6,6 +6,7 @@ import { LogOut } from "lucide-react";
 
 import { AnimatedButton } from "@/components/ui/AnimatedButton";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { useI18n } from "@/hooks/use-i18n";
 import { useToast } from "@/hooks/use-toast";
 import { createClient } from "@/lib/supabase/client";
 
@@ -19,6 +20,7 @@ export function LogoutButton() {
   const { toast } = useToast();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [pending, setPending] = useState(false);
+  const { t } = useI18n();
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -30,10 +32,10 @@ export function LogoutButton() {
     const { error } = await createClient().auth.signOut();
     if (error) {
       setPending(false);
-      toast({ variant: "destructive", title: "Hindi maka-logout", description: error.message });
+      toast({ variant: "destructive", title: t.auth.logout.failed, description: error.message });
       throw error; // keeps the modal open (and shakes it)
     }
-    toast({ title: "Naka-logout ka na.", description: "Hanggang sa susunod!" });
+    toast({ title: t.auth.logout.done, description: t.auth.logout.doneDescription });
     router.replace("/");
     router.refresh();
   };
@@ -45,19 +47,19 @@ export function LogoutButton() {
         variant="outline"
         size="lg"
         loading={pending}
-        loadingText="Nagla-logout..."
+        loadingText={t.auth.logout.pending}
         className="w-full"
       >
         <LogOut aria-hidden="true" />
-        Mag-logout
+        {t.auth.logout.button}
       </AnimatedButton>
       <ConfirmModal
         open={confirmOpen}
         onOpenChange={setConfirmOpen}
         icon={LogOut}
-        title="Sigurado ka bang gusto mong mag-logout?"
-        confirmLabel="Oo, mag-logout"
-        cancelLabel="Hindi"
+        title={t.auth.logout.confirmTitle}
+        confirmLabel={t.auth.logout.confirm}
+        cancelLabel={t.auth.logout.cancel}
         onConfirm={logout}
       />
     </form>

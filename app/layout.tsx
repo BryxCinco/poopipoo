@@ -8,6 +8,8 @@ import { Header } from "@/components/layout/Header";
 import { Providers } from "@/components/layout/Providers";
 import { UnsavedChangesGuard } from "@/components/layout/UnsavedChangesGuard";
 import { Toaster } from "@/components/ui/toaster";
+import { HTML_LANG } from "@/lib/i18n/config";
+import { getLocale } from "@/lib/i18n/server";
 import { rootMetadata } from "@/lib/metadata";
 import { THEME_INIT_SCRIPT } from "@/lib/theme";
 
@@ -17,8 +19,10 @@ const geistSans = localFont({
   weight: "100 900",
 });
 
-// Title template, description, Open Graph and Twitter defaults: see lib/metadata.ts
-export const metadata: Metadata = rootMetadata;
+// Title template, description, Open Graph and Twitter defaults (in the visitor's language): see lib/metadata.ts
+export function generateMetadata(): Metadata {
+  return rootMetadata();
+}
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -32,9 +36,11 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Saved language (cookie) or the browser's; see lib/i18n/config.ts
+  const locale = getLocale();
   return (
     // suppressHydrationWarning: the theme script may add the "dark" class before React hydrates
-    <html lang="fil" suppressHydrationWarning>
+    <html lang={HTML_LANG[locale]} suppressHydrationWarning>
       <head>
         {/* Sets light/dark before the first paint (no flash). See lib/theme.ts */}
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
@@ -42,7 +48,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} flex h-dvh flex-col font-sans antialiased`}
       >
-        <Providers>
+        <Providers locale={locale}>
           <Header />
           {/* Fills the space between header and bottom nav; pages scroll inside it.
               Full width so the map can go edge to edge; pages set their own max-width. */}

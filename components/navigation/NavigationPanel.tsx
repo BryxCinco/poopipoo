@@ -25,7 +25,9 @@ import { ManeuverIcon } from "@/components/navigation/ManeuverIcon";
 import { Button } from "@/components/ui/button";
 import type { NavigationProgress } from "@/lib/navigation-progress";
 import type { NavigationState } from "@/lib/navigation-store";
-import type { RouteProfile } from "@/lib/routing";
+import { useI18n } from "@/hooks/use-i18n";
+import { format } from "@/lib/i18n/format";
+import { stepInstruction, type RouteProfile } from "@/lib/routing";
 import { formatArrivalTime, formatDuration, formatMeters } from "@/lib/routing-translations";
 import { cn } from "@/lib/utils";
 import { isSpeechSupported } from "@/lib/voice";
@@ -45,9 +47,10 @@ interface NavigationPanelProps {
   className?: string;
 }
 
-const PROFILES: { value: RouteProfile; label: string; icon: LucideIcon }[] = [
-  { value: "foot", label: "Lakad", icon: Footprints },
-  { value: "car", label: "Sasakyan", icon: Car },
+// label = key in t.navigation
+const PROFILES: { value: RouteProfile; label: "walk" | "car"; icon: LucideIcon }[] = [
+  { value: "foot", label: "walk", icon: Footprints },
+  { value: "car", label: "car", icon: Car },
 ];
 
 /**
@@ -67,6 +70,7 @@ export function NavigationPanel({
   className,
 }: NavigationPanelProps) {
   const [stepsOpen, setStepsOpen] = useState(false);
+  const { t, locale } = useI18n();
   const { status, route, destination } = nav;
   if (status === "idle" || !destination) return null;
 
@@ -79,7 +83,7 @@ export function NavigationPanel({
 
   return (
     <motion.section
-      aria-label="Navigation"
+      aria-label={t.navigation.panelLabel}
       // Slides up when navigation starts
       initial={{ y: 32, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
@@ -101,7 +105,7 @@ export function NavigationPanel({
           size="icon"
           className="-mr-2 h-8 w-8"
           onClick={onStop}
-          aria-label="Itigil ang navigation"
+          aria-label={t.navigation.stopLabel}
         >
           <X aria-hidden="true" />
         </Button>
@@ -114,18 +118,18 @@ export function NavigationPanel({
             {gpsLoading && !progress ? (
               <>
                 <Loader2 className="h-7 w-7 shrink-0 animate-spin" aria-hidden="true" />
-                <p className="font-semibold">Hinahanap ang GPS signal...</p>
+                <p className="font-semibold">{t.navigation.findingGps}</p>
               </>
             ) : nextStep && progress ? (
               <>
                 <ManeuverIcon maneuver={nextStep.maneuver} className="h-8 w-8" />
                 <div className="min-w-0">
                   <p className="text-xl font-bold leading-tight">{formatMeters(progress.distanceToNextManeuver)}</p>
-                  <p className="truncate text-sm">{nextStep.instruction}</p>
+                  <p className="truncate text-sm">{stepInstruction(nextStep, route?.profile ?? nav.profile, locale)}</p>
                 </div>
               </>
             ) : (
-              <p className="font-semibold">Sundan ang ruta</p>
+              <p className="font-semibold">{t.navigation.followRoute}</p>
             )}
           </div>
         )}
@@ -133,14 +137,14 @@ export function NavigationPanel({
         {status === "arrived" && (
           <div className="flex items-center gap-3 rounded-lg bg-success p-3 text-success-foreground" role="status">
             <Flag className="h-7 w-7 shrink-0" aria-hidden="true" />
-            <p className="font-semibold">Nakarating ka na!</p>
+            <p className="font-semibold">{t.navigation.arrived}</p>
           </div>
         )}
 
         {status === "routing" && (
           <p className="flex items-center gap-2 py-2 text-sm text-muted-foreground" role="status">
             <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-            Hinahanap ang daan papunta sa CR...
+            {t.navigation.findingRoute}
           </p>
         )}
 
@@ -148,11 +152,11 @@ export function NavigationPanel({
           <div className="flex flex-col gap-2 rounded-lg bg-destructive/10 p-3 text-sm text-destructive" role="alert">
             <p className="flex items-start gap-2">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-              {nav.error}
+              {nav.error && t.navigation.errors[nav.error]}
             </p>
             <Button type="button" variant="outline" size="sm" onClick={onRetry} className="w-fit">
               <RefreshCw aria-hidden="true" />
-              Subukan ulit
+              {t.common.retry}
             </Button>
           </div>
         )}
@@ -164,18 +168,18 @@ export function NavigationPanel({
             <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
               <p className="flex items-center gap-1.5 text-xl font-bold text-primary">
                 <Clock className="h-5 w-5" aria-hidden="true" />
-                {formatDuration(remainingDuration)}
+                {formatDuration(remainingDuration, locale)}
               </p>
               <p className="text-sm font-medium">{formatMeters(remainingDistance)}</p>
               <p className="text-xs text-muted-foreground" suppressHydrationWarning>
-                Darating ng {formatArrivalTime(remainingDuration)}
+                {format(t.navigation.arrival, { time: formatArrivalTime(remainingDuration, locale) })}
               </p>
             </div>
 
             {nav.rerouting && (
               <p className="flex items-center gap-1.5 text-xs text-muted-foreground" role="status">
                 <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
-                Naliligaw ka. Hinahanap ang bagong daan...
+                {t.navigation.rerouting}
               </p>
             )}
             {gpsError && (
@@ -187,7 +191,7 @@ export function NavigationPanel({
 
             {/* Lakad / Sasakyan (before starting) */}
             {status === "preview" && (
-              <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Paraan ng pagbiyahe">
+              <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label={t.navigation.travelMode}>
                 {PROFILES.map(({ value, label, icon: Icon }) => (
                   <button
                     key={value}
@@ -203,7 +207,7 @@ export function NavigationPanel({
                     )}
                   >
                     <Icon className="h-4 w-4" aria-hidden="true" />
-                    {label}
+                    {t.navigation[label]}
                   </button>
                 ))}
               </div>
@@ -218,7 +222,7 @@ export function NavigationPanel({
                 aria-controls="nav-steps"
                 className="flex w-full items-center justify-between py-1 text-sm font-medium"
               >
-                Mga direksyon ({route.steps.length})
+                {format(t.navigation.directions, { count: route.steps.length })}
                 {stepsOpen ? (
                   <ChevronUp className="h-4 w-4" aria-hidden="true" />
                 ) : (
@@ -238,7 +242,7 @@ export function NavigationPanel({
                       )}
                     >
                       <ManeuverIcon maneuver={step.maneuver} className="text-primary" />
-                      <span className="min-w-0 flex-1">{step.instruction}</span>
+                      <span className="min-w-0 flex-1">{stepInstruction(step, route.profile, locale)}</span>
                       {step.distance > 0 && step.maneuver !== "arrive" && (
                         <span className="shrink-0 text-xs text-muted-foreground">{formatMeters(step.distance)}</span>
                       )}
@@ -255,7 +259,7 @@ export function NavigationPanel({
           {status === "preview" && (
             <Button type="button" size="lg" onClick={onStart} className="flex-1">
               <Play aria-hidden="true" />
-              Simulan
+              {t.navigation.start}
             </Button>
           )}
           {navigating && isSpeechSupported() && (
@@ -265,10 +269,10 @@ export function NavigationPanel({
               variant="outline"
               onClick={() => onVoiceChange(!nav.voiceEnabled)}
               aria-pressed={nav.voiceEnabled}
-              aria-label={nav.voiceEnabled ? "I-off ang boses" : "I-on ang boses"}
+              aria-label={nav.voiceEnabled ? t.navigation.voiceOff : t.navigation.voiceOn}
             >
               {nav.voiceEnabled ? <Volume2 aria-hidden="true" /> : <VolumeX aria-hidden="true" />}
-              Boses
+              {t.navigation.voice}
             </Button>
           )}
           {status === "arrived" ? (
@@ -276,11 +280,11 @@ export function NavigationPanel({
               <Button asChild size="lg" variant="outline" className="flex-1">
                 <Link href={`/restroom/${destination.id}#reviews`} onClick={onStop}>
                   <MessageSquare aria-hidden="true" />
-                  Mag-review
+                  {t.navigation.review}
                 </Link>
               </Button>
               <Button type="button" size="lg" onClick={onStop} className="flex-1">
-                Tapusin
+                {t.navigation.finish}
               </Button>
             </>
           ) : (
@@ -292,7 +296,7 @@ export function NavigationPanel({
               className="flex-1"
             >
               <X aria-hidden="true" />
-              Itigil
+              {t.navigation.stop}
             </Button>
           )}
         </div>

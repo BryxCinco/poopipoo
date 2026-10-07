@@ -21,6 +21,8 @@ import { useRestrooms } from "@/hooks/use-restrooms";
 import { staggerItemCapped } from "@/lib/animations";
 import { calculateDistance } from "@/lib/distance";
 import type { Restroom } from "@/types/restroom";
+import { useI18n } from "@/hooks/use-i18n";
+import { format } from "@/lib/i18n/format";
 
 /** Lowercase, no accents ("Parañaque" matches "paranaque"). */
 const normalize = (text: string) =>
@@ -59,9 +61,10 @@ export function RestroomList() {
   } = useGeolocation({ requestOnMount: true });
   const [activeFilters, setActiveFilters] = useState<FilterId[]>([]);
   const [query, setQuery] = useState("");
+  const { t } = useI18n();
   const queryWords = useMemo(() => normalize(query).split(/s+/).filter(Boolean), [query]);
 
-  useErrorToast(dataError, "Hindi makuha ang mga CR", retry);
+  useErrorToast(dataError, t.list.loadError, retry);
 
   // Wait for the location too, so the list doesn't reorder right after appearing.
   const loading = dataLoading || locationLoading;
@@ -90,21 +93,21 @@ export function RestroomList() {
       <SearchInput
         value={query}
         onValueChange={setQuery}
-        label="Maghanap ng CR ayon sa pangalan o address"
-        placeholder="Maghanap ng CR o address"
+        label={t.list.searchLabel}
+        placeholder={t.list.searchPlaceholder}
       />
       <RestroomFilters active={activeFilters} onChange={setActiveFilters} />
 
       {locationLoading ? (
         <p className="flex items-center gap-1.5 text-xs text-muted-foreground" role="status">
           <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
-          Kinukuha ang iyong location...
+          {t.list.gettingLocation}
         </p>
       ) : !hasLocation ? (
         <div className="flex items-center justify-between gap-2 rounded-md bg-muted px-3 py-2 text-xs text-muted-foreground">
           <span className="flex items-center gap-1.5">
             <LocateOff className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-            {locationError ?? "Walang location."} Naka-sort ayon sa rating.
+            {locationError ?? t.list.noLocation} {t.list.sortedByRating}
           </span>
           <Button
             type="button"
@@ -114,11 +117,11 @@ export function RestroomList() {
             className="h-7 shrink-0 px-2 text-xs"
           >
             <RefreshCw aria-hidden="true" />
-            Subukan ulit
+            {t.common.retry}
           </Button>
         </div>
       ) : (
-        <p className="text-xs text-muted-foreground">Naka-sort mula sa pinakamalapit.</p>
+        <p className="text-xs text-muted-foreground">{t.list.sortedByDistance}</p>
       )}
 
       {dataError && restrooms.length === 0 ? (
@@ -127,17 +130,17 @@ export function RestroomList() {
           icon={<CloudOff />}
           tone="error"
           role="alert"
-          title="Hindi makuha ang mga CR"
-          description="I-check ang internet connection mo."
+          title={t.list.loadError}
+          description={t.list.checkInternet}
           action={
             <Button variant="outline" size="sm" onClick={() => void retry()}>
               <RefreshCw aria-hidden="true" />
-              Subukan ulit
+              {t.common.retry}
             </Button>
           }
         />
       ) : loading ? (
-        <ul className="flex flex-col gap-2" aria-busy="true" aria-label="Naglo-load">
+        <ul className="flex flex-col gap-2" aria-busy="true" aria-label={t.list.loadingLabel}>
           {Array.from({ length: 4 }, (_, i) => (
             <li key={i}>
               <Skeleton className="h-[104px] w-full" />
@@ -147,13 +150,13 @@ export function RestroomList() {
       ) : restrooms.length === 0 ? (
         <EmptyState
           icon={<Toilet />}
-          title="Wala pang CR dito. Mag-add ka!"
-          description="Ikaw ang unang tumulong sa komunidad."
+          title={t.list.emptyTitle}
+          description={t.list.emptyDescription}
           action={
             <Button asChild size="sm">
               <Link href="/add">
                 <Plus aria-hidden="true" />
-                Magdagdag ng CR
+                {t.list.addRestroom}
               </Link>
             </Button>
           }
@@ -161,11 +164,11 @@ export function RestroomList() {
       ) : items.length === 0 ? (
         <EmptyState
           icon={<SearchX />}
-          title="Walang CR na tugma"
+          title={t.list.noMatchTitle}
           description={
             query.trim()
-              ? `Walang CR na tugma sa "${query.trim()}". Subukan ang ibang salita o bawasan ang mga filter.`
-              : "Subukang bawasan ang mga filter."
+              ? format(t.list.noMatchQuery, { query: query.trim() })
+              : t.list.noMatchFilters
           }
           action={
             <Button
@@ -176,7 +179,7 @@ export function RestroomList() {
                 setQuery("");
               }}
             >
-              {query.trim() ? "I-clear ang search at filters" : "Clear all filters"}
+              {query.trim() ? t.list.clearSearchAndFilters : t.list.clearFilters}
             </Button>
           }
         />

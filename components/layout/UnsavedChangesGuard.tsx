@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { FileWarning } from "lucide-react";
 
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { useI18n } from "@/hooks/use-i18n";
 import { clearUnsavedChanges, hasUnsavedChanges } from "@/lib/unsaved-changes";
 
 /**
@@ -18,6 +19,7 @@ import { clearUnsavedChanges, hasUnsavedChanges } from "@/lib/unsaved-changes";
  */
 export function UnsavedChangesGuard() {
   const router = useRouter();
+  const { t } = useI18n();
   const [pendingHref, setPendingHref] = useState<string | null>(null);
 
   useEffect(() => {
@@ -61,10 +63,10 @@ export function UnsavedChangesGuard() {
       }}
       variant="destructive"
       icon={FileWarning}
-      title="May hindi ka pa na-save."
-      description="Mawawala ang mga nailagay mo kapag umalis ka sa page na ito."
-      confirmLabel="Iwanan"
-      cancelLabel="Manatili"
+      title={t.unsaved.title}
+      description={t.unsaved.description}
+      confirmLabel={t.unsaved.leave}
+      cancelLabel={t.unsaved.stay}
       onConfirm={() => {
         const href = pendingHref;
         clearUnsavedChanges();

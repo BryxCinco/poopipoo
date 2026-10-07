@@ -13,6 +13,8 @@ import { SPRING, staggerItemCapped } from "@/lib/animations";
 import { formatAbsoluteDate, formatRelativeTime } from "@/lib/relative-time";
 import { cn } from "@/lib/utils";
 import type { Review } from "@/types/review";
+import { useI18n } from "@/hooks/use-i18n";
+import { format, plural } from "@/lib/i18n/format";
 
 // ---------- helpful vote ----------
 
@@ -26,12 +28,13 @@ export interface HelpfulState {
 }
 
 function HelpfulButton({ count, state }: { count: number; state: HelpfulState }) {
+  const { t } = useI18n();
   if (!state.onToggle) {
     // Own review: just show how many people it helped
     return count > 0 ? (
       <p className="flex items-center gap-1 text-xs text-muted-foreground">
         <ThumbsUp className="h-3.5 w-3.5" aria-hidden="true" />
-        {count} ang natulungan
+        {plural(t.reviews.helpedCount, count)}
       </p>
     ) : null;
   }
@@ -42,7 +45,7 @@ function HelpfulButton({ count, state }: { count: number; state: HelpfulState })
       onClick={state.onToggle}
       disabled={state.pending}
       aria-pressed={state.voted}
-      aria-label={`${state.voted ? "Alisin ang helpful vote" : "Markahan na nakatulong"} (${count})`}
+      aria-label={format(state.voted ? t.reviews.unmarkHelpful : t.reviews.markHelpful, { count })}
       whileTap={{ scale: 0.92 }}
       transition={SPRING}
       className={cn(
@@ -53,7 +56,7 @@ function HelpfulButton({ count, state }: { count: number; state: HelpfulState })
       )}
     >
       <ThumbsUp className={cn("h-3.5 w-3.5", state.voted && "fill-current")} aria-hidden="true" />
-      Nakatulong
+      {t.reviews.helpful}
       {count > 0 && <span className="tabular-nums">{count}</span>}
     </motion.button>
   );
@@ -74,6 +77,7 @@ interface ReviewItemProps {
 }
 
 export function ReviewItem({ review, onEdit, onDelete, pending = false, helpful, className }: ReviewItemProps) {
+  const { t, locale } = useI18n();
   return (
     <article
       className={cn("flex gap-3 rounded-xl border bg-card p-3 shadow-sm transition-opacity duration-200", pending && "opacity-60", className)}
@@ -92,11 +96,11 @@ export function ReviewItem({ review, onEdit, onDelete, pending = false, helpful,
           {/* Relative time depends on "now", which differs between server and browser */}
           <time
             dateTime={review.createdAt}
-            title={formatAbsoluteDate(review.createdAt)}
+            title={formatAbsoluteDate(review.createdAt, locale)}
             className="shrink-0 text-xs text-muted-foreground"
             suppressHydrationWarning
           >
-            {pending ? "Sine-save..." : formatRelativeTime(review.createdAt)}
+            {pending ? t.reviews.saving : formatRelativeTime(review.createdAt, locale)}
           </time>
         </div>
         <StarRating rating={review.rating} />
@@ -115,7 +119,7 @@ export function ReviewItem({ review, onEdit, onDelete, pending = false, helpful,
             {onEdit && (
               <Button type="button" variant="ghost" size="sm" className="h-8 px-2" onClick={onEdit} disabled={pending}>
                 <Pencil aria-hidden="true" />
-                I-edit
+                {t.common.edit}
               </Button>
             )}
             {onDelete && <DeleteReviewButton onConfirm={onDelete} disabled={pending} />}
@@ -172,11 +176,12 @@ export function ReviewList({
   onEdit,
   onDelete,
   getHelpful,
-  emptyText = "Wala pang review. Ikaw ang mauna!",
+  emptyText,
 }: ReviewListProps) {
+  const { t } = useI18n();
   if (loading) {
     return (
-      <div className="flex flex-col gap-2" aria-busy="true" aria-label="Naglo-load ang reviews">
+      <div className="flex flex-col gap-2" aria-busy="true" aria-label={t.reviews.loadingLabel}>
         <ReviewItemSkeleton />
         <ReviewItemSkeleton />
       </div>
@@ -191,11 +196,11 @@ export function ReviewList({
           icon={<CloudOff />}
           tone="error"
           role="alert"
-          title="Hindi ma-load ang mga review"
+          title={t.reviews.loadError}
           action={
             <Button variant="outline" size="sm" onClick={onRetry}>
               <RefreshCw aria-hidden="true" />
-              Subukan ulit
+              {t.common.retry}
             </Button>
           }
         />
@@ -206,7 +211,7 @@ export function ReviewList({
   if (reviews.length === 0) {
     return (
       <div className="rounded-xl border border-dashed">
-        <EmptyState compact icon={<MessageSquare />} title={emptyText} />
+        <EmptyState compact icon={<MessageSquare />} title={emptyText ?? t.reviews.emptyFirst} />
       </div>
     );
   }
@@ -242,10 +247,10 @@ export function ReviewList({
 
       {error && reviews.length > 0 && (
         <p className="flex items-center justify-center gap-2 text-sm text-destructive" role="alert">
-          Hindi ma-load ang iba pang review.
+          {t.reviews.loadMoreError}
           <Button variant="ghost" size="sm" className="h-7 px-2" onClick={onRetry}>
             <RefreshCw aria-hidden="true" />
-            Subukan ulit
+            {t.common.retry}
           </Button>
         </p>
       )}
@@ -253,13 +258,13 @@ export function ReviewList({
       {remaining > 0 && !loadingMore && !error && (
         <Button variant="outline" onClick={onLoadMore} className="w-full">
           <ChevronDown aria-hidden="true" />
-          Tingnan pa ({remaining})
+          {format(t.reviews.loadMore, { count: remaining })}
         </Button>
       )}
       {loadingMore && (
         <p className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground" role="status">
           <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
-          Naglo-load...
+          {t.common.loading}
         </p>
       )}
     </div>

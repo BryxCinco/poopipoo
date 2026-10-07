@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { useI18n } from "@/hooks/use-i18n";
 
 /**
  * Goes back in history when there is somewhere to go back to (e.g. came from the
@@ -12,6 +13,7 @@ import { Button } from "@/components/ui/button";
  */
 export function BackButton({ fallbackHref = "/list" }: { fallbackHref?: string }) {
   const router = useRouter();
+  const { t } = useI18n();
 
   const handleClick = () => {
     if (window.history.length > 1) {
@@ -24,7 +26,7 @@ export function BackButton({ fallbackHref = "/list" }: { fallbackHref?: string }
   return (
     <Button type="button" variant="ghost" size="sm" onClick={handleClick} className="-ml-2 w-fit">
       <ArrowLeft aria-hidden="true" />
-      Bumalik
+      {t.restroom.back}
     </Button>
   );
 }

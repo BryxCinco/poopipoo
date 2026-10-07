@@ -6,6 +6,7 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { X } from "lucide-react"
 
 import { cn } from "@/lib/utils"
+import { T } from "@/components/i18n/T"
 
 const ToastProvider = ToastPrimitives.Provider
 
@@ -84,7 +85,9 @@ const ToastClose = React.forwardRef<
     {...props}
   >
     <X className="h-4 w-4" aria-hidden="true" />
-    <span className="sr-only">Isara</span>
+    <span className="sr-only">
+          <T get={(t) => t.common.close} />
+        </span>
   </ToastPrimitives.Close>
 ))
 ToastClose.displayName = ToastPrimitives.Close.displayName

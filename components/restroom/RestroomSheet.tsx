@@ -20,6 +20,7 @@ import { RestroomRating } from "@/components/restroom/RestroomRating";
 import { NavigateButton } from "@/components/navigation/NavigateButton";
 import { getDisplayAmenities } from "@/lib/icons";
 import type { Restroom } from "@/types/restroom";
+import { useI18n } from "@/hooks/use-i18n";
 
 interface RestroomSheetProps {
   restroom: Restroom | null;
@@ -34,6 +35,7 @@ export function RestroomSheet({
   open,
   onOpenChange,
 }: RestroomSheetProps) {
+  const { t } = useI18n();
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
@@ -43,7 +45,7 @@ export function RestroomSheet({
         {restroom && (
           <div className="mx-auto flex w-full max-w-screen-md flex-col gap-4">
             <SheetHeader className="space-y-2 text-left">
-              {isUserAdded && <UserAddedBadge label="Iyong contribution" className="w-fit" />}
+              {isUserAdded && <UserAddedBadge label={t.restroom.yourContribution} className="w-fit" />}
               <SheetTitle className="pr-6 text-2xl font-bold">{restroom.name}</SheetTitle>
               <div className="flex flex-wrap items-center gap-2">
                 <RestroomRating rating={restroom.rating} reviewCount={restroom.reviewCount} />
@@ -78,7 +80,7 @@ export function RestroomSheet({
               />
               <Button asChild size="lg" variant="outline" className="w-full">
                 <Link href={`/restroom/${restroom.id}`}>
-                  Tingnan ang buong detalye
+                  {t.restroom.viewFullDetails}
                   <ChevronRight aria-hidden="true" />
                 </Link>
               </Button>

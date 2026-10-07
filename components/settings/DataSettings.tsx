@@ -4,7 +4,9 @@ import { useState } from "react";
 import { Download, Eraser } from "lucide-react";
 
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { useI18n } from "@/hooks/use-i18n";
 import { useToast } from "@/hooks/use-toast";
+import { errorText } from "@/lib/i18n/errors";
 import { RESTROOM_COLUMNS } from "@/lib/restrooms/mappers";
 import { createClient } from "@/lib/supabase/client";
 
@@ -78,6 +80,8 @@ export function DataSettings({ account }: DataSettingsProps) {
   const { toast } = useToast();
   const [clearOpen, setClearOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const { t } = useI18n();
+  const td = t.settings.data;
 
   const handleExport = async () => {
     if (!account) return;
@@ -85,12 +89,12 @@ export function DataSettings({ account }: DataSettingsProps) {
     try {
       const data = await buildExport(account.id, account.email);
       downloadJson(data, `poopipoo-data-${new Date().toISOString().slice(0, 10)}.json`);
-      toast({ title: "Na-download ang data mo.", description: "JSON file ito ng account, CR, reviews at votes mo." });
+      toast({ title: td.exported, description: td.exportedDescription });
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Hindi ma-export ang data",
-        description: error instanceof Error ? error.message : "Subukan ulit.",
+        title: td.exportFailed,
+        description: errorText(error, t),
       });
     } finally {
       setExporting(false);
@@ -100,7 +104,7 @@ export function DataSettings({ account }: DataSettingsProps) {
   return (
     <section className="flex flex-col gap-2" aria-labelledby="data-heading">
       <h2 id="data-heading" className="font-semibold">
-        Data
+        {td.heading}
       </h2>
       <ul className="divide-y overflow-hidden rounded-xl border bg-card shadow-sm">
         {account && (
@@ -109,13 +113,13 @@ export function DataSettings({ account }: DataSettingsProps) {
               type="button"
               onClick={() => void handleExport()}
               disabled={exporting}
-              aria-label="I-export ang data ko bilang JSON file"
+              aria-label={td.exportLabel}
               className={rowClass}
             >
               <Download className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
               <span className="flex flex-1 flex-col">
-                <span>{exporting ? "Ine-export..." : "I-export ang data"}</span>
-                <span className="text-xs text-muted-foreground">I-download bilang JSON file</span>
+                <span>{exporting ? td.exporting : td.export}</span>
+                <span className="text-xs text-muted-foreground">{td.exportHint}</span>
               </span>
             </button>
           </li>
@@ -124,13 +128,13 @@ export function DataSettings({ account }: DataSettingsProps) {
           <button
             type="button"
             onClick={() => setClearOpen(true)}
-            aria-label="Burahin ang local data sa device na ito"
+            aria-label={td.clearLabel}
             className={rowClass}
           >
             <Eraser className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
             <span className="flex flex-1 flex-col">
-              <span>I-clear ang local data</span>
-              <span className="text-xs text-muted-foreground">Mga setting at data na naka-save sa device na ito</span>
+              <span>{td.clear}</span>
+              <span className="text-xs text-muted-foreground">{td.clearHint}</span>
             </span>
           </button>
         </li>
@@ -141,10 +145,10 @@ export function DataSettings({ account }: DataSettingsProps) {
         onOpenChange={setClearOpen}
         variant="destructive"
         icon={Eraser}
-        title="I-clear ang local data?"
-        description="Mabubura sa device na ito ang mga setting (dark mode, AI agent, voice), recent searches, at mga CR na naka-save dito pero hindi pa na-upload. Hindi mabubura ang account at ang mga naka-save sa server. Lalabas ulit ang intro."
-        confirmLabel="Oo, i-clear"
-        cancelLabel="Huwag"
+        title={td.clearTitle}
+        description={td.clearDescription}
+        confirmLabel={td.clearConfirm}
+        cancelLabel={td.clearCancel}
         onConfirm={() => {
           clearAppStorage();
           // Reload so every setting goes back to its default

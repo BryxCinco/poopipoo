@@ -11,6 +11,7 @@ import { UserLocationLayer, type UserLocation } from "@/components/map/UserLocat
 import { Button } from "@/components/ui/button";
 import { RestroomRating } from "@/components/restroom/RestroomRating";
 import { MANILA_COORDS } from "@/hooks/use-geolocation";
+import { useI18n } from "@/hooks/use-i18n";
 import type { LatLng } from "@/types/geo";
 import type { Restroom } from "@/types/restroom";
 
@@ -42,6 +43,7 @@ interface RestroomPopupContentProps {
 /** Popup body. Closes the popup when opening details so it doesn't linger over the map. */
 function RestroomPopupContent({ restroom, onSelectRestroom }: RestroomPopupContentProps) {
   const map = useMap();
+  const { t } = useI18n();
 
   const handleViewDetails = () => {
     map.closePopup();
@@ -54,7 +56,7 @@ function RestroomPopupContent({ restroom, onSelectRestroom }: RestroomPopupConte
       <RestroomRating rating={restroom.rating} reviewCount={restroom.reviewCount} size="sm" />
       <p className="!m-0 text-xs text-muted-foreground">{restroom.address}</p>
       <Button size="sm" className="mt-1" onClick={handleViewDetails}>
-        View details
+        {t.map.viewDetails}
       </Button>
     </div>
   );

@@ -4,6 +4,7 @@ import {
   rowToRestroom,
   type NewRestroom,
 } from "@/lib/restrooms/mappers";
+import { LocalizedError } from "@/lib/i18n/errors";
 import { createClient } from "@/lib/supabase/client";
 import type { Restroom } from "@/types/restroom";
 
@@ -144,7 +145,7 @@ export async function removeRestroom(id: string): Promise<void> {
   if (error || data.length === 0) {
     // Only roll back if nothing else changed the list meanwhile
     if (state.restrooms !== previous) setState({ restrooms: previous });
-    throw new Error(error?.message ?? "Hindi mo pwedeng burahin ang CR na ito.");
+    throw error ? new Error(error.message) : new LocalizedError("restroomDeleteForbidden");
   }
 }
 

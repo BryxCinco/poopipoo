@@ -3,6 +3,7 @@
 import { forwardRef, type InputHTMLAttributes } from "react";
 import { Loader2, Search, X } from "lucide-react";
 
+import { useI18n } from "@/hooks/use-i18n";
 import { cn } from "@/lib/utils";
 
 /**
@@ -23,7 +24,9 @@ export interface SearchInputProps extends Omit<InputHTMLAttributes<HTMLInputElem
 }
 
 export const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
-  ({ value, onValueChange, label, loading = false, onClear, wrapperClassName, className, ...props }, ref) => (
+  ({ value, onValueChange, label, loading = false, onClear, wrapperClassName, className, ...props }, ref) => {
+    const { t } = useI18n();
+    return (
     <div className={cn("relative flex items-center", wrapperClassName)}>
       <Search className="pointer-events-none absolute left-3 h-4 w-4 text-muted-foreground" aria-hidden="true" />
       <input
@@ -51,7 +54,7 @@ export const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
               onValueChange("");
               onClear?.();
             }}
-            aria-label="I-clear ang search"
+            aria-label={t.search.clear}
             className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <X className="h-4 w-4" aria-hidden="true" />
@@ -59,6 +62,7 @@ export const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
         )}
       </div>
     </div>
-  )
+    );
+  }
 );
 SearchInput.displayName = "SearchInput";

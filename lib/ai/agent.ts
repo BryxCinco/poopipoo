@@ -4,6 +4,8 @@ import { z } from "zod";
 import { EmbeddingError } from "@/lib/ai/embeddings";
 import { buildContext, searchRestrooms } from "@/lib/ai/rag";
 import { calculateDistance, formatDistance } from "@/lib/distance";
+import type { Locale } from "@/lib/i18n/config";
+import { getDictionary } from "@/lib/i18n/dictionaries";
 import { ALL_AMENITIES } from "@/lib/icons";
 import { isUuid, RESTROOM_COLUMNS, rowToRestroom } from "@/lib/restrooms/mappers";
 import type { AgentAction, AgentResponse, ChatMessage, RankedRestroom } from "@/types/agent";
@@ -52,6 +54,8 @@ interface AgentInput {
   location?: LatLng | null;
   /** Signed-in user's Supabase client (RLS applies) */
   client: SupabaseClient<Database>;
+  /** The app language: the assistant answers in it */
+  locale: Locale;
 }
 
 // ---------- Groq wire format ----------
@@ -222,7 +226,7 @@ async function runTool(call: ToolCall, input: AgentInput, run: RunState): Promis
           : undefined,
       });
       results.forEach((restroom) => run.found.set(restroom.id, restroom));
-      return buildContext(results);
+      return buildContext(results, input.locale);
     }
 
     case "get_distance": {
@@ -247,7 +251,7 @@ async function runTool(call: ToolCall, input: AgentInput, run: RunState): Promis
       run.action = { type: "navigate", restroom_id: restroom.id };
       const known = run.found.get(restroom.id);
       run.found.set(restroom.id, known ?? { ...restroom, similarity: null, distanceKm: null });
-      return `OK. Makikita ng user ang "Simulan ang navigation" button para sa ${restroom.name}. Sabihin sa kanya na pindutin ito.`;
+      return `OK. Makikita ng user ang "${getDictionary(input.locale).agent.startNavigation}" button para sa ${restroom.name}. Sabihin sa kanya na pindutin ito.`;
     }
 
     default:
@@ -257,20 +261,26 @@ async function runTool(call: ToolCall, input: AgentInput, run: RunState): Promis
 
 // ---------- prompt ----------
 
-function systemPrompt(location: LatLng | null | undefined): string {
+function systemPrompt(location: LatLng | null | undefined, locale: Locale): string {
+  const button = getDictionary(locale).agent.startNavigation;
+  // The rules stay in Filipino (the model follows them fine); only the answer language changes
+  const language =
+    locale === "en"
+      ? "Answer in English (the user chose English), kahit Filipino ang mga patakaran sa ibaba at ang tanong."
+      : "Sagutin mo sa Filipino.";
   const where = location
     ? `Lokasyon ng user: lat ${location.latitude.toFixed(5)}, lng ${location.longitude.toFixed(5)}.`
     : "Hindi alam ang lokasyon ng user (hindi pinayagan o hindi available).";
 
   return [
     "Ikaw si Poopipoo Assistant. Tumutulong ka sa users na maghanap ng CR sa Pilipinas. " +
-      "Sagutin mo sa Filipino. Maging concise at helpful. Kung may tool na kailangan, gamitin ito.",
+      `${language} Maging concise at helpful. Kung may tool na kailangan, gamitin ito.`,
     where,
     "Mga patakaran:",
     "- Sa anumang tanong tungkol sa CR, gamitin muna ang search_restrooms. Ang sagot mo ay dapat galing LANG sa resulta ng tools. Huwag mag-imbento ng CR, lugar, address, presyo, o amenities.",
     "- Kung walang nahanap, sabihin nang tapat at imungkahi na i-add ng user ang CR na alam niya.",
     "- Kung tinanong ang layo at alam ang lokasyon, gamitin ang get_distance gamit ang lokasyon sa itaas.",
-    "- Kung gustong pumunta o magpa-direksyon ng user, gamitin ang start_navigation. Banggitin lang ang 'Simulan ang navigation' button kung tinawag mo ang start_navigation sa sagot na ito.",
+    `- Kung gustong pumunta o magpa-direksyon ng user, gamitin ang start_navigation. Banggitin lang ang '${button}' button kung tinawag mo ang start_navigation sa sagot na ito.`,
     "- Kung nag-error ang tool, sabihin na may problema sa paghahanap ngayon. Huwag sabihing walang CR.",
     "- Ipapakita ng app ang mga CR bilang cards na may address, rating, presyo at layo. Kaya sa sagot, pangalan lang ng CR at ang pinaka-kaugnay na detalye sa tanong (hal. may bidet, libre). Huwag ulitin ang buong address.",
     "- Maikli lang: 1 hanggang 3 pangungusap, hanggang 3 CR. Plain text lang: walang markdown, walang **, #, o table. Huwag ipakita ang id.",
@@ -299,15 +309,18 @@ function toPlainText(text: string): string {
     .trim();
 }
 
-/** Removes sentences that mention the "Simulan ang navigation" button. */
+// The navigation button's label in either language
+const NAVIGATION_HINT = /simulan ang navigation|start navigation/i;
+
+/** Removes sentences that mention the "Simulan ang navigation" / "Start navigation" button. */
 function withoutNavigationHint(text: string): string {
-  if (!/simulan ang navigation/i.test(text)) return text;
+  if (!NAVIGATION_HINT.test(text)) return text;
   return text
     .split("\n")
     .map((line) =>
       // Sentences end at . ! ? (keep the punctuation with the sentence)
       (line.match(/[^.!?]+[.!?]*/g) ?? [])
-        .filter((sentence) => !/simulan ang navigation/i.test(sentence))
+        .filter((sentence) => !NAVIGATION_HINT.test(sentence))
         .join("")
         .trim()
     )
@@ -386,7 +399,7 @@ export async function runAgent(input: AgentInput): Promise<AgentResponse> {
 [Mga CR sa sagot na ito: ${ids}]` };
   });
   const messages: GroqMessage[] = [
-    { role: "system", content: systemPrompt(input.location) },
+    { role: "system", content: systemPrompt(input.location, input.locale) },
     ...history,
     { role: "user", content: input.message },
   ];
@@ -419,7 +432,7 @@ export async function runAgent(input: AgentInput): Promise<AgentResponse> {
   // The model sometimes tells the user to press the navigation button even
   // when it didn't call start_navigation (so there is no button). Drop that sentence.
   if (!run.action) message = withoutNavigationHint(message);
-  if (!message) message = "Pasensya, hindi ako nakasagot. Subukan mong ulitin ang tanong.";
+  if (!message) message = getDictionary(input.locale).agent.errors.noAnswer;
 
   // Cards: restrooms the answer mentions by name (or everything found, if none),
   // with the navigation target first.

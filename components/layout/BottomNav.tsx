@@ -5,12 +5,14 @@ import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import { List, Map, Plus, User, type LucideIcon } from "lucide-react";
 
+import { useI18n } from "@/hooks/use-i18n";
 import { SPRING } from "@/lib/animations";
 import { cn } from "@/lib/utils";
 
 type NavItem = {
   href: string;
-  label: string;
+  /** Key in t.nav */
+  label: "map" | "list" | "add" | "profile";
   icon: LucideIcon;
   /** Extra path prefixes that should also highlight this tab. */
   matchPrefixes?: string[];
@@ -19,11 +21,11 @@ type NavItem = {
 };
 
 const NAV_ITEMS: NavItem[] = [
-  { href: "/", label: "Map", icon: Map },
+  { href: "/", label: "map", icon: Map },
   // Restroom detail pages are reached from the list, so keep "List" highlighted there.
-  { href: "/list", label: "List", icon: List, matchPrefixes: ["/restroom"] },
-  { href: "/add", label: "Add", icon: Plus, primary: true },
-  { href: "/profile", label: "Profile", icon: User },
+  { href: "/list", label: "list", icon: List, matchPrefixes: ["/restroom"] },
+  { href: "/add", label: "add", icon: Plus, primary: true },
+  { href: "/profile", label: "profile", icon: User },
 ];
 
 function isActive(pathname: string, { href, matchPrefixes = [] }: NavItem): boolean {
@@ -35,10 +37,11 @@ function isActive(pathname: string, { href, matchPrefixes = [] }: NavItem): bool
 
 export function BottomNav() {
   const pathname = usePathname();
+  const { t } = useI18n();
 
   return (
     <nav
-      aria-label="Pangunahing navigation"
+      aria-label={t.nav.label}
       className="sticky bottom-0 z-40 w-full border-t bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur supports-[backdrop-filter]:bg-background/80"
     >
       <ul className="mx-auto grid h-16 max-w-screen-md grid-cols-4">
@@ -67,7 +70,7 @@ export function BottomNav() {
                     <Icon className="h-6 w-6" aria-hidden="true" />
                   </motion.span>
                   <span className={cn(active ? "font-semibold text-foreground" : "text-muted-foreground")}>
-                    {label}
+                    {t.nav[label]}
                   </span>
                 </Link>
               </li>
@@ -99,7 +102,7 @@ export function BottomNav() {
                   className="relative h-5 w-5 transition-transform duration-150 group-hover:scale-110 group-active:scale-95 group-focus-visible:scale-110"
                   aria-hidden="true"
                 />
-                <span className="relative group-focus-visible:underline">{label}</span>
+                <span className="relative group-focus-visible:underline">{t.nav[label]}</span>
               </Link>
             </li>
           );

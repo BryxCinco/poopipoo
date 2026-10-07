@@ -11,6 +11,9 @@ import { loginUrl } from "@/lib/auth/return-url";
 import { clearLocalRestrooms, getLocalRestrooms } from "@/lib/local-restrooms";
 import { addRestrooms } from "@/lib/restroom-store";
 import type { Restroom } from "@/types/restroom";
+import { useI18n } from "@/hooks/use-i18n";
+import { errorText } from "@/lib/i18n/errors";
+import { plural } from "@/lib/i18n/format";
 
 // "Mamaya na" hides the prompt for this browser session only.
 const DISMISS_KEY = "poopipoo:local-upload-dismissed";
@@ -29,6 +32,7 @@ interface LocalRestroomsUploadProps {
 export function LocalRestroomsUpload({ userId, returnUrl }: LocalRestroomsUploadProps) {
   const router = useRouter();
   const { toast } = useToast();
+  const { t } = useI18n();
   const [local, setLocal] = useState<Restroom[]>([]);
   const [uploading, setUploading] = useState(false);
 
@@ -73,13 +77,13 @@ export function LocalRestroomsUpload({ userId, returnUrl }: LocalRestroomsUpload
       );
       clearLocalRestrooms();
       setLocal([]);
-      toast({ title: `Na-upload ang ${saved} CR!`, description: "Nasa account mo na sila." });
+      toast({ title: plural(t.localUpload.uploaded, saved), description: t.localUpload.uploadedDescription });
       router.refresh();
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Hindi ma-upload",
-        description: error instanceof Error ? error.message : "Subukan ulit mamaya.",
+        title: t.localUpload.uploadFailed,
+        description: errorText(error, t),
       });
     } finally {
       setUploading(false);
@@ -88,18 +92,18 @@ export function LocalRestroomsUpload({ userId, returnUrl }: LocalRestroomsUpload
 
   return (
     <section
-      aria-label="Mga CR sa device na ito"
+      aria-label={t.localUpload.label}
       className="flex flex-col gap-3 rounded-lg border border-highlight/40 bg-highlight/10 p-4 text-foreground"
     >
       <div className="flex items-start gap-3">
         <Smartphone className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" />
         <div className="flex flex-col gap-1">
           <p className="font-semibold">
-            May {local.length} CR ka sa device na ito.{" "}
-            {userId ? "I-upload sa account mo?" : "Mag-login para i-upload sa account mo."}
+            {plural(t.localUpload.count, local.length)}{" "}
+            {userId ? t.localUpload.uploadPrompt : t.localUpload.loginPrompt}
           </p>
           <p className="text-sm text-muted-foreground">
-            Idinagdag mo ang mga ito bago nagkaroon ng accounts. Makikita sila ng lahat pag na-upload.
+            {t.localUpload.explanation}
           </p>
         </div>
       </div>
@@ -111,15 +115,15 @@ export function LocalRestroomsUpload({ userId, returnUrl }: LocalRestroomsUpload
             ) : (
               <CloudUpload aria-hidden="true" />
             )}
-            {uploading ? "Ina-upload..." : "I-upload"}
+            {uploading ? t.localUpload.uploading : t.localUpload.upload}
           </Button>
         ) : (
           <Button asChild size="sm" className="flex-1">
-            <Link href={loginUrl(returnUrl)}>Mag-login</Link>
+            <Link href={loginUrl(returnUrl)}>{t.common.login}</Link>
           </Button>
         )}
         <Button size="sm" variant="ghost" onClick={dismiss} disabled={uploading}>
-          Mamaya na
+          {t.localUpload.later}
         </Button>
       </div>
     </section>

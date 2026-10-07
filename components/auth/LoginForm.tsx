@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -18,30 +18,41 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { useI18n } from "@/hooks/use-i18n";
 import { useToast } from "@/hooks/use-toast";
 import { friendlyAuthError } from "@/lib/auth/errors";
+import type { Dictionary } from "@/lib/i18n/dictionaries";
 import { createClient } from "@/lib/supabase/client";
 
-const loginSchema = z.object({
-  email: z.string().trim().email("Maglagay ng tamang email."),
-  password: z.string().min(1, "Ilagay ang password."),
-});
+// Built per language so validation messages follow the app language
+const makeLoginSchema = (t: Dictionary["auth"]) =>
+  z.object({
+    email: z.string().trim().email(t.invalidEmail),
+    password: z.string().min(1, t.passwordRequired),
+  });
 
-type LoginValues = z.infer<typeof loginSchema>;
+type LoginValues = z.infer<ReturnType<typeof makeLoginSchema>>;
+
+/** Errors passed in the URL (?error=...) */
+export type LoginUrlError = "confirm";
 
 interface LoginFormProps {
   returnUrl: string;
   /** Error passed in the URL (e.g. failed email confirmation). */
-  initialError?: string | null;
+  initialError?: LoginUrlError | null;
 }
 
 export function LoginForm({ returnUrl, initialError = null }: LoginFormProps) {
   const router = useRouter();
   const { toast } = useToast();
-  const [formError, setFormError] = useState<string | null>(initialError);
+  const { t } = useI18n();
+  const [formError, setFormError] = useState<string | null>(
+    initialError === "confirm" ? t.auth.login.confirmError : null
+  );
+  const schema = useMemo(() => makeLoginSchema(t.auth), [t]);
 
   const form = useForm<LoginValues>({
-    resolver: zodResolver(loginSchema),
+    resolver: zodResolver(schema),
     defaultValues: { email: "", password: "" },
   });
 
@@ -49,10 +60,10 @@ export function LoginForm({ returnUrl, initialError = null }: LoginFormProps) {
     setFormError(null);
     const { error } = await createClient().auth.signInWithPassword(values);
     if (error) {
-      setFormError(friendlyAuthError(error.message));
+      setFormError(friendlyAuthError(error.message, t.auth.errors));
       return;
     }
-    toast({ title: "Naka-login ka na!", description: "Welcome back sa Poopipoo." });
+    toast({ title: t.auth.login.success, description: t.auth.login.successDescription });
     router.replace(returnUrl);
     // Re-render Server Components with the new session cookies
     router.refresh();
@@ -78,9 +89,9 @@ export function LoginForm({ returnUrl, initialError = null }: LoginFormProps) {
           name="email"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Email</FormLabel>
+              <FormLabel>{t.auth.email}</FormLabel>
               <FormControl>
-                <Input type="email" autoComplete="email" inputMode="email" placeholder="ikaw@email.com" {...field} />
+                <Input type="email" autoComplete="email" inputMode="email" placeholder={t.auth.emailPlaceholder} {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -92,7 +103,7 @@ export function LoginForm({ returnUrl, initialError = null }: LoginFormProps) {
           name="password"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Password</FormLabel>
+              <FormLabel>{t.auth.password}</FormLabel>
               <FormControl>
                 <Input type="password" autoComplete="current-password" {...field} />
               </FormControl>
@@ -103,16 +114,16 @@ export function LoginForm({ returnUrl, initialError = null }: LoginFormProps) {
 
         <Button type="submit" size="lg" disabled={submitting} className="w-full">
           {submitting ? <Loader2 className="animate-spin" aria-hidden="true" /> : <LogIn aria-hidden="true" />}
-          {submitting ? "Nagla-login..." : "Mag-login"}
+          {submitting ? t.auth.login.submitting : t.auth.login.submit}
         </Button>
 
         <p className="text-center text-sm text-muted-foreground">
-          Wala pang account?{" "}
+          {t.auth.login.noAccount}{" "}
           <Link
             href={`/auth/signup?returnUrl=${encodeURIComponent(returnUrl)}`}
             className="font-medium text-foreground underline underline-offset-4"
           >
-            Mag-sign up
+            {t.auth.login.signupLink}
           </Link>
         </p>
       </form>

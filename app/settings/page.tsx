@@ -4,14 +4,14 @@ import { Settings } from "lucide-react";
 import type { AgentUsage } from "@/components/profile/AgentSettings";
 import { SettingsView, type SettingsAccount } from "@/components/settings/SettingsView";
 import { getCurrentUser } from "@/lib/auth/server";
+import { getT } from "@/lib/i18n/server";
 import { pageMetadata } from "@/lib/metadata";
 import { createClient } from "@/lib/supabase/server";
 
-export const metadata: Metadata = pageMetadata({
-  title: "Settings",
-  description: "I-edit ang account mo, dark mode, AI agent, at i-export o burahin ang data mo sa Poopipoo.",
-  path: "/settings",
-});
+export function generateMetadata(): Metadata {
+  const { title, description } = getT().meta.settings;
+  return pageMetadata({ title, description, path: "/settings" });
+}
 
 export default async function SettingsPage() {
   const user = await getCurrentUser();
@@ -44,7 +44,7 @@ export default async function SettingsPage() {
     account = {
       id: user.id,
       email: user.email ?? "",
-      username: profileResult.data?.username ?? user.email?.split("@")[0] ?? "User",
+      username: profileResult.data?.username ?? user.email?.split("@")[0] ?? getT().common.user,
       avatarUrl: profileResult.data?.avatar_url ?? null,
     };
     // Usage stats are optional: show "-" instead of failing the whole page
@@ -58,7 +58,7 @@ export default async function SettingsPage() {
     <div className="mx-auto flex w-full max-w-screen-md flex-col gap-6 px-4 py-5">
       <h1 className="flex items-center gap-2 text-xl font-bold">
         <Settings className="h-5 w-5" aria-hidden="true" />
-        Settings
+        {getT().settings.heading}
       </h1>
       <SettingsView account={account} agentUsage={agentUsage} />
     </div>

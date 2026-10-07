@@ -30,15 +30,16 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { useAgentChat, type ChatEntry } from "@/hooks/use-agent-chat";
 import { useAuthUser } from "@/hooks/use-auth-user";
 import { useGeolocation } from "@/hooks/use-geolocation";
+import { useI18n } from "@/hooks/use-i18n";
 import { useNavigation } from "@/hooks/use-navigation";
 import { useToast } from "@/hooks/use-toast";
 import { slideUp, staggerContainer, staggerItem } from "@/lib/animations";
 import { loginUrl } from "@/lib/auth/return-url";
 import { formatDistance } from "@/lib/distance";
+import { format } from "@/lib/i18n/format";
 import type { RankedRestroom } from "@/types/agent";
 import type { LatLng } from "@/types/geo";
 
-const SUGGESTIONS = ["Saan ang pinakamalapit na CR?", "May bidet ba sa BGC?", "Libre ba ang CR sa Makati?"];
 const MAX_MESSAGE_LENGTH = 500;
 // Re-use a location for this long before asking the browser again
 const LOCATION_MAX_AGE_MS = 2 * 60_000;
@@ -58,6 +59,7 @@ export function AgentChat({ open, onOpenChange }: AgentChatProps) {
   const { entries, pending, sendMessage, lastUserMessage, clearChat } = useAgentChat();
   const { requestLocation } = useGeolocation();
   const nav = useNavigation();
+  const { t } = useI18n();
   const [input, setInput] = useState("");
   const [locating, setLocating] = useState(false);
   // Seconds to wait, shown in the "Masyadong maraming tanong." modal (null = closed)
@@ -82,12 +84,12 @@ export function AgentChat({ open, onOpenChange }: AgentChatProps) {
     if (!text.trim() || pending) return;
     if (!retry) setInput("");
     const location = await getLocation();
-    const result = await sendMessage(text, location, retry);
+    const result = await sendMessage(text, location, t.agent.errors, retry);
     if (!result.ok && result.error) {
       if (result.code === "rate_limited" || result.code === "ai_busy") {
         setWaitSeconds(result.retryAfter ?? 60);
       } else {
-        toast({ variant: "destructive", title: "Hindi nakasagot ang AI", description: result.error });
+        toast({ variant: "destructive", title: t.agent.failedTitle, description: result.error });
       }
     }
   };
@@ -111,8 +113,8 @@ export function AgentChat({ open, onOpenChange }: AgentChatProps) {
     if (!origin) {
       toast({
         variant: "destructive",
-        title: "Kailangan ang location mo",
-        description: "Payagan ang location access para makapag-navigate.",
+        title: t.agent.locationNeeded,
+        description: t.agent.allowLocation,
       });
       return;
     }
@@ -136,22 +138,21 @@ export function AgentChat({ open, onOpenChange }: AgentChatProps) {
             <Sparkles className="h-5 w-5" aria-hidden="true" />
           </span>
           <div className="min-w-0 flex-1">
-            <SheetTitle className="text-base">Poopipoo Assistant</SheetTitle>
-            <SheetDescription className="text-xs">AI ito, kaya puwedeng magkamali.</SheetDescription>
+            <SheetTitle className="text-base">{t.agent.title}</SheetTitle>
+            <SheetDescription className="text-xs">{t.agent.disclaimer}</SheetDescription>
           </div>
           <Popover>
             <PopoverTrigger asChild>
-              <Button type="button" variant="ghost" size="icon" aria-label="Tungkol sa AI assistant" className="h-8 w-8 shrink-0">
+              <Button type="button" variant="ghost" size="icon" aria-label={t.agent.aboutLabel} className="h-8 w-8 shrink-0">
                 <Info aria-hidden="true" />
               </Button>
             </PopoverTrigger>
             <PopoverContent align="end" className="w-64 text-sm">
-              <p className="font-semibold">Paano ito gumagana</p>
+              <p className="font-semibold">{t.agent.howItWorks}</p>
               <ul className="mt-2 flex list-disc flex-col gap-1 pl-4 text-xs text-muted-foreground">
-                <li>Sumasagot gamit lang ang mga CR sa Poopipoo.</li>
-                <li>Ginagamit ang location mo para sa &quot;pinakamalapit&quot; (kung pinayagan).</li>
-                <li>Hanggang 10 tanong bawat minuto.</li>
-                <li>AI ito: i-double check ang mahahalagang detalye.</li>
+                {t.agent.howItWorksItems.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
               </ul>
             </PopoverContent>
           </Popover>
@@ -164,13 +165,13 @@ export function AgentChat({ open, onOpenChange }: AgentChatProps) {
                   size="icon"
                   onClick={clearChat}
                   disabled={pending}
-                  aria-label="Bagong usapan"
+                  aria-label={t.agent.newChat}
                   className="group h-8 w-8 shrink-0"
                 >
                   <RotateCcw className="transition-transform duration-300 group-hover:-rotate-180" aria-hidden="true" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Bagong usapan</TooltipContent>
+              <TooltipContent>{t.agent.newChat}</TooltipContent>
             </Tooltip>
           )}
         </SheetHeader>
@@ -187,9 +188,9 @@ export function AgentChat({ open, onOpenChange }: AgentChatProps) {
               <span className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-primary to-highlight text-primary-foreground shadow-lg">
                 <Sparkles className="h-8 w-8" aria-hidden="true" />
               </span>
-              <p className="font-semibold">Kumusta! Saan mo kailangan ng CR?</p>
+              <p className="font-semibold">{t.agent.greeting}</p>
               <p className="text-sm text-muted-foreground">
-                Magtanong tungkol sa mga CR: kung nasaan, kung libre, o kung may bidet.
+                {t.agent.intro}
               </p>
               {signedIn && (
                 <motion.ul
@@ -198,7 +199,7 @@ export function AgentChat({ open, onOpenChange }: AgentChatProps) {
                   initial="hidden"
                   animate="visible"
                 >
-                  {SUGGESTIONS.map((suggestion) => (
+                  {t.agent.suggestions.map((suggestion) => (
                     <motion.li key={suggestion} variants={staggerItem}>
                       <AnimatedButton
                         type="button"
@@ -251,7 +252,7 @@ export function AgentChat({ open, onOpenChange }: AgentChatProps) {
                   />
                 ))}
               </span>
-              <span className="animate-pulse">Nag-iisip...</span>
+              <span className="animate-pulse">{t.agent.thinking}</span>
             </motion.p>
           )}
           <div ref={bottomRef} />
@@ -264,9 +265,9 @@ export function AgentChat({ open, onOpenChange }: AgentChatProps) {
               <Input
                 value={input}
                 onChange={(event) => setInput(event.target.value)}
-                placeholder="Magtanong tungkol sa CR..."
+                placeholder={t.agent.inputPlaceholder}
                 maxLength={MAX_MESSAGE_LENGTH}
-                aria-label="Mensahe"
+                aria-label={t.agent.inputLabel}
                 enterKeyHint="send"
                 className="h-11 flex-1 text-base"
               />
@@ -274,7 +275,7 @@ export function AgentChat({ open, onOpenChange }: AgentChatProps) {
                 type="submit"
                 size="icon"
                 disabled={pending || input.trim().length === 0}
-                aria-label="Ipadala"
+                aria-label={t.agent.send}
                 className="h-11 w-11 shrink-0"
               >
                 {pending ? <Loader2 className="animate-spin" aria-hidden="true" /> : <SendHorizontal aria-hidden="true" />}
@@ -282,11 +283,11 @@ export function AgentChat({ open, onOpenChange }: AgentChatProps) {
             </form>
           ) : (
             <div className="flex flex-col gap-2 text-center">
-              <p className="text-sm text-muted-foreground">Mag-login para magamit ang AI assistant.</p>
+              <p className="text-sm text-muted-foreground">{t.agent.loginPrompt}</p>
               <Button asChild size="lg">
                 <Link href={loginUrl("/")}>
                   <LogIn aria-hidden="true" />
-                  Mag-login
+                  {t.common.login}
                 </Link>
               </Button>
             </div>
@@ -300,9 +301,9 @@ export function AgentChat({ open, onOpenChange }: AgentChatProps) {
           if (!open) setWaitSeconds(null);
         }}
         icon={Clock}
-        title="Masyadong maraming tanong."
-        description={`Subukan ulit pagkalipas ng ${waitSeconds ?? 60} segundo.`}
-        confirmLabel="Okay"
+        title={t.agent.tooManyTitle}
+        description={format(t.agent.tryAgainIn, { seconds: waitSeconds ?? 60 })}
+        confirmLabel={t.common.okay}
         onConfirm={() => setWaitSeconds(null)}
       />
     </Sheet>
@@ -319,6 +320,7 @@ interface MessageBubbleProps {
 }
 
 function MessageBubble({ entry, onRetry, retryDisabled, onNavigate, navigating, onOpenRestroom }: MessageBubbleProps) {
+  const { t } = useI18n();
   if (entry.role === "user") {
     return (
       <p className="ml-auto w-fit max-w-[85%] whitespace-pre-line break-words rounded-2xl rounded-br-sm bg-primary px-3.5 py-2.5 text-sm text-primary-foreground">
@@ -333,7 +335,7 @@ function MessageBubble({ entry, onRetry, retryDisabled, onNavigate, navigating, 
         <p className="text-destructive">{entry.content}</p>
         <Button type="button" size="sm" variant="outline" onClick={onRetry} disabled={retryDisabled} className="h-8">
           <RefreshCw aria-hidden="true" />
-          Subukan ulit
+          {t.common.retry}
         </Button>
       </div>
     );
@@ -348,7 +350,7 @@ function MessageBubble({ entry, onRetry, retryDisabled, onNavigate, navigating, 
       </p>
 
       {entry.restrooms && entry.restrooms.length > 0 && (
-        <ul className="flex flex-col gap-2" aria-label="Mga CR">
+        <ul className="flex flex-col gap-2" aria-label={t.agent.restroomsLabel}>
           {entry.restrooms.map((restroom) => (
             <li key={restroom.id}>
               <RestroomCard restroom={restroom} onOpen={onOpenRestroom} />
@@ -360,7 +362,7 @@ function MessageBubble({ entry, onRetry, retryDisabled, onNavigate, navigating, 
       {target && (
         <AnimatedButton type="button" onClick={() => onNavigate(target)} loading={navigating} className="w-full">
           {!navigating && <Navigation aria-hidden="true" />}
-          Simulan ang navigation
+          {t.agent.startNavigation}
         </AnimatedButton>
       )}
     </div>

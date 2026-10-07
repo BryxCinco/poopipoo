@@ -8,45 +8,42 @@ import { SPRING } from "@/lib/animations";
 import { getAmenityIcon } from "@/lib/icons";
 import { cn } from "@/lib/utils";
 import type { Restroom } from "@/types/restroom";
+import { useI18n } from "@/hooks/use-i18n";
+import { plural } from "@/lib/i18n/format";
 
 export type FilterId = "free" | "bidet" | "wheelchair" | "tissue" | "soap" | "air-conditioned";
 
 interface FilterDef {
+  /** Also the key of its label in t.filters */
   id: FilterId;
-  label: string;
   icon: LucideIcon;
   matches: (restroom: Restroom) => boolean;
 }
 
 export const FILTERS: FilterDef[] = [
-  { id: "free", label: "Libre", icon: BadgeCheck, matches: (r) => r.isFree },
+  { id: "free", icon: BadgeCheck, matches: (r) => r.isFree },
   {
     id: "bidet",
-    label: "May bidet",
     icon: getAmenityIcon("bidet"),
     matches: (r) => r.amenities.includes("bidet"),
   },
   {
     id: "wheelchair",
-    label: "PWD accessible",
     icon: getAmenityIcon("wheelchair"),
     matches: (r) => r.amenities.includes("wheelchair"),
   },
   {
     id: "tissue",
-    label: "May tissue",
     icon: getAmenityIcon("tissue"),
     matches: (r) => r.amenities.includes("tissue"),
   },
   {
     id: "soap",
-    label: "May soap",
     icon: getAmenityIcon("soap"),
     matches: (r) => r.amenities.includes("soap"),
   },
   {
     id: "air-conditioned",
-    label: "Air-conditioned",
     icon: getAmenityIcon("air-conditioned"),
     matches: (r) => r.amenities.includes("air-conditioned"),
   },
@@ -92,6 +89,7 @@ interface RestroomFiltersProps {
 }
 
 export function RestroomFilters({ active, onChange }: RestroomFiltersProps) {
+  const { t } = useI18n();
   const toggle = (id: FilterId) =>
     onChange(active.includes(id) ? active.filter((a) => a !== id) : [...active, id]);
 
@@ -101,13 +99,13 @@ export function RestroomFilters({ active, onChange }: RestroomFiltersProps) {
       <div
         className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         role="group"
-        aria-label="Mga filter"
+        aria-label={t.filters.groupLabel}
       >
-        <FilterChip label="Lahat" active={active.length === 0} onClick={() => onChange([])} />
+        <FilterChip label={t.filters.all} active={active.length === 0} onClick={() => onChange([])} />
         {FILTERS.map((filter) => (
           <FilterChip
             key={filter.id}
-            label={filter.label}
+            label={t.filters[filter.id]}
             icon={filter.icon}
             active={active.includes(filter.id)}
             onClick={() => toggle(filter.id)}
@@ -116,7 +114,7 @@ export function RestroomFilters({ active, onChange }: RestroomFiltersProps) {
       </div>
       {active.length > 0 && (
         <div className="flex items-center justify-between text-xs text-muted-foreground">
-          <span>{active.length} filter ang naka-on</span>
+          <span>{plural(t.filters.activeCount, active.length)}</span>
           <Button
             type="button"
             variant="ghost"
@@ -125,7 +123,7 @@ export function RestroomFilters({ active, onChange }: RestroomFiltersProps) {
             className="h-7 px-2 text-xs text-muted-foreground"
           >
             <X aria-hidden="true" />
-            Clear all
+            {t.filters.clearAll}
           </Button>
         </div>
       )}

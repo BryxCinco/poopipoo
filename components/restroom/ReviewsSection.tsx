@@ -26,6 +26,8 @@ import {
 } from "@/lib/reviews/queries";
 import { createClient } from "@/lib/supabase/client";
 import type { Review, ReviewAuthor, ReviewInput } from "@/types/review";
+import { useI18n } from "@/hooks/use-i18n";
+import { errorText } from "@/lib/i18n/errors";
 
 export interface ReviewViewer extends ReviewAuthor {
   id: string;
@@ -45,7 +47,6 @@ interface ReviewsSectionProps {
 }
 
 const EMPTY_DRAFT: ReviewInput = { rating: 0, comment: "" };
-const errorMessage = (error: unknown) => (error instanceof Error ? error.message : "Subukan ulit mamaya.");
 
 export function ReviewsSection({
   restroomId,
@@ -57,6 +58,8 @@ export function ReviewsSection({
 }: ReviewsSectionProps) {
   const router = useRouter();
   const { toast } = useToast();
+  const { t } = useI18n();
+  const errorMessage = (error: unknown) => errorText(error, t);
 
   // ---- the viewer's own review ----
   const [myReview, setMyReview] = useState<Review | null>(initialMyReview);
@@ -73,7 +76,7 @@ export function ReviewsSection({
   const [page, setPage] = useState(0);
   const [listLoading, setListLoading] = useState(false);
   const [listError, setListError] = useState<string | null>(
-    initialReviews === null ? "Hindi ma-load ang mga review" : null
+    initialReviews === null ? t.reviews.loadError : null
   );
 
   // ---- helpful votes (on other people's reviews) ----
@@ -111,7 +114,7 @@ export function ReviewsSection({
   /** Optimistic toggle: update the count and button now, roll back if saving fails. */
   const toggleHelpful = async (review: Review) => {
     if (!viewer) {
-      toast({ title: "Mag-login para mag-vote", description: "Kailangan ng account para markahan ang review na nakatulong." });
+      toast({ title: t.reviews.loginToVote, description: t.reviews.loginToVoteDescription });
       return;
     }
     const helpful = !votedIds.has(review.id);
@@ -135,7 +138,7 @@ export function ReviewsSection({
       await setHelpfulVote(createClient(), review.id, viewer.id, helpful);
     } catch (error) {
       apply(!helpful);
-      toast({ variant: "destructive", title: "Hindi ma-save ang vote", description: errorMessage(error) });
+      toast({ variant: "destructive", title: t.reviews.voteFailed, description: errorMessage(error) });
     } finally {
       setReviewPending(review.id, false);
     }
@@ -189,8 +192,8 @@ export function ReviewsSection({
       setMyReview(saved);
       setDraft({ rating: saved.rating, comment: saved.comment });
       toast({
-        title: previous ? "Na-update ang review mo!" : "Salamat sa review!",
-        description: "Nakakatulong ito sa ibang naghahanap ng CR.",
+        title: previous ? t.reviews.updated : t.reviews.thanks,
+        description: t.reviews.savedDescription,
       });
       syncRating();
     } catch (error) {
@@ -200,12 +203,12 @@ export function ReviewsSection({
         const existing = await fetchUserReview(supabase, restroomId, viewer.id).catch(() => null);
         setMyReview(existing);
         setEditing(existing !== null);
-        toast({ title: "May review ka na rito", description: "I-update mo na lang ang dati mong review." });
+        toast({ title: t.reviews.alreadyReviewed, description: t.reviews.alreadyReviewedDescription });
       } else {
         // Roll back and reopen the form with the same values
         setMyReview(previous);
         setEditing(true);
-        toast({ variant: "destructive", title: "Hindi ma-save ang review", description: errorMessage(error) });
+        toast({ variant: "destructive", title: t.reviews.saveFailed, description: errorMessage(error) });
       }
     } finally {
       setMyPending(false);
@@ -229,11 +232,11 @@ export function ReviewsSection({
     setEditing(false);
     try {
       await deleteReview(createClient(), previous.id);
-      toast({ title: "Nabura ang review mo." });
+      toast({ title: t.reviews.deleted });
       syncRating();
     } catch (error) {
       setMyReview(previous);
-      toast({ variant: "destructive", title: "Hindi mabura ang review", description: errorMessage(error) });
+      toast({ variant: "destructive", title: t.reviews.deleteFailed, description: errorMessage(error) });
     }
   };
 
@@ -254,7 +257,7 @@ export function ReviewsSection({
       void loadVotes(result.reviews.map((review) => review.id));
     } catch (error) {
       setListError(errorMessage(error));
-      toast({ variant: "destructive", title: "Hindi ma-load ang mga review", description: "I-check ang internet mo." });
+      toast({ variant: "destructive", title: t.reviews.loadError, description: t.reviews.loadErrorDescription });
     } finally {
       setListLoading(false);
     }
@@ -274,7 +277,7 @@ export function ReviewsSection({
   return (
     <section id="reviews" aria-labelledby="reviews-heading" className="flex scroll-mt-4 flex-col gap-3">
       <h2 id="reviews-heading" className="font-semibold">
-        Mga review <span className="font-normal text-muted-foreground">({total})</span>
+        {t.reviews.heading} <span className="font-normal text-muted-foreground">({total})</span>
       </h2>
 
       <div id="iyong-review" className="scroll-mt-4">
@@ -290,11 +293,11 @@ export function ReviewsSection({
           >
             {!viewer ? (
               <div className="flex flex-col items-center gap-2 rounded-lg border p-4 text-center">
-                <p className="text-sm text-muted-foreground">Ginamit mo na ba ang CR na ito? Ibahagi ang karanasan mo.</p>
+                <p className="text-sm text-muted-foreground">{t.reviews.loginPrompt}</p>
                 <Button asChild className="w-full">
                   <Link href={loginUrl(`/restroom/${restroomId}#reviews`)}>
                     <LogIn aria-hidden="true" />
-                    Mag-login para mag-review
+                    {t.reviews.loginToReview}
                   </Link>
                 </Button>
               </div>
@@ -309,7 +312,7 @@ export function ReviewsSection({
               />
             ) : myReview ? (
               <div className="flex flex-col gap-1.5">
-                <p className="text-sm font-medium text-muted-foreground">Iyong review</p>
+                <p className="text-sm font-medium text-muted-foreground">{t.reviews.yourReview}</p>
                 <ReviewItem
                   review={myReview}
                   pending={myPending}
@@ -334,7 +337,7 @@ export function ReviewsSection({
         onLoadMore={() => void loadPage(page + 1)}
         getHelpful={getHelpful}
         emptyText={
-          myReview ? "Wala pang ibang nag-review." : "Wala pang review. Ikaw ang mauna!"
+          myReview ? t.reviews.emptyOthers : t.reviews.emptyFirst
         }
       />
     </section>

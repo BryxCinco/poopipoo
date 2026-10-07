@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { LocalizedError } from "@/lib/i18n/errors";
 import type { Database } from "@/types/database";
 
 /**
@@ -58,10 +59,10 @@ async function removeOldAvatars(supabase: Client, userId: string, keep: string |
 /** Uploads a new avatar, saves its URL on the profile, and returns the URL. */
 export async function uploadAvatar(supabase: Client, userId: string, file: File): Promise<string> {
   if (!(AVATAR_TYPES as readonly string[]).includes(file.type)) {
-    throw new Error("JPG, PNG o WebP lang ang pwede.");
+    throw new LocalizedError("avatarType");
   }
   const image = await shrinkImage(file);
-  if (image.size > AVATAR_MAX_BYTES) throw new Error("Masyadong malaki ang photo (max 2 MB).");
+  if (image.size > AVATAR_MAX_BYTES) throw new LocalizedError("avatarTooBig");
 
   const extension = image.type === "image/webp" ? "webp" : image.type === "image/png" ? "png" : "jpg";
   // New name each time, so browsers and the CDN don't show the old cached photo

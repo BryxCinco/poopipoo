@@ -31,12 +31,15 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { useGeolocation } from "@/hooks/use-geolocation";
+import { useI18n } from "@/hooks/use-i18n";
 import { useToast } from "@/hooks/use-toast";
 import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
 import { DURATION, EASE_OUT, scaleIn, SPRING, stepSlide, tapScale } from "@/lib/animations";
 import { reverseGeocode } from "@/lib/geocode";
+import { errorText } from "@/lib/i18n/errors";
+import { format } from "@/lib/i18n/format";
 import { addRestroom } from "@/lib/restroom-store";
-import { ALL_AMENITIES, getAmenityIcon, getAmenityLabel, getDisplayAmenities } from "@/lib/icons";
+import { ALL_AMENITIES, getAmenityIcon, getDisplayAmenities } from "@/lib/icons";
 import { cn } from "@/lib/utils";
 import type { Amenity } from "@/types/restroom";
 
@@ -48,8 +51,9 @@ const LocationPicker = dynamic(() => import("@/components/map/LocationPicker"), 
 
 // ---------- form model ----------
 
-const STEPS = ["Lokasyon", "Detalye", "Amenities", "I-review"] as const;
-const LAST_STEP = STEPS.length - 1;
+// Step names are in t.add.steps (same order)
+const STEP_COUNT = 4;
+const LAST_STEP = STEP_COUNT - 1;
 
 const LIMITS = { name: { min: 3, max: 80 }, address: { min: 5, max: 200 }, description: 500 };
 
@@ -68,7 +72,8 @@ interface FormState {
   isFree: boolean;
 }
 
-type FieldErrors = Partial<Record<"location" | "name" | "address", string>>;
+// Which fields are invalid; the message (in the current language) comes from t.add.errors
+type FieldErrors = Partial<Record<"location" | "name" | "address", true>>;
 
 const INITIAL_STATE: FormState = {
   location: null,
@@ -82,16 +87,10 @@ const INITIAL_STATE: FormState = {
 /** Errors for the fields shown on a given step (only steps 0 and 1 have required fields). */
 function validateStep(step: number, form: FormState): FieldErrors {
   const errors: FieldErrors = {};
-  if (step === 0 && !form.location) {
-    errors.location = "I-tap ang mapa para ilagay ang pin.";
-  }
+  if (step === 0 && !form.location) errors.location = true;
   if (step === 1) {
-    if (form.name.trim().length < LIMITS.name.min) {
-      errors.name = `Kailangan ng pangalan (hindi bababa sa ${LIMITS.name.min} letra).`;
-    }
-    if (form.address.trim().length < LIMITS.address.min) {
-      errors.address = `Kailangan ng address (hindi bababa sa ${LIMITS.address.min} letra).`;
-    }
+    if (form.name.trim().length < LIMITS.name.min) errors.name = true;
+    if (form.address.trim().length < LIMITS.address.min) errors.address = true;
   }
   return errors;
 }
@@ -113,6 +112,13 @@ export function AddRestroomForm({ userId }: AddRestroomFormProps) {
   const router = useRouter();
   const { toast } = useToast();
   const geolocation = useGeolocation();
+  const { t } = useI18n();
+  const ta = t.add;
+  const errorMessage = {
+    location: ta.errors.location,
+    name: format(ta.errors.name, { min: LIMITS.name.min }),
+    address: format(ta.errors.address, { min: LIMITS.address.min }),
+  };
 
   const [step, setStepState] = useState(0);
   // +1 = forward, -1 = back: steps slide in from the matching side
@@ -164,7 +170,7 @@ export function AddRestroomForm({ userId }: AddRestroomFormProps) {
   const handleUseMyLocation = async () => {
     const result = await geolocation.requestLocation();
     if (result.error) {
-      toast({ variant: "destructive", title: "Hindi makuha ang location", description: result.error });
+      toast({ variant: "destructive", title: ta.locationError, description: result.error });
       return;
     }
     handleLocationChange({ latitude: result.latitude, longitude: result.longitude });
@@ -263,8 +269,8 @@ export function AddRestroomForm({ userId }: AddRestroomFormProps) {
       setSubmitting(false);
       toast({
         variant: "destructive",
-        title: "Hindi ma-save ang CR",
-        description: error instanceof Error ? error.message : "Subukan ulit mamaya.",
+        title: ta.saveFailed,
+        description: errorText(error, t),
       });
     }
   };
@@ -284,7 +290,7 @@ export function AddRestroomForm({ userId }: AddRestroomFormProps) {
         <div className="flex items-center justify-between">
           <Button type="button" variant="ghost" size="sm" onClick={goBack} className="-ml-2">
             <ArrowLeft aria-hidden="true" />
-            Bumalik
+            {ta.back}
           </Button>
           <Button
             type="button"
@@ -294,31 +300,31 @@ export function AddRestroomForm({ userId }: AddRestroomFormProps) {
             className="-mr-2 text-muted-foreground"
           >
             <X aria-hidden="true" />
-            Cancel
+            {ta.cancel}
           </Button>
         </div>
-        <h1 className="text-xl font-bold">Magdagdag ng CR</h1>
+        <h1 className="text-xl font-bold">{ta.heading}</h1>
 
         {/* Progress bar (fills smoothly) */}
         <div
           className="h-1.5 overflow-hidden rounded-full bg-muted"
           role="progressbar"
-          aria-label="Progress ng form"
+          aria-label={ta.progressLabel}
           aria-valuemin={1}
-          aria-valuemax={STEPS.length}
+          aria-valuemax={STEP_COUNT}
           aria-valuenow={step + 1}
         >
           <motion.div
             className="h-full rounded-full bg-primary"
             initial={false}
-            animate={{ width: `${((step + 1) / STEPS.length) * 100}%` }}
+            animate={{ width: `${((step + 1) / STEP_COUNT) * 100}%` }}
             transition={{ duration: DURATION.slow, ease: EASE_OUT }}
           />
         </div>
 
         {/* Step indicators: done steps show an animated check */}
         <ol className="grid grid-cols-4 gap-1" aria-hidden="true">
-          {STEPS.map((label, i) => {
+          {ta.steps.map((label, i) => {
             const done = i < step;
             const current = i === step;
             return (
@@ -346,7 +352,7 @@ export function AddRestroomForm({ userId }: AddRestroomFormProps) {
           })}
         </ol>
         <p className="sr-only" aria-live="polite">
-          Hakbang {step + 1} ng {STEPS.length}: {STEPS[step]}
+          {format(ta.stepStatus, { current: step + 1, total: STEP_COUNT, name: ta.steps[step] })}
         </p>
       </div>
 
@@ -365,7 +371,7 @@ export function AddRestroomForm({ userId }: AddRestroomFormProps) {
             {step === 0 && (
               <>
                 <p className="text-sm text-muted-foreground">
-                  I-tap ang mapa kung nasaan ang CR. Pwede mo ring i-drag ang pin.
+                  {ta.mapHint}
                 </p>
                 <div
                   className={cn(
@@ -381,7 +387,7 @@ export function AddRestroomForm({ userId }: AddRestroomFormProps) {
                     {form.location ? (
                       <span className="font-mono text-xs">{formatCoords(form.location)}</span>
                     ) : (
-                      <span className="text-muted-foreground">Wala pang pin</span>
+                      <span className="text-muted-foreground">{ta.noPin}</span>
                     )}
                   </p>
                   <Button
@@ -396,33 +402,33 @@ export function AddRestroomForm({ userId }: AddRestroomFormProps) {
                     ) : (
                       <Crosshair aria-hidden="true" />
                     )}
-                    Use my location
+                    {ta.useMyLocation}
                   </Button>
                 </div>
-                {errors.location && <FieldError key={`location-${errorAttempt}`} message={errors.location} />}
+                {errors.location && <FieldError key={`location-${errorAttempt}`} message={errorMessage.location} />}
               </>
             )}
 
             {step === 1 && (
               <>
                 <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="name">Pangalan *</Label>
+                  <Label htmlFor="name">{ta.name}</Label>
                   <Input
                     id="name"
                     value={form.name}
                     onChange={(e) => update("name", e.target.value)}
-                    placeholder="hal. SM North EDSA 2nd floor CR"
+                    placeholder={ta.namePlaceholder}
                     maxLength={LIMITS.name.max}
                     aria-invalid={Boolean(errors.name)}
                     aria-describedby={errors.name ? "name-error" : undefined}
                     className={cn(errors.name && "border-destructive")}
                   />
-                  {errors.name && <FieldError key={`name-${errorAttempt}`} id="name-error" message={errors.name} />}
+                  {errors.name && <FieldError key={`name-${errorAttempt}`} id="name-error" message={errorMessage.name} />}
                 </div>
 
                 <div className="flex flex-col gap-1.5">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="address">Address *</Label>
+                    <Label htmlFor="address">{ta.address}</Label>
                     {form.location && (
                       <Button
                         type="button"
@@ -433,7 +439,7 @@ export function AddRestroomForm({ userId }: AddRestroomFormProps) {
                         onClick={() => form.location && void fillAddressFromPin(form.location)}
                       >
                         <Wand2 aria-hidden="true" />
-                        Kunin mula sa pin
+                        {ta.fromPin}
                       </Button>
                     )}
                   </div>
@@ -442,7 +448,7 @@ export function AddRestroomForm({ userId }: AddRestroomFormProps) {
                       id="address"
                       value={form.address}
                       onChange={(e) => update("address", e.target.value)}
-                      placeholder={geocoding ? "Hinahanap ang address..." : "Street, barangay, city"}
+                      placeholder={geocoding ? ta.findingAddress : ta.addressPlaceholder}
                       maxLength={LIMITS.address.max}
                       aria-invalid={Boolean(errors.address)}
                       aria-describedby={errors.address ? "address-error" : undefined}
@@ -451,28 +457,28 @@ export function AddRestroomForm({ userId }: AddRestroomFormProps) {
                     {geocoding && (
                       <Loader2
                         className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground"
-                        aria-label="Hinahanap ang address"
+                        aria-label={ta.findingAddressLabel}
                       />
                     )}
                   </div>
                   {errors.address ? (
-                    <FieldError key={`address-${errorAttempt}`} id="address-error" message={errors.address} />
+                    <FieldError key={`address-${errorAttempt}`} id="address-error" message={errorMessage.address} />
                   ) : geocodeFailed ? (
                     <p className="text-xs text-muted-foreground">
-                      Hindi makuha ang address mula sa pin. I-type na lang.
+                      {ta.addressFailed}
                     </p>
                   ) : null}
                 </div>
 
                 <div className="flex flex-col gap-1.5">
                   <Label htmlFor="description">
-                    Description <span className="font-normal text-muted-foreground">(optional)</span>
+                    {ta.description} <span className="font-normal text-muted-foreground">{ta.optional}</span>
                   </Label>
                   <Textarea
                     id="description"
                     value={form.description}
                     onChange={(e) => update("description", e.target.value)}
-                    placeholder="hal. Malapit sa food court, may attendant"
+                    placeholder={ta.descriptionPlaceholder}
                     maxLength={LIMITS.description}
                     rows={4}
                   />
@@ -486,28 +492,28 @@ export function AddRestroomForm({ userId }: AddRestroomFormProps) {
             {step === 2 && (
               <>
                 <fieldset className="flex flex-col gap-2">
-                  <legend className="mb-2 text-sm font-medium">Libre ba o may bayad?</legend>
-                  <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Bayad">
+                  <legend className="mb-2 text-sm font-medium">{ta.priceQuestion}</legend>
+                  <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label={ta.priceLabel}>
                     <ChoiceButton
                       role="radio"
                       selected={form.isFree}
                       onClick={() => update("isFree", true)}
                       icon={BadgeCheck}
-                      label="Libre"
+                      label={t.restroom.free}
                     />
                     <ChoiceButton
                       role="radio"
                       selected={!form.isFree}
                       onClick={() => update("isFree", false)}
                       icon={CircleDollarSign}
-                      label="May bayad"
+                      label={t.restroom.paid}
                     />
                   </div>
                 </fieldset>
 
                 <fieldset className="flex flex-col gap-2">
                   <legend className="mb-2 text-sm font-medium">
-                    Ano ang meron? <span className="font-normal text-muted-foreground">(piliin lahat)</span>
+                    {ta.amenitiesQuestion} <span className="font-normal text-muted-foreground">{ta.selectAll}</span>
                   </legend>
                   <div className="grid grid-cols-2 gap-2">
                     {AMENITY_OPTIONS.map((amenity) => (
@@ -517,7 +523,7 @@ export function AddRestroomForm({ userId }: AddRestroomFormProps) {
                         selected={form.amenities.includes(amenity)}
                         onClick={() => toggleAmenity(amenity)}
                         icon={getAmenityIcon(amenity)}
-                        label={getAmenityLabel(amenity)}
+                        label={t.amenities[amenity]}
                       />
                     ))}
                   </div>
@@ -527,9 +533,9 @@ export function AddRestroomForm({ userId }: AddRestroomFormProps) {
 
             {step === 3 && form.location && (
               <div className="flex flex-col gap-4">
-                <p className="text-sm text-muted-foreground">I-check kung tama ang lahat bago i-submit.</p>
+                <p className="text-sm text-muted-foreground">{ta.reviewHint}</p>
 
-                <ReviewSection title="Lokasyon" onEdit={() => setStep(0)}>
+                <ReviewSection title={ta.steps[0]} editLabel={ta.edit} onEdit={() => setStep(0)}>
                   <div className="relative isolate h-40 overflow-hidden rounded-md border">
                     {/* key: remount when the pin changes so the mini map recenters */}
                     <MiniMapLoader
@@ -542,7 +548,7 @@ export function AddRestroomForm({ userId }: AddRestroomFormProps) {
                   <p className="font-mono text-xs text-muted-foreground">{formatCoords(form.location)}</p>
                 </ReviewSection>
 
-                <ReviewSection title="Detalye" onEdit={() => setStep(1)}>
+                <ReviewSection title={ta.steps[1]} editLabel={ta.edit} onEdit={() => setStep(1)}>
                   <p className="font-semibold">{form.name.trim()}</p>
                   <p className="flex items-start gap-1.5 text-sm text-muted-foreground">
                     <MapPin className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
@@ -553,7 +559,7 @@ export function AddRestroomForm({ userId }: AddRestroomFormProps) {
                   )}
                 </ReviewSection>
 
-                <ReviewSection title="Amenities" onEdit={() => setStep(2)}>
+                <ReviewSection title={ta.steps[2]} editLabel={ta.edit} onEdit={() => setStep(2)}>
                   <div className="flex flex-wrap gap-1.5">
                     <PriceBadge isFree={form.isFree} />
                     {form.amenities.map((amenity) => (
@@ -561,7 +567,7 @@ export function AddRestroomForm({ userId }: AddRestroomFormProps) {
                     ))}
                   </div>
                   {form.amenities.length === 0 && (
-                    <p className="text-xs text-muted-foreground">Walang napiling amenities.</p>
+                    <p className="text-xs text-muted-foreground">{ta.noAmenities}</p>
                   )}
                 </ReviewSection>
               </div>
@@ -575,12 +581,12 @@ export function AddRestroomForm({ userId }: AddRestroomFormProps) {
         {step > 0 && (
           <AnimatedButton type="button" variant="outline" size="lg" onClick={goBack} className="flex-1">
             <ArrowLeft aria-hidden="true" />
-            Bumalik
+            {ta.back}
           </AnimatedButton>
         )}
         {step < LAST_STEP ? (
           <AnimatedButton type="button" size="lg" onClick={goNext} className="flex-1">
-            Susunod
+            {ta.next}
             <ArrowRight aria-hidden="true" />
           </AnimatedButton>
         ) : (
@@ -589,11 +595,11 @@ export function AddRestroomForm({ userId }: AddRestroomFormProps) {
             size="lg"
             onClick={() => void handleSubmit()}
             loading={submitting || saved}
-            loadingText="Sine-save..."
+            loadingText={ta.saving}
             className="flex-1"
           >
             <Check aria-hidden="true" />
-            I-submit
+            {ta.submit}
           </AnimatedButton>
         )}
       </div>
@@ -603,10 +609,10 @@ export function AddRestroomForm({ userId }: AddRestroomFormProps) {
         onOpenChange={setConfirmCancel}
         variant="destructive"
         icon={X}
-        title="Itigil ang pagdagdag?"
-        description="Mawawala ang mga nailagay mo na sa form na ito."
-        confirmLabel="Itigil"
-        cancelLabel="Ituloy"
+        title={ta.cancelTitle}
+        description={ta.cancelDescription}
+        confirmLabel={ta.cancelConfirm}
+        cancelLabel={ta.cancelKeep}
         onConfirm={leave}
       />
 
@@ -630,8 +636,8 @@ export function AddRestroomForm({ userId }: AddRestroomFormProps) {
             >
               <AnimatedCheck className="h-10 w-10" strokeWidth={3} />
             </motion.span>
-            <p className="text-lg font-semibold">Naidagdag ang CR!</p>
-            <p className="text-sm text-muted-foreground">Salamat sa contribution mo.</p>
+            <p className="text-lg font-semibold">{ta.added}</p>
+            <p className="text-sm text-muted-foreground">{ta.thanks}</p>
           </motion.div>
         )}
       </AnimatePresence>
@@ -693,10 +699,12 @@ function ChoiceButton({ role, selected, onClick, icon: Icon, label }: ChoiceButt
 
 function ReviewSection({
   title,
+  editLabel,
   onEdit,
   children,
 }: {
   title: string;
+  editLabel: string;
   onEdit: () => void;
   children: React.ReactNode;
 }) {
@@ -706,7 +714,7 @@ function ReviewSection({
         <h2 className="text-sm font-semibold">{title}</h2>
         <Button type="button" variant="ghost" size="sm" onClick={onEdit} className="h-7 px-2 text-xs">
           <Pencil aria-hidden="true" />
-          I-edit
+          {editLabel}
         </Button>
       </div>
       {children}

@@ -3,14 +3,15 @@ import { Trophy } from "lucide-react";
 
 import { Leaderboard, type LeaderboardEntry } from "@/components/leaderboard/Leaderboard";
 import { getCurrentUser } from "@/lib/auth/server";
+import { format } from "@/lib/i18n/format";
+import { getT } from "@/lib/i18n/server";
 import { pageMetadata } from "@/lib/metadata";
 import { createClient } from "@/lib/supabase/server";
 
-export const metadata: Metadata = pageMetadata({
-  title: "Leaderboard",
-  description: "Ang mga nangungunang contributor ng Poopipoo: pinakamaraming CR at review na naidagdag.",
-  path: "/leaderboard",
-});
+export function generateMetadata(): Metadata {
+  const { title, description } = getT().meta.leaderboard;
+  return pageMetadata({ title, description, path: "/leaderboard" });
+}
 
 // Points change all the time: always render fresh
 export const dynamic = "force-dynamic";
@@ -18,6 +19,7 @@ export const dynamic = "force-dynamic";
 const LIMIT = 50;
 
 export default async function LeaderboardPage() {
+  const t = getT();
   const supabase = createClient();
   const [user, topResult] = await Promise.all([
     getCurrentUser(),
@@ -40,7 +42,7 @@ export default async function LeaderboardPage() {
     const previous = entries[index - 1];
     entries.push({
       id: row.id,
-      username: row.username ?? "User",
+      username: row.username ?? t.common.user,
       avatarUrl: row.avatar_url,
       points: row.points,
       level: row.level,
@@ -63,7 +65,7 @@ export default async function LeaderboardPage() {
         .gt("points", profile.points);
       me = {
         id: profile.id,
-        username: profile.username ?? "User",
+        username: profile.username ?? t.common.user,
         avatarUrl: profile.avatar_url,
         points: profile.points,
         level: profile.level,
@@ -77,10 +79,10 @@ export default async function LeaderboardPage() {
       <header className="flex flex-col gap-1">
         <h1 className="flex items-center gap-2 text-xl font-bold">
           <Trophy className="h-5 w-5 text-primary" aria-hidden="true" />
-          Leaderboard
+          {t.leaderboard.heading}
         </h1>
         <p className="text-sm text-muted-foreground">
-          Top {LIMIT} contributor. +10 sa bawat CR, +5 sa bawat review, +1 sa bawat helpful vote.
+          {format(t.leaderboard.subtitle, { limit: LIMIT })}
         </p>
       </header>
       <Leaderboard entries={entries} currentUserId={user?.id ?? null} me={me} />

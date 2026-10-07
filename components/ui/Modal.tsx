@@ -5,6 +5,7 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { AnimatePresence, motion, useAnimate } from "framer-motion";
 import { X } from "lucide-react";
 
+import { useI18n } from "@/hooks/use-i18n";
 import { fadeIn, scaleIn } from "@/lib/animations";
 import { cn } from "@/lib/utils";
 
@@ -54,6 +55,7 @@ export function Modal({
   shakeKey = 0,
   className,
 }: ModalProps) {
+  const { t } = useI18n();
   // Error shake (300ms). Plain inner wrapper, so it doesn't fight the enter/exit animation.
   const [shakeScope, animate] = useAnimate<HTMLDivElement>();
   useEffect(() => {
@@ -123,7 +125,7 @@ export function Modal({
                   {!hideCloseButton && dismissible && (
                     <DialogPrimitive.Close
                       className="absolute right-3 top-3 rounded-full p-1.5 text-muted-foreground transition-[color,background-color,transform] duration-150 hover:rotate-90 hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                      aria-label="Isara"
+                      aria-label={t.common.close}
                     >
                       <X className="h-4 w-4" aria-hidden="true" />
                     </DialogPrimitive.Close>

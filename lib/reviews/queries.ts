@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database, ReviewRow } from "@/types/database";
+import { LocalizedError } from "@/lib/i18n/errors";
 import type { Review, ReviewInput } from "@/types/review";
 
 /**
@@ -89,9 +90,9 @@ export async function fetchUserReview(
 }
 
 /** Postgres unique_violation: the user already reviewed this restroom. */
-export class DuplicateReviewError extends Error {
+export class DuplicateReviewError extends LocalizedError {
   constructor() {
-    super("May review ka na para sa CR na ito.");
+    super("duplicateReview");
     this.name = "DuplicateReviewError";
   }
 }
@@ -132,7 +133,7 @@ export async function updateReview(
     .maybeSingle();
   if (error) throw new Error(error.message);
   // RLS hides rows you don't own, so "no row" means it's gone or not yours
-  if (!data) throw new Error("Hindi na mahanap ang review mo. Baka nabura na.");
+  if (!data) throw new LocalizedError("reviewNotFound");
   return toReview(data);
 }
 
@@ -182,5 +183,5 @@ export async function setHelpfulVote(
 export async function deleteReview(supabase: Client, reviewId: string): Promise<void> {
   const { data, error } = await supabase.from("reviews").delete().eq("id", reviewId).select("id");
   if (error) throw new Error(error.message);
-  if (data.length === 0) throw new Error("Hindi mabura ang review. Baka nabura na ito.");
+  if (data.length === 0) throw new LocalizedError("reviewDeleteFailed");
 }

@@ -26,9 +26,18 @@ import {
 } from "lucide-react";
 
 import { SearchInput } from "@/components/ui/SearchInput";
+import { useI18n } from "@/hooks/use-i18n";
 import { DURATION, EASE_OUT } from "@/lib/animations";
+import { plural } from "@/lib/i18n/format";
 import { addRecentSearch, clearRecentSearches, loadRecentSearches } from "@/lib/recent-searches";
-import { isAbortError, MIN_QUERY_LENGTH, SearchError, searchLocation, type SearchResult } from "@/lib/search";
+import {
+  isAbortError,
+  MIN_QUERY_LENGTH,
+  SearchError,
+  searchLocation,
+  type SearchErrorKind,
+  type SearchResult,
+} from "@/lib/search";
 import { cn } from "@/lib/utils";
 
 /**
@@ -122,6 +131,7 @@ interface SearchBarProps {
 
 export function SearchBar({ onSelect, className }: SearchBarProps) {
   const listboxId = useId();
+  const { t } = useI18n();
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -129,7 +139,8 @@ export function SearchBar({ onSelect, className }: SearchBarProps) {
   const [open, setOpen] = useState(false);
   const [status, setStatus] = useState<Status>("idle");
   const [results, setResults] = useState<SearchResult[]>([]);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  // Error kind; the message is picked in the current language when rendering
+  const [errorKind, setErrorKind] = useState<SearchErrorKind | null>(null);
   const [recent, setRecent] = useState<SearchResult[]>([]);
   const [activeIndex, setActiveIndex] = useState(-1);
 
@@ -148,7 +159,7 @@ export function SearchBar({ onSelect, className }: SearchBarProps) {
     if (!searching) {
       setStatus("idle");
       setResults([]);
-      setErrorMessage(null);
+      setErrorKind(null);
       return;
     }
     setStatus("loading");
@@ -157,13 +168,13 @@ export function SearchBar({ onSelect, className }: SearchBarProps) {
       searchLocation(trimmed, controller.signal)
         .then((found) => {
           setResults(found);
-          setErrorMessage(null);
+          setErrorKind(null);
           setStatus("done");
         })
         .catch((error: unknown) => {
           if (isAbortError(error)) return;
           setResults([]);
-          setErrorMessage(error instanceof SearchError ? error.message : "Hindi gumana ang search. Subukan ulit.");
+          setErrorKind(error instanceof SearchError ? error.kind : "server");
           setStatus("error");
         });
     }, DEBOUNCE_MS);
@@ -232,8 +243,8 @@ export function SearchBar({ onSelect, className }: SearchBarProps) {
         onClear={() => inputRef.current?.focus()}
         onFocus={() => setOpen(true)}
         onKeyDown={handleKeyDown}
-        label="Maghanap ng lugar"
-        placeholder="Maghanap ng lugar (hal. SM Megamall)"
+        label={t.search.placeLabel}
+        placeholder={t.search.placePlaceholder}
         loading={status === "loading"}
         role="combobox"
         aria-expanded={expanded}
@@ -245,7 +256,7 @@ export function SearchBar({ onSelect, className }: SearchBarProps) {
 
       {/* Screen readers: announce how many results came back */}
       <p className="sr-only" aria-live="polite">
-        {status === "done" ? `${results.length} resulta` : ""}
+        {status === "done" ? plural(t.search.resultCount, results.length) : ""}
       </p>
 
       <AnimatePresence>
@@ -258,7 +269,7 @@ export function SearchBar({ onSelect, className }: SearchBarProps) {
           >
             {showingRecent && (
               <div className="flex items-center justify-between px-3 pb-1 pt-2.5">
-                <span className="text-xs font-medium text-muted-foreground">Mga huling hinanap</span>
+                <span className="text-xs font-medium text-muted-foreground">{t.search.recent}</span>
                 <button
                   type="button"
                   onClick={() => {
@@ -266,31 +277,31 @@ export function SearchBar({ onSelect, className }: SearchBarProps) {
                     setRecent([]);
                     inputRef.current?.focus();
                   }}
-                  aria-label="Burahin ang mga huling hinanap"
+                  aria-label={t.search.clearRecentLabel}
                   className="rounded-md px-1.5 py-0.5 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
-                  I-clear
+                  {t.search.clearRecent}
                 </button>
               </div>
             )}
 
             {/* Status rows (not options) */}
             {searching && status === "loading" && results.length === 0 && (
-              <p className="px-4 py-3 text-sm text-muted-foreground">Naghahanap...</p>
+              <p className="px-4 py-3 text-sm text-muted-foreground">{t.search.searching}</p>
             )}
             {searching && status === "error" && (
               <p role="alert" className="px-4 py-3 text-sm text-destructive">
-                {errorMessage}
+                {errorKind && t.search.errors[errorKind]}
               </p>
             )}
             {searching && status === "done" && results.length === 0 && (
               <p className="flex items-center gap-2 px-4 py-3 text-sm text-muted-foreground">
                 <SearchX className="h-4 w-4 shrink-0" aria-hidden="true" />
-                Walang nahanap
+                {t.search.noResults}
               </p>
             )}
 
-            <ul id={listboxId} role="listbox" aria-label="Mga resulta" className={cn("max-h-[50dvh] overflow-y-auto", options.length > 0 && "py-1")}>
+            <ul id={listboxId} role="listbox" aria-label={t.search.resultsLabel} className={cn("max-h-[50dvh] overflow-y-auto", options.length > 0 && "py-1")}>
               {options.map((result, index) => {
                 const Icon = showingRecent ? Clock : getPlaceIcon(result.category, result.type);
                 const active = index === activeIndex;
@@ -324,7 +335,7 @@ export function SearchBar({ onSelect, className }: SearchBarProps) {
             {/* Nominatim usage policy: credit OpenStreetMap */}
             {searching && results.length > 0 && (
               <p className="border-t px-3 py-1.5 text-[10px] text-muted-foreground">
-                Search mula sa OpenStreetMap Nominatim
+                {t.search.attribution}
               </p>
             )}
           </motion.div>
