@@ -8,8 +8,10 @@ import { LocateFixed, Loader2, RefreshCw, Sparkles } from "lucide-react";
 import { AgentChat } from "@/components/agent/AgentChat";
 import type { MapTarget } from "@/components/map/MapController";
 import { NearMeButton, type LocateResult } from "@/components/map/NearMeButton";
+import { SearchBar } from "@/components/map/SearchBar";
 import type { UserLocation } from "@/components/map/UserLocationLayer";
 import { NavigationPanel } from "@/components/navigation/NavigationPanel";
+import { Onboarding } from "@/components/onboarding/Onboarding";
 import { RestroomSheet } from "@/components/restroom/RestroomSheet";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -19,7 +21,8 @@ import { useErrorToast } from "@/hooks/use-error-toast";
 import { useNavigation, useNavigationGuidance } from "@/hooks/use-navigation";
 import { useRestrooms } from "@/hooks/use-restrooms";
 import { useWatchPosition } from "@/hooks/use-watch-position";
-import { scaleIn, SPRING, tapScale } from "@/lib/animations";
+import { fadeIn, scaleIn, SPRING, tapScale } from "@/lib/animations";
+import type { SearchResult } from "@/lib/search";
 import type { Restroom } from "@/types/restroom";
 
 // Leaflet touches `window` on import, so the map must only load in the browser.
@@ -69,6 +72,11 @@ export default function HomePage() {
 
   const pauseFollow = useCallback(() => setFollow(false), []);
 
+  // Place search: fly to the picked place (close enough to see nearby CR pins)
+  const handleSearchSelect = useCallback((result: SearchResult) => {
+    setFlyTo({ latitude: result.lat, longitude: result.lon, zoom: 16 });
+  }, []);
+
   // Blue dot: live GPS while navigating, route start in preview, otherwise "Near Me"
   const userLocation: UserLocation | null =
     tracking && position.latitude !== null && position.longitude !== null
@@ -78,12 +86,15 @@ export default function HomePage() {
         : nearMeLocation;
 
   const navActive = nav.status !== "idle";
+  // Controls below the search bar move up when it's hidden (during navigation)
+  const belowSearch = navActive ? "top-3" : "top-[4.75rem]";
 
   return (
     // `isolate` keeps Leaflet's high z-indexes (up to 1000) inside this box,
     // so the header, bottom nav, and sheet still render above the map.
     // overflow-hidden: nothing on the map (e.g. the AI button glow) can widen the page
-    <div className="relative isolate flex-1 overflow-hidden">
+    // map-search-visible: moves the zoom buttons below the search bar (globals.css)
+    <div className={`relative isolate flex-1 overflow-hidden ${navActive ? "" : "map-search-visible"}`}>
       <RestroomMap
         restrooms={restrooms}
         onSelectRestroom={handleSelectRestroom}
@@ -97,7 +108,23 @@ export default function HomePage() {
         bottomInset={navActive ? 300 : 0}
       />
 
-      {!tracking && <NearMeButton onLocate={handleLocate} className="absolute right-3 top-3 z-[1000]" />}
+      {/* Place search (Nominatim). Hidden during navigation. */}
+      <AnimatePresence>
+        {!navActive && (
+          <motion.div
+            key="search"
+            variants={fadeIn}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            className="absolute left-4 right-4 top-4 z-[1001]"
+          >
+            <SearchBar onSelect={handleSearchSelect} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {!tracking && <NearMeButton onLocate={handleLocate} className={`absolute right-4 z-[1000] ${belowSearch}`} />}
 
       {/* Navigating but the user panned away: bring the map back to them */}
       {tracking && !follow && (
@@ -116,7 +143,7 @@ export default function HomePage() {
       {loading && !navActive && (
         <p
           role="status"
-          className="absolute left-1/2 top-3 z-[1000] flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-background px-3 py-1.5 text-xs shadow-md"
+          className="absolute left-14 top-[4.75rem] z-[1000] flex items-center gap-1.5 rounded-full bg-background px-3 py-1.5 text-xs shadow-md"
         >
           <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
           <span className="animate-pulse">Kinukuha ang mga CR...</span>
@@ -193,6 +220,9 @@ export default function HomePage() {
         open={sheetOpen}
         onOpenChange={setSheetOpen}
       />
+
+      {/* First visit only: short intro slides */}
+      <Onboarding />
     </div>
   );
 }

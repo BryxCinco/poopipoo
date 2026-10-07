@@ -2,10 +2,13 @@ import type { Metadata } from "next";
 import { List } from "lucide-react";
 
 import { RestroomList } from "@/components/restroom/RestroomList";
+import { pageMetadata } from "@/lib/metadata";
 
-export const metadata: Metadata = {
-  title: "Poopipoo — Mga CR Malapit Sa'yo",
-};
+export const metadata: Metadata = pageMetadata({
+  title: "Mga CR Malapit Sa'yo",
+  description: "Listahan ng mga CR na malapit sa'yo, naka-sort mula sa pinakamalapit. I-filter ayon sa bidet, PWD access at iba pa.",
+  path: "/list",
+});
 
 export default function ListPage() {
   return (

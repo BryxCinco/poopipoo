@@ -1,7 +1,7 @@
 /**
- * "AI Agent" on/off switch (Profile → AI Agent). Saved per device in
+ * "AI Agent" on/off switch (Settings → AI Agent). Saved per device in
  * localStorage; on by default. Module store for useSyncExternalStore, so the
- * home page's floating button updates as soon as the profile toggle changes.
+ * home page's floating button updates as soon as the settings toggle changes.
  */
 
 const KEY = "poopipoo:ai-agent-enabled";

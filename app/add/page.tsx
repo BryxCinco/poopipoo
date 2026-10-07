@@ -5,10 +5,13 @@ import { AddRestroomForm } from "@/components/add/AddRestroomForm";
 import { LocalRestroomsUpload } from "@/components/restroom/LocalRestroomsUpload";
 import { loginUrl } from "@/lib/auth/return-url";
 import { getCurrentUser } from "@/lib/auth/server";
+import { pageMetadata } from "@/lib/metadata";
 
-export const metadata: Metadata = {
-  title: "Poopipoo — Magdagdag ng CR",
-};
+export const metadata: Metadata = pageMetadata({
+  title: "Magdagdag ng CR",
+  description: "May alam kang CR? I-share sa iba: lokasyon, amenities at kung libre ito.",
+  path: "/add",
+});
 
 export default async function AddPage() {
   const user = await getCurrentUser();

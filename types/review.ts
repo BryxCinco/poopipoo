@@ -13,6 +13,8 @@ export interface Review {
   images: string[];
   createdAt: string;
   author: ReviewAuthor;
+  /** How many people marked it helpful */
+  helpfulCount: number;
 }
 
 /** What the review form submits. */

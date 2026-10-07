@@ -4,8 +4,8 @@ import { useEffect } from "react";
 import Link from "next/link";
 import { AlertTriangle, Home, RefreshCw } from "lucide-react";
 
+import { StatusScreen } from "@/components/layout/StatusScreen";
 import { Button } from "@/components/ui/button";
-import { EmptyState } from "@/components/ui/EmptyState";
 
 /** Error boundary for every page under the root layout (header/nav stay visible). */
 export default function Error({
@@ -20,29 +20,26 @@ export default function Error({
   }, [error]);
 
   return (
-    <div className="mx-auto flex w-full max-w-screen-md flex-1 flex-col items-center justify-center px-4">
-      <EmptyState
-        icon={<AlertTriangle />}
-        tone="error"
-        role="alert"
-        titleAs="h1"
-        title="May nangyaring mali"
-        description="Hindi ma-load ang page na ito. Baka may problema sa internet o sa server."
-        action={
-          <div className="flex gap-2">
-            <Button onClick={reset}>
-              <RefreshCw aria-hidden="true" />
-              Subukan ulit
-            </Button>
-            <Button asChild variant="outline">
-              <Link href="/">
-                <Home aria-hidden="true" />
-                Home
-              </Link>
-            </Button>
-          </div>
-        }
-      />
-    </div>
+    <StatusScreen
+      code="Oops"
+      tone="error"
+      icon={<AlertTriangle />}
+      title="May nangyaring mali"
+      description="Hindi ma-load ang page na ito. Baka may problema sa internet o sa server. Subukan ulit."
+      actions={
+        <>
+          <Button size="lg" onClick={reset}>
+            <RefreshCw aria-hidden="true" />
+            Subukan ulit
+          </Button>
+          <Button asChild size="lg" variant="outline">
+            <Link href="/">
+              <Home aria-hidden="true" />
+              Bumalik sa home
+            </Link>
+          </Button>
+        </>
+      }
+    />
   );
 }

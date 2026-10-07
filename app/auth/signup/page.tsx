@@ -5,10 +5,13 @@ import { AuthCard } from "@/components/auth/AuthCard";
 import { SignupForm } from "@/components/auth/SignupForm";
 import { safeReturnUrl } from "@/lib/auth/return-url";
 import { getCurrentUser } from "@/lib/auth/server";
+import { pageMetadata } from "@/lib/metadata";
 
-export const metadata: Metadata = {
-  title: "Poopipoo — Mag-sign up",
-};
+export const metadata: Metadata = pageMetadata({
+  title: "Mag-sign up",
+  description: "Gumawa ng libreng Poopipoo account at tumulong maghanap ng malinis na CR sa Pilipinas.",
+  path: "/auth/signup",
+});
 
 interface SignupPageProps {
   searchParams: { returnUrl?: string | string[] };

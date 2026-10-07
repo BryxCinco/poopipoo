@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ChevronDown, CloudOff, Loader2, MessageSquare, Pencil, RefreshCw } from "lucide-react";
+import { ChevronDown, CloudOff, Loader2, MessageSquare, Pencil, RefreshCw, ThumbsUp } from "lucide-react";
 
 import { DeleteReviewButton } from "@/components/restroom/DeleteReviewButton";
 import { StarRating } from "@/components/restroom/StarRating";
@@ -9,10 +9,55 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Skeleton } from "@/components/ui/skeleton";
-import { staggerItemCapped } from "@/lib/animations";
+import { SPRING, staggerItemCapped } from "@/lib/animations";
 import { formatAbsoluteDate, formatRelativeTime } from "@/lib/relative-time";
 import { cn } from "@/lib/utils";
 import type { Review } from "@/types/review";
+
+// ---------- helpful vote ----------
+
+export interface HelpfulState {
+  /** The viewer already marked this review helpful */
+  voted: boolean;
+  /** A vote change is saving */
+  pending?: boolean;
+  /** Omit for the viewer's own review (count only, no button) */
+  onToggle?: () => void;
+}
+
+function HelpfulButton({ count, state }: { count: number; state: HelpfulState }) {
+  if (!state.onToggle) {
+    // Own review: just show how many people it helped
+    return count > 0 ? (
+      <p className="flex items-center gap-1 text-xs text-muted-foreground">
+        <ThumbsUp className="h-3.5 w-3.5" aria-hidden="true" />
+        {count} ang natulungan
+      </p>
+    ) : null;
+  }
+
+  return (
+    <motion.button
+      type="button"
+      onClick={state.onToggle}
+      disabled={state.pending}
+      aria-pressed={state.voted}
+      aria-label={`${state.voted ? "Alisin ang helpful vote" : "Markahan na nakatulong"} (${count})`}
+      whileTap={{ scale: 0.92 }}
+      transition={SPRING}
+      className={cn(
+        "flex h-8 items-center gap-1.5 rounded-full border px-3 text-xs font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60",
+        state.voted
+          ? "border-primary/40 bg-primary/10 text-primary"
+          : "text-muted-foreground hover:border-primary/40 hover:text-foreground"
+      )}
+    >
+      <ThumbsUp className={cn("h-3.5 w-3.5", state.voted && "fill-current")} aria-hidden="true" />
+      Nakatulong
+      {count > 0 && <span className="tabular-nums">{count}</span>}
+    </motion.button>
+  );
+}
 
 // ---------- single review ----------
 
@@ -23,10 +68,12 @@ interface ReviewItemProps {
   onDelete?: () => void;
   /** Dims the card while an optimistic change is saving. */
   pending?: boolean;
+  /** Helpful vote button / count; omit to hide */
+  helpful?: HelpfulState;
   className?: string;
 }
 
-export function ReviewItem({ review, onEdit, onDelete, pending = false, className }: ReviewItemProps) {
+export function ReviewItem({ review, onEdit, onDelete, pending = false, helpful, className }: ReviewItemProps) {
   return (
     <article
       className={cn("flex gap-3 rounded-xl border bg-card p-3 shadow-sm transition-opacity duration-200", pending && "opacity-60", className)}
@@ -55,6 +102,12 @@ export function ReviewItem({ review, onEdit, onDelete, pending = false, classNam
         <StarRating rating={review.rating} />
         {review.comment && (
           <p className="whitespace-pre-line break-words text-sm leading-relaxed">{review.comment}</p>
+        )}
+
+        {helpful && !pending && (
+          <div className="mt-1">
+            <HelpfulButton count={review.helpfulCount} state={helpful} />
+          </div>
         )}
 
         {(onEdit || onDelete) && (
@@ -102,6 +155,8 @@ interface ReviewListProps {
   currentUserId?: string | null;
   onEdit?: (review: Review) => void;
   onDelete?: (review: Review) => void;
+  /** Helpful vote state for each review (omit to hide the button) */
+  getHelpful?: (review: Review) => HelpfulState;
   emptyText?: string;
 }
 
@@ -116,6 +171,7 @@ export function ReviewList({
   currentUserId = null,
   onEdit,
   onDelete,
+  getHelpful,
   emptyText = "Wala pang review. Ikaw ang mauna!",
 }: ReviewListProps) {
   if (loading) {
@@ -175,6 +231,7 @@ export function ReviewList({
                 review={review}
                 onEdit={isOwn && onEdit ? () => onEdit(review) : undefined}
                 onDelete={isOwn && onDelete ? () => onDelete(review) : undefined}
+                helpful={getHelpful?.(review)}
               />
             </motion.li>
           );

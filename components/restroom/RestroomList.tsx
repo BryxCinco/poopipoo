@@ -13,6 +13,7 @@ import {
 import { RestroomListItem } from "@/components/restroom/RestroomListItem";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { SearchInput } from "@/components/ui/SearchInput";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useErrorToast } from "@/hooks/use-error-toast";
 import { useGeolocation } from "@/hooks/use-geolocation";
@@ -20,6 +21,20 @@ import { useRestrooms } from "@/hooks/use-restrooms";
 import { staggerItemCapped } from "@/lib/animations";
 import { calculateDistance } from "@/lib/distance";
 import type { Restroom } from "@/types/restroom";
+
+/** Lowercase, no accents ("Parañaque" matches "paranaque"). */
+const normalize = (text: string) =>
+  text
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+
+/** Every word of the query must appear in the CR's name or address. */
+function matchesQuery(restroom: Restroom, words: string[]): boolean {
+  if (words.length === 0) return true;
+  const haystack = normalize(`${restroom.name} ${restroom.address}`);
+  return words.every((word) => haystack.includes(word));
+}
 
 interface RestroomWithDistance {
   restroom: Restroom;
@@ -43,6 +58,8 @@ export function RestroomList() {
     requestLocation,
   } = useGeolocation({ requestOnMount: true });
   const [activeFilters, setActiveFilters] = useState<FilterId[]>([]);
+  const [query, setQuery] = useState("");
+  const queryWords = useMemo(() => normalize(query).split(/s+/).filter(Boolean), [query]);
 
   useErrorToast(dataError, "Hindi makuha ang mga CR", retry);
 
@@ -52,7 +69,8 @@ export function RestroomList() {
   // Filter, then sort: nearest first when we know where the user is,
   // otherwise highest rating first.
   const items = useMemo<RestroomWithDistance[]>(() => {
-    const withDistance = applyFilters(restrooms, activeFilters).map((restroom) => ({
+    const matching = applyFilters(restrooms, activeFilters).filter((restroom) => matchesQuery(restroom, queryWords));
+    const withDistance = matching.map((restroom) => ({
       restroom,
       distanceKm: hasLocation
         ? calculateDistance(latitude, longitude, restroom.latitude, restroom.longitude)
@@ -64,10 +82,17 @@ export function RestroomList() {
         ? a.distanceKm - b.distanceKm
         : b.restroom.rating - a.restroom.rating
     );
-  }, [restrooms, activeFilters, hasLocation, latitude, longitude]);
+  }, [restrooms, activeFilters, queryWords, hasLocation, latitude, longitude]);
 
   return (
     <div className="flex flex-col gap-3">
+      {/* Search by CR name or address (filters the list below; no network request) */}
+      <SearchInput
+        value={query}
+        onValueChange={setQuery}
+        label="Maghanap ng CR ayon sa pangalan o address"
+        placeholder="Maghanap ng CR o address"
+      />
       <RestroomFilters active={activeFilters} onChange={setActiveFilters} />
 
       {locationLoading ? (
@@ -137,10 +162,21 @@ export function RestroomList() {
         <EmptyState
           icon={<SearchX />}
           title="Walang CR na tugma"
-          description="Subukang bawasan ang mga filter."
+          description={
+            query.trim()
+              ? `Walang CR na tugma sa "${query.trim()}". Subukan ang ibang salita o bawasan ang mga filter.`
+              : "Subukang bawasan ang mga filter."
+          }
           action={
-            <Button variant="outline" size="sm" onClick={() => setActiveFilters([])}>
-              Clear all filters
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setActiveFilters([]);
+                setQuery("");
+              }}
+            >
+              {query.trim() ? "I-clear ang search at filters" : "Clear all filters"}
             </Button>
           }
         />

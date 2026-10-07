@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { RestroomDetail } from "@/components/restroom/RestroomDetail";
 import type { ReviewViewer } from "@/components/restroom/ReviewsSection";
 import { getCurrentUser } from "@/lib/auth/server";
+import { pageMetadata } from "@/lib/metadata";
 import { getRestroomByIdServer } from "@/lib/restrooms/server";
 import { fetchReviewsPage, fetchUserReview } from "@/lib/reviews/queries";
 import { createClient } from "@/lib/supabase/server";
@@ -17,15 +18,18 @@ interface RestroomPageProps {
 export async function generateMetadata({ params }: RestroomPageProps): Promise<Metadata> {
   const restroom = await getRestroomByIdServer(params.id);
   if (!restroom) notFound();
-  return {
-    title: `Poopipoo — ${restroom.name}`,
-    description: [restroom.description, restroom.address].filter(Boolean).join(" "),
-  };
+  return pageMetadata({
+    title: restroom.name,
+    description:
+      [restroom.description, restroom.address].filter(Boolean).join(" ") || "CR details, rating at reviews sa Poopipoo.",
+    path: `/restroom/${restroom.id}`,
+  });
 }
 
-// Server-rendered from Supabase: unknown ids get a real 404 status.
-// Note: no loading.tsx for this route on purpose. A loading boundary makes Next
-// start streaming (status 200) before notFound() runs, losing the 404.
+// Server-rendered from Supabase. Unknown ids show the not-found page with a
+// "noindex" robots tag. Note: since Phase 10 the root app/loading.tsx wraps this
+// route, so Next starts streaming (status 200) before notFound() runs; the
+// HTTP status is 200 instead of 404 (a "soft 404"). Same UI for users.
 export default async function RestroomPage({ params, searchParams }: RestroomPageProps) {
   const [restroom, user] = await Promise.all([
     getRestroomByIdServer(params.id),

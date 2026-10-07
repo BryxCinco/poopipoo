@@ -14,9 +14,11 @@ type Client = SupabaseClient<Database>;
 export const REVIEWS_PAGE_SIZE = 10;
 export const REVIEW_COMMENT_MAX = 500;
 
-// Embeds the author's profile via the reviews.user_id → profiles.id foreign key
+// Embeds the author's profile via the reviews.user_id → profiles.id foreign key.
+// The FK name is required since Phase 10: review_votes also links reviews and
+// profiles, so a plain profiles(...) embed is ambiguous (PostgREST error PGRST201).
 const REVIEW_SELECT =
-  "id, restroom_id, user_id, rating, comment, images, created_at, profiles(username, avatar_url)";
+  "id, restroom_id, user_id, rating, comment, images, helpful_count, created_at, profiles!reviews_user_id_fkey(username, avatar_url)";
 
 type ReviewRowWithAuthor = ReviewRow & {
   profiles: { username: string | null; avatar_url: string | null } | null;
@@ -35,6 +37,7 @@ function toReview(row: ReviewRowWithAuthor): Review {
       username: row.profiles?.username ?? "User",
       avatarUrl: row.profiles?.avatar_url ?? null,
     },
+    helpfulCount: row.helpful_count,
   };
 }
 
@@ -131,6 +134,49 @@ export async function updateReview(
   // RLS hides rows you don't own, so "no row" means it's gone or not yours
   if (!data) throw new Error("Hindi na mahanap ang review mo. Baka nabura na.");
   return toReview(data);
+}
+
+// ---------- helpful votes ----------
+
+/** Which of these reviews the user already marked helpful. */
+export async function fetchVotedReviewIds(
+  supabase: Client,
+  userId: string,
+  reviewIds: string[]
+): Promise<Set<string>> {
+  if (reviewIds.length === 0) return new Set();
+  const { data, error } = await supabase
+    .from("review_votes")
+    .select("review_id")
+    .eq("user_id", userId)
+    .in("review_id", reviewIds);
+  if (error) throw new Error(error.message);
+  return new Set(data.map((row) => row.review_id));
+}
+
+/**
+ * Marks / un-marks a review as helpful. The database trigger updates the
+ * review's helpful_count and gives (or takes back) 1 point to its author.
+ * RLS blocks voting on your own review.
+ */
+export async function setHelpfulVote(
+  supabase: Client,
+  reviewId: string,
+  userId: string,
+  helpful: boolean
+): Promise<void> {
+  if (helpful) {
+    const { error } = await supabase.from("review_votes").insert({ review_id: reviewId, user_id: userId });
+    // 23505 = already voted (e.g. in another tab): that's the state we want
+    if (error && error.code !== "23505") throw new Error(error.message);
+  } else {
+    const { error } = await supabase
+      .from("review_votes")
+      .delete()
+      .eq("review_id", reviewId)
+      .eq("user_id", userId);
+    if (error) throw new Error(error.message);
+  }
 }
 
 export async function deleteReview(supabase: Client, reviewId: string): Promise<void> {

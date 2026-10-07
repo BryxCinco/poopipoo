@@ -15,7 +15,7 @@ interface AgentSettingsProps {
   usage: AgentUsage | null;
 }
 
-/** Profile → "AI Agent": show/hide the assistant button, plus usage stats. */
+/** Settings → "AI Agent": show/hide the assistant button, plus usage stats. */
 export function AgentSettings({ usage }: AgentSettingsProps) {
   const [enabled, setEnabled] = useAgentEnabled();
 

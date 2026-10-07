@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { LogIn } from "lucide-react";
 
 import { ReviewForm } from "@/components/restroom/ReviewForm";
-import { ReviewItem, ReviewList } from "@/components/restroom/ReviewList";
+import { ReviewItem, ReviewList, type HelpfulState } from "@/components/restroom/ReviewList";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
@@ -20,6 +20,8 @@ import {
   DuplicateReviewError,
   fetchReviewsPage,
   fetchUserReview,
+  fetchVotedReviewIds,
+  setHelpfulVote,
   updateReview,
 } from "@/lib/reviews/queries";
 import { createClient } from "@/lib/supabase/client";
@@ -74,6 +76,77 @@ export function ReviewsSection({
     initialReviews === null ? "Hindi ma-load ang mga review" : null
   );
 
+  // ---- helpful votes (on other people's reviews) ----
+  const [votedIds, setVotedIds] = useState<ReadonlySet<string>>(new Set());
+  const [votePending, setVotePending] = useState<ReadonlySet<string>>(new Set());
+  const viewerId = viewer?.id ?? null;
+
+  /** Loads which of these reviews the viewer already voted on (merged into votedIds). */
+  const loadVotes = useCallback(
+    async (reviewIds: string[]) => {
+      if (!viewerId || reviewIds.length === 0) return;
+      try {
+        const voted = await fetchVotedReviewIds(createClient(), viewerId, reviewIds);
+        setVotedIds((prev) => new Set([...Array.from(prev), ...Array.from(voted)]));
+      } catch {
+        // Not critical: buttons just start as "not voted"
+      }
+    },
+    [viewerId]
+  );
+
+  // Votes for the first page (rendered on the server)
+  useEffect(() => {
+    void loadVotes((initialReviews ?? []).map((review) => review.id));
+  }, [loadVotes, initialReviews]);
+
+  const setReviewPending = (id: string, pending: boolean) =>
+    setVotePending((prev) => {
+      const next = new Set(prev);
+      if (pending) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+
+  /** Optimistic toggle: update the count and button now, roll back if saving fails. */
+  const toggleHelpful = async (review: Review) => {
+    if (!viewer) {
+      toast({ title: "Mag-login para mag-vote", description: "Kailangan ng account para markahan ang review na nakatulong." });
+      return;
+    }
+    const helpful = !votedIds.has(review.id);
+    const apply = (on: boolean) => {
+      setVotedIds((prev) => {
+        const next = new Set(prev);
+        if (on) next.add(review.id);
+        else next.delete(review.id);
+        return next;
+      });
+      setOthers((prev) =>
+        prev.map((item) =>
+          item.id === review.id ? { ...item, helpfulCount: Math.max(item.helpfulCount + (on ? 1 : -1), 0) } : item
+        )
+      );
+    };
+
+    apply(helpful);
+    setReviewPending(review.id, true);
+    try {
+      await setHelpfulVote(createClient(), review.id, viewer.id, helpful);
+    } catch (error) {
+      apply(!helpful);
+      toast({ variant: "destructive", title: "Hindi ma-save ang vote", description: errorMessage(error) });
+    } finally {
+      setReviewPending(review.id, false);
+    }
+  };
+
+  const getHelpful = (review: Review): HelpfulState => ({
+    voted: votedIds.has(review.id),
+    pending: votePending.has(review.id),
+    onToggle: () => void toggleHelpful(review),
+  });
+
   // Came from "I-edit" on the profile page: bring the form into view
   useEffect(() => {
     if (startEditing) document.getElementById("iyong-review")?.scrollIntoView({ block: "center" });
@@ -102,6 +175,7 @@ export function ReviewsSection({
       images: previous?.images ?? [],
       createdAt: previous?.createdAt ?? new Date().toISOString(),
       author: { username: viewer.username, avatarUrl: viewer.avatarUrl },
+      helpfulCount: previous?.helpfulCount ?? 0,
     });
     setMyPending(true);
     setEditing(false);
@@ -177,6 +251,7 @@ export function ReviewsSection({
       });
       setOthersTotal(result.total);
       setPage(nextPage);
+      void loadVotes(result.reviews.map((review) => review.id));
     } catch (error) {
       setListError(errorMessage(error));
       toast({ variant: "destructive", title: "Hindi ma-load ang mga review", description: "I-check ang internet mo." });
@@ -240,6 +315,7 @@ export function ReviewsSection({
                   pending={myPending}
                   onEdit={handleEdit}
                   onDelete={() => void handleDelete()}
+                  helpful={{ voted: false }}
                   className="border-primary/30 bg-primary/5"
                 />
               </div>
@@ -256,6 +332,7 @@ export function ReviewsSection({
         error={listError}
         onRetry={() => void loadPage(others.length === 0 ? 0 : page + 1)}
         onLoadMore={() => void loadPage(page + 1)}
+        getHelpful={getHelpful}
         emptyText={
           myReview ? "Wala pang ibang nag-review." : "Wala pang review. Ikaw ang mauna!"
         }

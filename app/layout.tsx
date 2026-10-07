@@ -8,6 +8,7 @@ import { Header } from "@/components/layout/Header";
 import { Providers } from "@/components/layout/Providers";
 import { UnsavedChangesGuard } from "@/components/layout/UnsavedChangesGuard";
 import { Toaster } from "@/components/ui/toaster";
+import { rootMetadata } from "@/lib/metadata";
 import { THEME_INIT_SCRIPT } from "@/lib/theme";
 
 const geistSans = localFont({
@@ -16,17 +17,8 @@ const geistSans = localFont({
   weight: "100 900",
 });
 
-export const metadata: Metadata = {
-  title: "Poopipoo — Saan ang CR?",
-  description: "Crowdsourced restroom finder for the Philippines",
-  applicationName: "Poopipoo",
-  manifest: "/manifest.json",
-  appleWebApp: {
-    capable: true,
-    title: "Poopipoo",
-    statusBarStyle: "default",
-  },
-};
+// Title template, description, Open Graph and Twitter defaults: see lib/metadata.ts
+export const metadata: Metadata = rootMetadata;
 
 export const viewport: Viewport = {
   width: "device-width",

@@ -5,10 +5,13 @@ import { AuthCard } from "@/components/auth/AuthCard";
 import { LoginForm } from "@/components/auth/LoginForm";
 import { safeReturnUrl } from "@/lib/auth/return-url";
 import { getCurrentUser } from "@/lib/auth/server";
+import { pageMetadata } from "@/lib/metadata";
 
-export const metadata: Metadata = {
-  title: "Poopipoo — Mag-login",
-};
+export const metadata: Metadata = pageMetadata({
+  title: "Mag-login",
+  description: "Mag-login sa Poopipoo para makapag-add ng CR, mag-review at makakuha ng points.",
+  path: "/auth/login",
+});
 
 interface LoginPageProps {
   searchParams: { returnUrl?: string | string[]; error?: string | string[] };

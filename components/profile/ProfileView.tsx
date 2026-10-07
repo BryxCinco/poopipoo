@@ -1,35 +1,35 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
-  Award,
   ChevronRight,
-  Globe,
   Info,
   LogIn,
   MapPin,
   MessageSquare,
   Pencil,
   Plus,
+  Settings,
+  ThumbsUp,
   Toilet,
+  Trophy,
   User,
   UserPlus,
   type LucideIcon,
 } from "lucide-react";
 
 import { LogoutButton } from "@/components/auth/LogoutButton";
-import { AgentSettings, type AgentUsage } from "@/components/profile/AgentSettings";
-import { ThemeSetting } from "@/components/profile/ThemeSetting";
+import { BadgesGrid } from "@/components/profile/BadgesGrid";
+import { LevelCard } from "@/components/profile/LevelCard";
 import { DeleteRestroomButton } from "@/components/restroom/DeleteRestroomButton";
 import { DeleteReviewButton } from "@/components/restroom/DeleteReviewButton";
 import { LocalRestroomsUpload } from "@/components/restroom/LocalRestroomsUpload";
 import { StarRating } from "@/components/restroom/StarRating";
 import { AnimatedCard } from "@/components/ui/AnimatedCard";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CountUp } from "@/components/ui/CountUp";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -37,6 +37,7 @@ import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { SPRING, staggerContainer, staggerItem, staggerItemCapped } from "@/lib/animations";
 import { loginUrl } from "@/lib/auth/return-url";
+import { BADGES, type BadgeId, type BadgeStats } from "@/lib/badges";
 import { formatRelativeTime } from "@/lib/relative-time";
 import { invalidateRestrooms } from "@/lib/restroom-store";
 import { deleteReview } from "@/lib/reviews/queries";
@@ -49,6 +50,12 @@ export interface ProfileAccount {
   username: string;
   avatarUrl: string | null;
   points: number;
+  /** Counts used for badges (and shown as stats) */
+  stats: BadgeStats;
+  /** Unlocked badge ids */
+  badges: string[];
+  /** Badges unlocked on this visit (a toast celebrates them) */
+  newBadges: BadgeId[];
 }
 
 export interface ProfileReview {
@@ -65,17 +72,15 @@ interface ProfileViewProps {
   account: ProfileAccount | null;
   restrooms: Restroom[];
   reviews: ProfileReview[];
-  /** AI agent usage; null for guests or if it couldn't be loaded */
-  agentUsage: AgentUsage | null;
 }
 
-// Still "Soon" (dark mode is the real ThemeSetting row)
-const SETTINGS: { label: string; icon: LucideIcon }[] = [
-  { label: "Language", icon: Globe },
-  { label: "About", icon: Info },
+const LINKS: { href: string; label: string; description: string; icon: LucideIcon }[] = [
+  { href: "/leaderboard", label: "Leaderboard", description: "Top contributors", icon: Trophy },
+  { href: "/settings", label: "Settings", description: "Account, dark mode, AI agent, data", icon: Settings },
+  { href: "/about", label: "About", description: "Tungkol sa Poopipoo at credits", icon: Info },
 ];
 
-export function ProfileView({ account, restrooms, reviews, agentUsage }: ProfileViewProps) {
+export function ProfileView({ account, restrooms, reviews }: ProfileViewProps) {
   const router = useRouter();
   const { toast } = useToast();
   // Restrooms hidden right away while their delete is in flight (optimistic UI)
@@ -109,13 +114,20 @@ export function ProfileView({ account, restrooms, reviews, agentUsage }: Profile
     }
   };
 
-  const comingSoon = (title: string) =>
-    toast({ title, description: "Malapit na ito sa susunod na update." });
+  // Celebrate badges unlocked on this visit (once per page load)
+  const celebrated = useRef(false);
+  const newBadges = account?.newBadges;
+  useEffect(() => {
+    if (celebrated.current || !newBadges || newBadges.length === 0) return;
+    celebrated.current = true;
+    const names = BADGES.filter((badge) => newBadges.includes(badge.id)).map((badge) => badge.name);
+    toast({ title: newBadges.length === 1 ? "Bagong badge!" : "Mga bagong badge!", description: names.join(", ") });
+  }, [newBadges, toast]);
 
   const stats: { label: string; value: number; icon: LucideIcon }[] = [
     { label: "Mga naidagdag na CR", value: visibleRestrooms.length, icon: Toilet },
     { label: "Mga review", value: visibleReviews.length, icon: MessageSquare },
-    { label: "Points", value: account?.points ?? 0, icon: Award },
+    { label: "Helpful votes", value: account?.stats.helpfulVotesReceived ?? 0, icon: ThumbsUp },
   ];
 
   return (
@@ -149,6 +161,8 @@ export function ProfileView({ account, restrooms, reviews, agentUsage }: Profile
         <GuestPrompt />
       ) : (
         <>
+          <LevelCard points={account.points} />
+
           {/* Stats */}
           <motion.section
             aria-label="Stats"
@@ -171,6 +185,8 @@ export function ProfileView({ account, restrooms, reviews, agentUsage }: Profile
               </motion.div>
             ))}
           </motion.section>
+
+          <BadgesGrid badges={account.badges} stats={account.stats} />
 
           {/* User's restrooms */}
           <section className="flex flex-col gap-2">
@@ -294,36 +310,35 @@ export function ProfileView({ account, restrooms, reviews, agentUsage }: Profile
             )}
           </section>
 
-          <AgentSettings usage={agentUsage} />
         </>
       )}
 
       <Separator />
 
-      {/* Settings (placeholders) */}
-      <section className="flex flex-col gap-2">
-        <h2 className="font-semibold">Settings</h2>
-        <ul className="divide-y rounded-xl border bg-card shadow-sm">
-          <li>
-            <ThemeSetting />
-          </li>
-          {SETTINGS.map(({ label, icon: Icon }) => (
-            <li key={label}>
-              <button
-                type="button"
-                onClick={() => comingSoon(label)}
-                className="group flex w-full items-center gap-3 px-3 py-3 text-left text-sm transition-colors duration-150 first:rounded-t-xl last:rounded-b-xl hover:bg-muted/50 focus-visible:bg-muted/50 focus-visible:outline-none"
+      {/* More: leaderboard, settings, about */}
+      <section className="flex flex-col gap-2" aria-labelledby="more-heading">
+        <h2 id="more-heading" className="font-semibold">
+          Iba pa
+        </h2>
+        <ul className="divide-y overflow-hidden rounded-xl border bg-card shadow-sm">
+          {LINKS.map(({ href, label, description, icon: Icon }) => (
+            <li key={href}>
+              <Link
+                href={href}
+                className="group flex w-full items-center gap-3 px-3 py-3 text-left text-sm transition-colors duration-150 hover:bg-muted/50 focus-visible:bg-muted/50 focus-visible:outline-none"
               >
-                <Icon className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-                <span className="flex-1">{label}</span>
-                <Badge variant="secondary" className="font-normal">
-                  Soon
-                </Badge>
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                  <Icon className="h-4 w-4" aria-hidden="true" />
+                </span>
+                <span className="flex min-w-0 flex-1 flex-col">
+                  <span className="font-medium">{label}</span>
+                  <span className="truncate text-xs text-muted-foreground">{description}</span>
+                </span>
                 <ChevronRight
                   className="h-4 w-4 text-muted-foreground transition-transform duration-150 group-hover:translate-x-0.5"
                   aria-hidden="true"
                 />
-              </button>
+              </Link>
             </li>
           ))}
         </ul>

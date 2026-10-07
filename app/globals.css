@@ -170,6 +170,10 @@
 .restroom-map .leaflet-bottom.leaflet-left {
   margin-bottom: 1.75rem;
 }
+/* Home map with the floating search bar: move the zoom buttons below it */
+.map-search-visible .restroom-map .leaflet-top.leaflet-left {
+  margin-top: 4.25rem;
+}
 
 /* Leaflet controls and popups follow the theme */
 .dark .leaflet-bar a,

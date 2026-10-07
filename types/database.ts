@@ -3,7 +3,7 @@
 
 /**
  * Supabase database types, written by hand to match
- * supabase/migrations/ (0001–0003). Keep the two in sync.
+ * supabase/migrations/ (0001–0004). Keep the two in sync.
  * (Can be replaced later with `supabase gen types typescript`.)
  */
 
@@ -11,7 +11,12 @@ export type ProfileRow = {
   id: string;
   username: string | null;
   avatar_url: string | null;
+  /** Read-only for users: maintained by the award_points() trigger (0004) */
   points: number;
+  /** 1–5, from calculate_level(points) */
+  level: number;
+  /** Badge ids (lib/badges.ts); written by the server with the secret key */
+  badges: string[];
   created_at: string;
 };
 
@@ -38,7 +43,11 @@ export type RestroomRow = {
  * so the big vector isn't downloaded with every restroom. PostgREST returns
  * vectors as text like "[0.1,0.2,...]".
  */
-export type RestroomTableRow = RestroomRow & { embedding: string | null };
+export type RestroomTableRow = RestroomRow & {
+  embedding: string | null;
+  /** Phase 10; not in RESTROOM_COLUMNS yet (nothing in the UI uses it) */
+  is_verified: boolean;
+};
 
 /** A row from the match_restrooms() vector search. */
 export type RestroomMatchRow = RestroomRow & { similarity: number };
@@ -56,6 +65,14 @@ export type ReviewRow = {
   rating: number;
   comment: string;
   images: string[];
+  /** Maintained by the review_votes trigger (0004) */
+  helpful_count: number;
+  created_at: string;
+};
+
+export type ReviewVoteRow = {
+  review_id: string;
+  user_id: string;
   created_at: string;
 };
 
@@ -89,8 +106,30 @@ export type Database = {
       profiles: {
         Row: ProfileRow;
         Insert: Pick<ProfileRow, "id"> & Partial<Omit<ProfileRow, "id">>;
-        Update: Partial<Pick<ProfileRow, "username" | "avatar_url">>;
+        // points/level are trigger-only; badges are writable by the secret (admin) key only
+        Update: Partial<Pick<ProfileRow, "username" | "avatar_url" | "badges">>;
         Relationships: [];
+      };
+      review_votes: {
+        Row: ReviewVoteRow;
+        Insert: Pick<ReviewVoteRow, "review_id" | "user_id">;
+        Update: Record<string, never>;
+        Relationships: [
+          {
+            foreignKeyName: "review_votes_review_id_fkey";
+            columns: ["review_id"];
+            isOneToOne: false;
+            referencedRelation: "reviews";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "review_votes_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       restrooms: {
         Row: RestroomTableRow;
