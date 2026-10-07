@@ -82,7 +82,8 @@ export default function HomePage() {
   return (
     // `isolate` keeps Leaflet's high z-indexes (up to 1000) inside this box,
     // so the header, bottom nav, and sheet still render above the map.
-    <div className="relative isolate flex-1">
+    // overflow-hidden: nothing on the map (e.g. the AI button glow) can widen the page
+    <div className="relative isolate flex-1 overflow-hidden">
       <RestroomMap
         restrooms={restrooms}
         onSelectRestroom={handleSelectRestroom}

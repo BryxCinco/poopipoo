@@ -45,7 +45,7 @@ export function NavigateButton({ destination, onPlanned, pulse = false, classNam
   return (
     <span className={cn("relative block w-full", className)}>
       {pulse && !busy && (
-        <span className="absolute inset-0 animate-pulse-ring rounded-xl bg-primary/40" aria-hidden="true" />
+        <span className="absolute inset-0 animate-pulse-ring rounded-xl" aria-hidden="true" />
       )}
       <AnimatedButton
         type="button"

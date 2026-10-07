@@ -78,9 +78,10 @@ const config: Config = {
   				from: { transform: "scaleX(1)" },
   				to: { transform: "scaleX(0)" }
   			},
+  			// Expanding glow via box-shadow (a scale transform would widen the page and show a scrollbar)
   			"pulse-ring": {
-  				"0%": { transform: "scale(1)", opacity: "0.5" },
-  				"100%": { transform: "scale(1.6)", opacity: "0" }
+  				"0%": { boxShadow: "0 0 0 0 hsl(var(--primary) / 0.45)" },
+  				"100%": { boxShadow: "0 0 0 14px hsl(var(--primary) / 0)" }
   			}
   		},
   		animation: {
