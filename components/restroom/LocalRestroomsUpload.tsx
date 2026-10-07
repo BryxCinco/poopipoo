@@ -8,7 +8,7 @@ import { CloudUpload, Loader2, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { loginUrl } from "@/lib/auth/return-url";
-import { clearLocalRestrooms, getLocalRestrooms } from "@/lib/local-restrooms";
+import { getLocalRestrooms, setLocalRestrooms } from "@/lib/local-restrooms";
 import { addRestrooms } from "@/lib/restroom-store";
 import type { Restroom } from "@/types/restroom";
 import { useI18n } from "@/hooks/use-i18n";
@@ -62,7 +62,7 @@ export function LocalRestroomsUpload({ userId, returnUrl }: LocalRestroomsUpload
     if (!userId) return;
     setUploading(true);
     try {
-      const saved = await addRestrooms(
+      const { saved, error } = await addRestrooms(
         local.map((r) => ({
           name: r.name,
           description: r.description,
@@ -75,10 +75,15 @@ export function LocalRestroomsUpload({ userId, returnUrl }: LocalRestroomsUpload
         })),
         userId
       );
-      clearLocalRestrooms();
-      setLocal([]);
-      toast({ title: plural(t.localUpload.uploaded, saved), description: t.localUpload.uploadedDescription });
-      router.refresh();
+      // Keep what wasn't uploaded (e.g. stopped by the rate limit) for next time
+      const remaining = local.slice(saved);
+      setLocalRestrooms(remaining);
+      setLocal(remaining);
+      if (saved > 0) {
+        toast({ title: plural(t.localUpload.uploaded, saved), description: t.localUpload.uploadedDescription });
+        router.refresh();
+      }
+      if (error) throw error;
     } catch (error) {
       toast({
         variant: "destructive",

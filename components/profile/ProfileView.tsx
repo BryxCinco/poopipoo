@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   ChevronRight,
+  Flag,
+  Gavel,
   Info,
   LogIn,
   MapPin,
@@ -13,6 +15,7 @@ import {
   Pencil,
   Plus,
   Settings,
+  ShieldCheck,
   ThumbsUp,
   Toilet,
   Trophy,
@@ -22,6 +25,9 @@ import {
 } from "lucide-react";
 
 import { LogoutButton } from "@/components/auth/LogoutButton";
+import { BannedNotice } from "@/components/moderation/Notices";
+import { RestroomStatusBadge } from "@/components/moderation/RestroomStatusBadge";
+import { VERIFICATIONS_NEEDED } from "@/components/moderation/VerifyButton";
 import { BadgesGrid } from "@/components/profile/BadgesGrid";
 import { LevelCard } from "@/components/profile/LevelCard";
 import { DeleteRestroomButton } from "@/components/restroom/DeleteRestroomButton";
@@ -40,10 +46,12 @@ import { SPRING, staggerContainer, staggerItem, staggerItemCapped } from "@/lib/
 import { loginUrl } from "@/lib/auth/return-url";
 import { BADGES, type BadgeId, type BadgeStats } from "@/lib/badges";
 import { errorText } from "@/lib/i18n/errors";
+import { format } from "@/lib/i18n/format";
 import { formatRelativeTime } from "@/lib/relative-time";
 import { invalidateRestrooms } from "@/lib/restroom-store";
 import { deleteReview } from "@/lib/reviews/queries";
 import { createClient } from "@/lib/supabase/client";
+import type { ReportReason, ReportStatus, ReportTargetType } from "@/types/database";
 import type { Restroom } from "@/types/restroom";
 
 export interface ProfileAccount {
@@ -58,6 +66,21 @@ export interface ProfileAccount {
   badges: string[];
   /** Badges unlocked on this visit (a toast celebrates them) */
   newBadges: BadgeId[];
+  /** Phase 11 */
+  trustScore: number;
+  isModerator: boolean;
+  /** null = not banned */
+  ban: { reason: string | null; at: string | null } | null;
+}
+
+export interface ProfileReport {
+  id: string;
+  targetType: ReportTargetType;
+  /** null when the reported item was deleted or is hidden */
+  target: { name: string; restroomId: string } | null;
+  reason: ReportReason;
+  status: ReportStatus;
+  createdAt: string;
 }
 
 export interface ProfileReview {
@@ -75,16 +98,27 @@ interface ProfileViewProps {
   account: ProfileAccount | null;
   restrooms: Restroom[];
   reviews: ProfileReview[];
+  /** The user's own reports, newest first */
+  reports: ProfileReport[];
 }
 
+type LinkKey = "leaderboard" | "settings" | "about" | "moderation";
+
 // key = entry in t.profile.links
-const LINKS: { href: string; key: "leaderboard" | "settings" | "about"; icon: LucideIcon }[] = [
+const LINKS: { href: string; key: LinkKey; icon: LucideIcon }[] = [
   { href: "/leaderboard", key: "leaderboard", icon: Trophy },
   { href: "/settings", key: "settings", icon: Settings },
   { href: "/about", key: "about", icon: Info },
 ];
 
-export function ProfileView({ account, restrooms, reviews }: ProfileViewProps) {
+// Only shown to moderators/admins (the page checks the role again)
+const MODERATION_LINK: { href: string; key: LinkKey; icon: LucideIcon } = {
+  href: "/moderation",
+  key: "moderation",
+  icon: Gavel,
+};
+
+export function ProfileView({ account, restrooms, reviews, reports }: ProfileViewProps) {
   const router = useRouter();
   const { toast } = useToast();
   const { t, locale } = useI18n();
@@ -93,6 +127,10 @@ export function ProfileView({ account, restrooms, reviews }: ProfileViewProps) {
 
   const visibleRestrooms = restrooms.filter((restroom) => !hiddenIds.has(restroom.id));
   const visibleReviews = reviews.filter((review) => !hiddenIds.has(review.id));
+  // "My submissions": restrooms not approved yet (pending, flagged or rejected)
+  const submissions = visibleRestrooms.filter((restroom) => restroom.status && restroom.status !== "approved");
+  const links = account?.isModerator ? [MODERATION_LINK, ...LINKS] : LINKS;
+  const tm = t.moderation;
 
   const setHidden = (id: string, hidden: boolean) =>
     setHiddenIds((prev) => {
@@ -166,7 +204,26 @@ export function ProfileView({ account, restrooms, reviews }: ProfileViewProps) {
         <GuestPrompt />
       ) : (
         <>
+          {account.ban && <BannedNotice reason={account.ban.reason} bannedAt={account.ban.at} headingLevel="h2" />}
+
           <LevelCard points={account.points} />
+
+          {/* Trust score (Phase 11): grows when the community confirms your restrooms */}
+          <section
+            aria-labelledby="trust-heading"
+            className="flex items-center gap-3 rounded-xl border bg-card p-3 shadow-sm"
+          >
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <ShieldCheck className="h-5 w-5" aria-hidden="true" />
+            </span>
+            <div className="flex min-w-0 flex-1 flex-col">
+              <h2 id="trust-heading" className="text-sm font-semibold">
+                {tm.profile.trustScore}
+              </h2>
+              <p className="text-xs text-muted-foreground">{tm.profile.trustHint}</p>
+            </div>
+            <CountUp value={account.trustScore} className="text-2xl font-bold tabular-nums" />
+          </section>
 
           {/* Stats */}
           <motion.section
@@ -192,6 +249,41 @@ export function ProfileView({ account, restrooms, reviews }: ProfileViewProps) {
           </motion.section>
 
           <BadgesGrid badges={account.badges} stats={account.stats} />
+
+          {/* Restrooms waiting for verification / under review / rejected */}
+          {submissions.length > 0 && (
+            <section className="flex flex-col gap-2" aria-labelledby="submissions-heading">
+              <div>
+                <h2 id="submissions-heading" className="font-semibold">
+                  {tm.profile.mySubmissions}
+                </h2>
+                <p className="text-xs text-muted-foreground">{tm.profile.submissionsHint}</p>
+              </div>
+              <ul className="flex flex-col gap-2">
+                {submissions.map((restroom) => (
+                  <li key={restroom.id}>
+                    <Link
+                      href={"/restroom/" + restroom.id}
+                      className="flex flex-col gap-1.5 rounded-xl border bg-card p-3 shadow-sm transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    >
+                      <span className="flex items-start justify-between gap-2">
+                        <span className="truncate font-medium">{restroom.name}</span>
+                        {restroom.status && <RestroomStatusBadge status={restroom.status} className="shrink-0" />}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {restroom.status === "rejected"
+                          ? tm.statusHint.rejected
+                          : format(tm.profile.confirmations, {
+                              count: restroom.verifiedCount ?? 0,
+                              needed: VERIFICATIONS_NEEDED,
+                            })}
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
 
           {/* User's restrooms */}
           <section className="flex flex-col gap-2">
@@ -315,6 +407,42 @@ export function ProfileView({ account, restrooms, reviews }: ProfileViewProps) {
             )}
           </section>
 
+          {/* Reports this user made (only shown when there are some) */}
+          {reports.length > 0 && (
+            <section className="flex flex-col gap-2" aria-labelledby="reports-heading">
+              <h2 id="reports-heading" className="font-semibold">
+                {tm.profile.myReports}
+              </h2>
+              <ul className="divide-y overflow-hidden rounded-xl border bg-card shadow-sm">
+                {reports.map((report) => (
+                  <li key={report.id} className="flex items-start gap-3 p-3">
+                    <Flag className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                    <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                      <p className="truncate text-sm font-medium">
+                        <span className="text-muted-foreground">{tm.profile.reportOn[report.targetType]}: </span>
+                        {report.target ? (
+                          <Link href={"/restroom/" + report.target.restroomId} className="link-underline">
+                            {report.target.name || t.profile.deletedRestroom}
+                          </Link>
+                        ) : (
+                          <span className="italic text-muted-foreground">{tm.profile.removedTarget}</span>
+                        )}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {tm.report.reasons[report.reason]} ·{" "}
+                        <time dateTime={report.createdAt} suppressHydrationWarning>
+                          {formatRelativeTime(report.createdAt, locale)}
+                        </time>
+                      </p>
+                    </div>
+                    <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                      {tm.profile.reportStatus[report.status]}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
         </>
       )}
 
@@ -326,7 +454,7 @@ export function ProfileView({ account, restrooms, reviews }: ProfileViewProps) {
           {t.profile.more}
         </h2>
         <ul className="divide-y overflow-hidden rounded-xl border bg-card shadow-sm">
-          {LINKS.map(({ href, key, icon: Icon }) => (
+          {links.map(({ href, key, icon: Icon }) => (
             <li key={href}>
               <Link
                 href={href}

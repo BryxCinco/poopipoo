@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database, ReviewRow } from "@/types/database";
 import { LocalizedError } from "@/lib/i18n/errors";
+import { toAppError } from "@/lib/moderation/errors";
 import type { Review, ReviewInput } from "@/types/review";
 
 /**
@@ -19,9 +20,9 @@ export const REVIEW_COMMENT_MAX = 500;
 // The FK name is required since Phase 10: review_votes also links reviews and
 // profiles, so a plain profiles(...) embed is ambiguous (PostgREST error PGRST201).
 const REVIEW_SELECT =
-  "id, restroom_id, user_id, rating, comment, images, helpful_count, created_at, profiles!reviews_user_id_fkey(username, avatar_url)";
+  "id, restroom_id, user_id, rating, comment, images, helpful_count, status, created_at, profiles!reviews_user_id_fkey(username, avatar_url)";
 
-type ReviewRowWithAuthor = ReviewRow & {
+type ReviewRowWithAuthor = Omit<ReviewRow, "flag_count"> & {
   profiles: { username: string | null; avatar_url: string | null } | null;
 };
 
@@ -39,6 +40,7 @@ function toReview(row: ReviewRowWithAuthor): Review {
       avatarUrl: row.profiles?.avatar_url ?? null,
     },
     helpfulCount: row.helpful_count,
+    status: row.status,
   };
 }
 
@@ -115,7 +117,7 @@ export async function createReview(
     .single();
   if (error) {
     if (error.code === "23505") throw new DuplicateReviewError();
-    throw new Error(error.message);
+    throw toAppError(error);
   }
   return toReview(data);
 }
@@ -131,7 +133,7 @@ export async function updateReview(
     .eq("id", reviewId)
     .select(REVIEW_SELECT)
     .maybeSingle();
-  if (error) throw new Error(error.message);
+  if (error) throw toAppError(error);
   // RLS hides rows you don't own, so "no row" means it's gone or not yours
   if (!data) throw new LocalizedError("reviewNotFound");
   return toReview(data);
@@ -169,19 +171,19 @@ export async function setHelpfulVote(
   if (helpful) {
     const { error } = await supabase.from("review_votes").insert({ review_id: reviewId, user_id: userId });
     // 23505 = already voted (e.g. in another tab): that's the state we want
-    if (error && error.code !== "23505") throw new Error(error.message);
+    if (error && error.code !== "23505") throw toAppError(error);
   } else {
     const { error } = await supabase
       .from("review_votes")
       .delete()
       .eq("review_id", reviewId)
       .eq("user_id", userId);
-    if (error) throw new Error(error.message);
+    if (error) throw toAppError(error);
   }
 }
 
 export async function deleteReview(supabase: Client, reviewId: string): Promise<void> {
   const { data, error } = await supabase.from("reviews").delete().eq("id", reviewId).select("id");
-  if (error) throw new Error(error.message);
+  if (error) throw toAppError(error);
   if (data.length === 0) throw new LocalizedError("reviewDeleteFailed");
 }

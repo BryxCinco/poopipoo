@@ -1,5 +1,7 @@
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 import { getDictionary } from "@/lib/i18n/dictionaries";
+import { format } from "@/lib/i18n/format";
+import { BannedError, RateLimitError } from "@/lib/moderation/errors";
 
 export type ErrorKey = keyof Dictionary["errors"];
 
@@ -21,6 +23,10 @@ export class LocalizedError extends Error {
  */
 export function errorText(error: unknown, t: Dictionary, fallback: string = t.common.tryAgainLater): string {
   if (error instanceof LocalizedError) return t.errors[error.key];
+  if (error instanceof BannedError) return format(t.errors.banned, { reason: error.reason || t.errors.noReason });
+  if (error instanceof RateLimitError) {
+    return error.kind === "restroom" ? t.errors.restroomRateLimit : t.errors.reportRateLimit;
+  }
   if (error instanceof Error && error.message) return error.message;
   return fallback;
 }

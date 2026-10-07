@@ -1,7 +1,9 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ChevronDown, CloudOff, Loader2, MessageSquare, Pencil, RefreshCw, ThumbsUp } from "lucide-react";
+import { AlertTriangle, ChevronDown, CloudOff, EyeOff, Loader2, MessageSquare, Pencil, RefreshCw, ThumbsUp } from "lucide-react";
+
+import { ReportButton } from "@/components/moderation/ReportButton";
 
 import { DeleteReviewButton } from "@/components/restroom/DeleteReviewButton";
 import { StarRating } from "@/components/restroom/StarRating";
@@ -73,10 +75,20 @@ interface ReviewItemProps {
   pending?: boolean;
   /** Helpful vote button / count; omit to hide */
   helpful?: HelpfulState;
+  /** Shows a report button (other people's reviews): the viewer's id, null for guests */
+  reportViewerId?: string | null;
   className?: string;
 }
 
-export function ReviewItem({ review, onEdit, onDelete, pending = false, helpful, className }: ReviewItemProps) {
+export function ReviewItem({
+  review,
+  onEdit,
+  onDelete,
+  pending = false,
+  helpful,
+  reportViewerId,
+  className,
+}: ReviewItemProps) {
   const { t, locale } = useI18n();
   return (
     <article
@@ -108,9 +120,35 @@ export function ReviewItem({ review, onEdit, onDelete, pending = false, helpful,
           <p className="whitespace-pre-line break-words text-sm leading-relaxed">{review.comment}</p>
         )}
 
-        {helpful && !pending && (
-          <div className="mt-1">
-            <HelpfulButton count={review.helpfulCount} state={helpful} />
+        {/* Moderation status (rejected ones only reach their author and moderators) */}
+        {review.status !== "approved" && (
+          <p
+            className={cn(
+              "flex items-center gap-1.5 text-xs",
+              review.status === "rejected" ? "text-destructive" : "text-amber-800 dark:text-amber-300"
+            )}
+          >
+            {review.status === "rejected" ? (
+              <EyeOff className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+            ) : (
+              <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+            )}
+            {review.status === "rejected" ? t.moderation.reviewHidden : t.moderation.reviewFlagged}
+          </p>
+        )}
+
+        {((helpful && !pending) || reportViewerId !== undefined) && (
+          <div className="mt-1 flex items-center justify-between gap-2">
+            {helpful && !pending ? <HelpfulButton count={review.helpfulCount} state={helpful} /> : <span />}
+            {reportViewerId !== undefined && (
+              <ReportButton
+                targetType="review"
+                targetId={review.id}
+                authorName={review.author.username}
+                viewerId={reportViewerId}
+                variant="icon"
+              />
+            )}
           </div>
         )}
 
@@ -161,6 +199,8 @@ interface ReviewListProps {
   onDelete?: (review: Review) => void;
   /** Helpful vote state for each review (omit to hide the button) */
   getHelpful?: (review: Review) => HelpfulState;
+  /** Adds report buttons to other people's reviews: the viewer's id (null = guest); omit to hide */
+  reportViewerId?: string | null;
   emptyText?: string;
 }
 
@@ -176,6 +216,7 @@ export function ReviewList({
   onEdit,
   onDelete,
   getHelpful,
+  reportViewerId,
   emptyText,
 }: ReviewListProps) {
   const { t } = useI18n();
@@ -237,6 +278,7 @@ export function ReviewList({
                 onEdit={isOwn && onEdit ? () => onEdit(review) : undefined}
                 onDelete={isOwn && onDelete ? () => onDelete(review) : undefined}
                 helpful={getHelpful?.(review)}
+                reportViewerId={isOwn ? undefined : reportViewerId}
               />
             </motion.li>
           );

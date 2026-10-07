@@ -21,6 +21,7 @@ import {
 import type { MapTarget } from "@/components/map/MapController";
 import type { LatLng } from "@/components/map/LocationPicker";
 import { MiniMapLoader } from "@/components/map/MiniMapLoader";
+import { RateLimitNotice } from "@/components/moderation/Notices";
 import { AmenityBadge, PriceBadge } from "@/components/restroom/RestroomBadges";
 import { AnimatedButton } from "@/components/ui/AnimatedButton";
 import { AnimatedCheck } from "@/components/ui/AnimatedCheck";
@@ -38,6 +39,7 @@ import { DURATION, EASE_OUT, scaleIn, SPRING, stepSlide, tapScale } from "@/lib/
 import { reverseGeocode } from "@/lib/geocode";
 import { errorText } from "@/lib/i18n/errors";
 import { format } from "@/lib/i18n/format";
+import { RateLimitError } from "@/lib/moderation/errors";
 import { addRestroom } from "@/lib/restroom-store";
 import { ALL_AMENITIES, getAmenityIcon, getDisplayAmenities } from "@/lib/icons";
 import { cn } from "@/lib/utils";
@@ -131,6 +133,9 @@ export function AddRestroomForm({ userId }: AddRestroomFormProps) {
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [saved, setSaved] = useState(false);
+  // Set when saving hit the rate limit: shows a countdown, submit waits for it
+  const [rateLimitedUntil, setRateLimitedUntil] = useState<string | null>(null);
+  const clearRateLimit = useCallback(() => setRateLimitedUntil(null), []);
 
   const setStep = (next: number) => {
     setDirection(next >= step ? 1 : -1);
@@ -234,7 +239,7 @@ export function AddRestroomForm({ userId }: AddRestroomFormProps) {
   const handleCancel = () => (isDirty ? setConfirmCancel(true) : leave());
 
   const handleSubmit = async () => {
-    if (submitting) return;
+    if (submitting || rateLimitedUntil) return;
     // Re-check everything in case a step was skipped via "I-edit" links.
     for (const s of [0, 1]) {
       const stepErrors = validateStep(s, form);
@@ -262,11 +267,24 @@ export function AddRestroomForm({ userId }: AddRestroomFormProps) {
         },
         userId
       );
+      // AI moderation runs on the server in the background (Groq). Not awaited:
+      // the result only matters to moderators. keepalive lets it finish even
+      // if the page changes right away.
+      void fetch("/api/moderate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ restroom_id: restroom.id }),
+        keepalive: true,
+      }).catch(() => {
+        // Unchecked restrooms stay listed on /moderation for a manual check
+      });
       // Success animation, then open the new restroom (button stays disabled meanwhile)
       setSaved(true);
       window.setTimeout(() => router.push(`/restroom/${restroom.id}`), SUCCESS_HOLD_MS);
     } catch (error) {
       setSubmitting(false);
+      // Too many restrooms: keep the form as is and count down to the next try
+      if (error instanceof RateLimitError) setRateLimitedUntil(error.retryAt.toISOString());
       toast({
         variant: "destructive",
         title: ta.saveFailed,
@@ -533,6 +551,9 @@ export function AddRestroomForm({ userId }: AddRestroomFormProps) {
 
             {step === 3 && form.location && (
               <div className="flex flex-col gap-4">
+                {rateLimitedUntil && (
+                  <RateLimitNotice retryAt={rateLimitedUntil} onReady={clearRateLimit} variant="inline" />
+                )}
                 <p className="text-sm text-muted-foreground">{ta.reviewHint}</p>
 
                 <ReviewSection title={ta.steps[0]} editLabel={ta.edit} onEdit={() => setStep(0)}>
@@ -596,6 +617,7 @@ export function AddRestroomForm({ userId }: AddRestroomFormProps) {
             onClick={() => void handleSubmit()}
             loading={submitting || saved}
             loadingText={ta.saving}
+            disabled={rateLimitedUntil !== null}
             className="flex-1"
           >
             <Check aria-hidden="true" />

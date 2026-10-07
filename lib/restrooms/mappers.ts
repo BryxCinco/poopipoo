@@ -10,7 +10,7 @@ const AMENITY_SET = new Set<string>(ALL_AMENITIES);
  * row type (RestroomRow) from this literal string.
  */
 export const RESTROOM_COLUMNS =
-  "id, name, description, address, latitude, longitude, amenities, is_free, images, rating, review_count, created_by, created_at, updated_at" as const;
+  "id, name, description, address, latitude, longitude, amenities, is_free, images, rating, review_count, created_by, created_at, updated_at, status, verified_count" as const;
 
 function isAmenity(value: string): value is Amenity {
   return AMENITY_SET.has(value);
@@ -32,6 +32,8 @@ export function rowToRestroom(row: RestroomRow): Restroom {
     isFree: row.is_free,
     createdAt: row.created_at,
     createdBy: row.created_by,
+    status: row.status,
+    verifiedCount: row.verified_count,
   };
 }
 

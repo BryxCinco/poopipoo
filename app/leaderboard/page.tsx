@@ -26,8 +26,9 @@ export default async function LeaderboardPage() {
     supabase
       .from("profiles")
       .select("id, username, avatar_url, points, level")
-      // Only people who have contributed something
+      // Only people who have contributed something; banned accounts are left out (Phase 11)
       .gt("points", 0)
+      .eq("is_banned", false)
       .order("points", { ascending: false })
       // Ties: whoever joined first ranks higher (stable order)
       .order("created_at", { ascending: true })
@@ -62,7 +63,8 @@ export default async function LeaderboardPage() {
       const { count } = await supabase
         .from("profiles")
         .select("id", { count: "exact", head: true })
-        .gt("points", profile.points);
+        .gt("points", profile.points)
+        .eq("is_banned", false);
       me = {
         id: profile.id,
         username: profile.username ?? t.common.user,

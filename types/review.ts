@@ -15,7 +15,11 @@ export interface Review {
   author: ReviewAuthor;
   /** How many people marked it helpful */
   helpfulCount: number;
+  /** Phase 11: 'rejected' reviews only reach their author and moderators */
+  status: ReviewStatus;
 }
+
+export type ReviewStatus = "approved" | "rejected" | "flagged";
 
 /** What the review form submits. */
 export interface ReviewInput {

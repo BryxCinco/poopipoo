@@ -1,11 +1,15 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, useTransform } from "framer-motion";
 import { MapPin, Navigation, Toilet } from "lucide-react";
 
 import { MiniMapLoader } from "@/components/map/MiniMapLoader";
+import { ReportButton } from "@/components/moderation/ReportButton";
+import { RestroomStatusBadge } from "@/components/moderation/RestroomStatusBadge";
+import { VerifyButton } from "@/components/moderation/VerifyButton";
 import { NavigateButton } from "@/components/navigation/NavigateButton";
 import { NavigationPanel } from "@/components/navigation/NavigationPanel";
 import { BackButton } from "@/components/restroom/BackButton";
@@ -34,6 +38,10 @@ interface RestroomDetailProps {
   restroom: Restroom;
   /** Decided on the server from the validated session. */
   isOwner: boolean;
+  /** Signed-in user's id; null for guests */
+  viewerId: string | null;
+  /** The viewer already confirmed this restroom exists */
+  initialVerified: boolean;
   /** Initial review data, loaded on the server. */
   reviews: {
     viewer: ReviewViewer | null;
@@ -48,10 +56,15 @@ interface RestroomDetailProps {
  * Restroom detail view. Data is loaded on the server (app/restroom/[id]/page.tsx);
  * this is a Client Component only for the interactive bits (delete, router).
  */
-export function RestroomDetail({ restroom, isOwner, reviews }: RestroomDetailProps) {
+export function RestroomDetail({ restroom, isOwner, viewerId, initialVerified, reviews }: RestroomDetailProps) {
   const router = useRouter();
   const nav = useNavigation();
   const { t, locale } = useI18n();
+  // Moderation status + confirmations; updated in place after a vote
+  const [community, setCommunity] = useState({
+    status: restroom.status ?? "approved",
+    verifiedCount: restroom.verifiedCount ?? 0,
+  });
 
   // Hero parallax: the decorative layer drifts down and fades as the page scrolls
   const scrollY = useMainScrollY();
@@ -100,7 +113,10 @@ export function RestroomDetail({ restroom, isOwner, reviews }: RestroomDetailPro
           animate="visible"
           className="flex flex-col gap-2"
         >
-          {isOwner && <UserAddedBadge label={t.restroom.yourContribution} className="w-fit" />}
+          <div className="flex flex-wrap gap-1.5">
+            <RestroomStatusBadge status={community.status} />
+            {isOwner && <UserAddedBadge label={t.restroom.yourContribution} />}
+          </div>
           <h1 className="text-2xl font-bold leading-tight">{restroom.name}</h1>
           <div className="flex flex-wrap items-center gap-2">
             <a href="#reviews" className="link-underline rounded-sm">
@@ -146,6 +162,26 @@ export function RestroomDetail({ restroom, isOwner, reviews }: RestroomDetailPro
         )}
         <ShareButton />
       </div>
+
+      {/* Community verification ("Nakita ko na ito") */}
+      <section
+        aria-labelledby="verify-heading"
+        className="flex flex-col gap-2 rounded-xl border bg-card p-3 shadow-sm"
+      >
+        <h2 id="verify-heading" className="text-sm font-semibold">
+          {t.moderation.verify.question}
+        </h2>
+        <p className="text-xs text-muted-foreground">{t.moderation.statusHint[community.status]}</p>
+        <VerifyButton
+          restroomId={restroom.id}
+          status={community.status}
+          verifiedCount={community.verifiedCount}
+          initialVerified={initialVerified}
+          viewerId={viewerId}
+          isOwner={isOwner}
+          onChange={setCommunity}
+        />
+      </section>
 
       <section className="flex flex-col gap-2">
         <h2 className="font-semibold">{t.restroom.amenities}</h2>
@@ -203,6 +239,10 @@ export function RestroomDetail({ restroom, isOwner, reviews }: RestroomDetailPro
           // Fixed just above the bottom nav bar (h-16 + safe area)
           className="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-30 mx-auto max-w-screen-md"
         />
+      )}
+
+      {!isOwner && (
+        <ReportButton targetType="restroom" targetId={restroom.id} viewerId={viewerId} className="self-center" />
       )}
 
       {isOwner && (

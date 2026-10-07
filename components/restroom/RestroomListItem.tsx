@@ -9,6 +9,7 @@ import {
   PriceBadge,
   UserAddedBadge,
 } from "@/components/restroom/RestroomBadges";
+import { RestroomStatusBadge } from "@/components/moderation/RestroomStatusBadge";
 import { RestroomRating } from "@/components/restroom/RestroomRating";
 import { AnimatedCard } from "@/components/ui/AnimatedCard";
 import { Badge } from "@/components/ui/badge";
@@ -66,7 +67,15 @@ export function RestroomListItem({
             <PriceBadge isFree={restroom.isFree} className="shrink-0" />
           </div>
 
-          {isUserAdded && <UserAddedBadge className="w-fit px-1.5 py-0 text-[11px]" />}
+          {/* Approved is the normal case: only the exceptions get a badge in the list */}
+          {(isUserAdded || (restroom.status && restroom.status !== "approved")) && (
+            <div className="flex flex-wrap gap-1">
+              {restroom.status && restroom.status !== "approved" && (
+                <RestroomStatusBadge status={restroom.status} className="px-1.5 py-0 text-[11px]" />
+              )}
+              {isUserAdded && <UserAddedBadge className="w-fit px-1.5 py-0 text-[11px]" />}
+            </div>
+          )}
 
           <RestroomRating rating={restroom.rating} reviewCount={restroom.reviewCount} size="sm" />
 

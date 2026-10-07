@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
 import { AVATAR_TYPES, removeAvatar, uploadAvatar } from "@/lib/avatar";
 import { errorText } from "@/lib/i18n/errors";
+import { toAppError } from "@/lib/moderation/errors";
 import { format } from "@/lib/i18n/format";
 import { createClient } from "@/lib/supabase/client";
 
@@ -59,7 +60,7 @@ export function AccountSettings({ userId, email, username: initialUsername, avat
     const { error } = await createClient().from("profiles").update({ username: trimmed }).eq("id", userId);
     setSaving(false);
     if (error) {
-      toast({ variant: "destructive", title: ts.username.saveFailed, description: error.message });
+      toast({ variant: "destructive", title: ts.username.saveFailed, description: errorText(toAppError(error), t) });
       return;
     }
     setSavedUsername(trimmed);

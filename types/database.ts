@@ -3,7 +3,7 @@
 
 /**
  * Supabase database types, written by hand to match
- * supabase/migrations/ (0001–0004). Keep the two in sync.
+ * supabase/migrations/ (0001–0005). Keep the two in sync.
  * (Can be replaced later with `supabase gen types typescript`.)
  */
 
@@ -17,8 +17,24 @@ export type ProfileRow = {
   level: number;
   /** Badge ids (lib/badges.ts); written by the server with the secret key */
   badges: string[];
+  /** Phase 11, read-only for users (trigger-maintained, see 0005) */
+  trust_score: number;
+  is_banned: boolean;
+  ban_reason: string | null;
+  banned_at: string | null;
+  role: UserRole;
   created_at: string;
 };
+
+export type UserRole = "user" | "moderator" | "admin";
+export type { RestroomStatus } from "@/types/restroom";
+import type { RestroomStatus } from "@/types/restroom";
+export type { ReviewStatus } from "@/types/review";
+import type { ReviewStatus } from "@/types/review";
+export type ReportTargetType = "restroom" | "review" | "user";
+export type ReportReason = "fake" | "inappropriate" | "spam" | "duplicate" | "other";
+export type ReportStatus = "pending" | "reviewed" | "resolved" | "dismissed";
+export type ModerationAction = "approve" | "reject" | "flag" | "ban" | "unban";
 
 export type RestroomRow = {
   id: string;
@@ -35,6 +51,9 @@ export type RestroomRow = {
   created_by: string | null;
   created_at: string;
   updated_at: string;
+  /** Phase 11: moderation status + "Nakita ko na ito" votes (read-only for users) */
+  status: RestroomStatus;
+  verified_count: number;
 };
 
 /**
@@ -47,6 +66,12 @@ export type RestroomTableRow = RestroomRow & {
   embedding: string | null;
   /** Phase 10; not in RESTROOM_COLUMNS yet (nothing in the UI uses it) */
   is_verified: boolean;
+  /** Phase 11 moderation columns (read-only for users; moderators read them) */
+  flag_count: number;
+  ai_flagged: boolean;
+  ai_flag_reason: string | null;
+  /** When the AI check ran; null = not checked yet */
+  ai_checked_at: string | null;
 };
 
 /** A row from the match_restrooms() vector search. */
@@ -67,12 +92,49 @@ export type ReviewRow = {
   images: string[];
   /** Maintained by the review_votes trigger (0004) */
   helpful_count: number;
+  /** Phase 11 (read-only for users) */
+  status: ReviewStatus;
+  flag_count: number;
   created_at: string;
 };
 
 export type ReviewVoteRow = {
   review_id: string;
   user_id: string;
+  created_at: string;
+};
+
+export type RestroomSubmissionRow = {
+  id: string;
+  user_id: string;
+  submitted_at: string;
+};
+
+export type ReportRow = {
+  id: string;
+  reporter_id: string;
+  target_type: ReportTargetType;
+  target_id: string;
+  reason: ReportReason;
+  details: string | null;
+  status: ReportStatus;
+  created_at: string;
+};
+
+export type RestroomVerificationRow = {
+  restroom_id: string;
+  user_id: string;
+  created_at: string;
+};
+
+export type ModerationLogRow = {
+  id: string;
+  /** null = automatic (AI) */
+  moderator_id: string | null;
+  action: ModerationAction;
+  target_type: ReportTargetType;
+  target_id: string;
+  reason: string | null;
   created_at: string;
 };
 
@@ -146,6 +208,55 @@ export type Database = {
           },
         ];
       };
+      restroom_submissions: {
+        Row: RestroomSubmissionRow;
+        // Written by the restrooms insert trigger only
+        Insert: Record<string, never>;
+        Update: Record<string, never>;
+        Relationships: [];
+      };
+      reports: {
+        Row: ReportRow;
+        Insert: Pick<ReportRow, "reporter_id" | "target_type" | "target_id" | "reason"> &
+          Partial<Pick<ReportRow, "details">>;
+        Update: Record<string, never>;
+        Relationships: [
+          {
+            foreignKeyName: "reports_reporter_id_fkey";
+            columns: ["reporter_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      restroom_verifications: {
+        Row: RestroomVerificationRow;
+        Insert: Pick<RestroomVerificationRow, "restroom_id" | "user_id">;
+        Update: Record<string, never>;
+        Relationships: [
+          {
+            foreignKeyName: "restroom_verifications_restroom_id_fkey";
+            columns: ["restroom_id"];
+            isOneToOne: false;
+            referencedRelation: "restrooms";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "restroom_verifications_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      moderation_log: {
+        Row: ModerationLogRow;
+        Insert: Record<string, never>;
+        Update: Record<string, never>;
+        Relationships: [];
+      };
       agent_queries: {
         Row: AgentQueryRow;
         Insert: Pick<AgentQueryRow, "user_id">;
@@ -193,6 +304,33 @@ export type Database = {
           match_count: number;
         };
         Returns: RestroomMatchRow[];
+      };
+      /** NULL = may add a restroom now; otherwise when it's allowed again */
+      my_rate_limit_retry_at: {
+        Args: Record<string, never>;
+        Returns: string | null;
+      };
+      check_rate_limit: {
+        Args: { user_id: string };
+        Returns: boolean;
+      };
+      /** Moderators/admins only (the function checks) */
+      moderate_content: {
+        Args: { target_type: "restroom" | "review"; target_id: string; decision: "approve" | "reject"; reason?: string | null };
+        Returns: undefined;
+      };
+      ban_user: {
+        Args: { user_id: string; reason: string };
+        Returns: undefined;
+      };
+      unban_user: {
+        Args: { user_id: string };
+        Returns: undefined;
+      };
+      /** Secret key only (/api/moderate). Returns true when it flagged the restroom. */
+      record_ai_moderation: {
+        Args: { restroom_id: string; is_suspicious: boolean; reason: string; confidence: number };
+        Returns: boolean;
       };
     };
     Enums: Record<never, never>;

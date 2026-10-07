@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { LocalizedError } from "@/lib/i18n/errors";
+import { toAppError } from "@/lib/moderation/errors";
 import type { Database } from "@/types/database";
 
 /**
@@ -76,7 +77,7 @@ export async function uploadAvatar(supabase: Client, userId: string, file: File)
   const { error } = await supabase.from("profiles").update({ avatar_url: url }).eq("id", userId);
   if (error) {
     await supabase.storage.from(BUCKET).remove([path]);
-    throw new Error(error.message);
+    throw toAppError(error);
   }
 
   await removeOldAvatars(supabase, userId, path).catch(() => undefined);
@@ -86,6 +87,6 @@ export async function uploadAvatar(supabase: Client, userId: string, file: File)
 /** Clears the profile photo (back to the letter avatar). */
 export async function removeAvatar(supabase: Client, userId: string): Promise<void> {
   const { error } = await supabase.from("profiles").update({ avatar_url: null }).eq("id", userId);
-  if (error) throw new Error(error.message);
+  if (error) throw toAppError(error);
   await removeOldAvatars(supabase, userId, null).catch(() => undefined);
 }

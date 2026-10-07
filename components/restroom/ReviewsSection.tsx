@@ -179,6 +179,7 @@ export function ReviewsSection({
       createdAt: previous?.createdAt ?? new Date().toISOString(),
       author: { username: viewer.username, avatarUrl: viewer.avatarUrl },
       helpfulCount: previous?.helpfulCount ?? 0,
+      status: previous?.status ?? "approved",
     });
     setMyPending(true);
     setEditing(false);
@@ -336,6 +337,7 @@ export function ReviewsSection({
         onRetry={() => void loadPage(others.length === 0 ? 0 : page + 1)}
         onLoadMore={() => void loadPage(page + 1)}
         getHelpful={getHelpful}
+        reportViewerId={viewer?.id ?? null}
         emptyText={
           myReview ? t.reviews.emptyOthers : t.reviews.emptyFirst
         }

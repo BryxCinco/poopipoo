@@ -42,10 +42,19 @@ export default async function RestroomPage({ params, searchParams }: RestroomPag
 
   // Reviews are secondary: if they fail to load, still show the restroom and
   // let the reviews section offer a retry instead of failing the whole page.
-  const [profileResult, myReviewResult, othersResult] = await Promise.allSettled([
+  const [profileResult, myReviewResult, othersResult, verifiedResult] = await Promise.allSettled([
     user ? supabase.from("profiles").select("username, avatar_url").eq("id", user.id).maybeSingle() : null,
     user ? fetchUserReview(supabase, restroom.id, user.id) : null,
     fetchReviewsPage(supabase, restroom.id, 0, user?.id ?? null),
+    // Did the viewer already confirm this restroom? ("Nakita ko na ito")
+    user
+      ? supabase
+          .from("restroom_verifications")
+          .select("restroom_id")
+          .eq("restroom_id", restroom.id)
+          .eq("user_id", user.id)
+          .maybeSingle()
+      : null,
   ]);
 
   const profile =
@@ -59,11 +68,15 @@ export default async function RestroomPage({ params, searchParams }: RestroomPag
     : null;
   const myReview: Review | null = myReviewResult.status === "fulfilled" ? myReviewResult.value : null;
   const others = othersResult.status === "fulfilled" ? othersResult.value : null;
+  const initialVerified =
+    verifiedResult.status === "fulfilled" && verifiedResult.value !== null && verifiedResult.value.data !== null;
 
   return (
     <RestroomDetail
       restroom={restroom}
       isOwner={user !== null && restroom.createdBy === user.id}
+      viewerId={user?.id ?? null}
+      initialVerified={initialVerified}
       reviews={{
         viewer,
         initialMyReview: myReview,

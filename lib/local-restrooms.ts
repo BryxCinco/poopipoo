@@ -49,6 +49,19 @@ export function getLocalRestrooms(): Restroom[] {
   }
 }
 
+/** Keeps only the given restrooms (e.g. the ones not uploaded yet). */
+export function setLocalRestrooms(restrooms: Restroom[]): void {
+  if (restrooms.length === 0) {
+    clearLocalRestrooms();
+    return;
+  }
+  try {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(restrooms));
+  } catch {
+    // Storage blocked: nothing to update.
+  }
+}
+
 export function clearLocalRestrooms(): void {
   try {
     window.localStorage.removeItem(STORAGE_KEY);

@@ -16,6 +16,7 @@ import {
   PriceBadge,
   UserAddedBadge,
 } from "@/components/restroom/RestroomBadges";
+import { RestroomStatusBadge } from "@/components/moderation/RestroomStatusBadge";
 import { RestroomRating } from "@/components/restroom/RestroomRating";
 import { NavigateButton } from "@/components/navigation/NavigateButton";
 import { getDisplayAmenities } from "@/lib/icons";
@@ -45,7 +46,12 @@ export function RestroomSheet({
         {restroom && (
           <div className="mx-auto flex w-full max-w-screen-md flex-col gap-4">
             <SheetHeader className="space-y-2 text-left">
-              {isUserAdded && <UserAddedBadge label={t.restroom.yourContribution} className="w-fit" />}
+              {(isUserAdded || (restroom.status && restroom.status !== "approved")) && (
+                <div className="flex flex-wrap gap-1.5">
+                  {restroom.status && restroom.status !== "approved" && <RestroomStatusBadge status={restroom.status} />}
+                  {isUserAdded && <UserAddedBadge label={t.restroom.yourContribution} />}
+                </div>
+              )}
               <SheetTitle className="pr-6 text-2xl font-bold">{restroom.name}</SheetTitle>
               <div className="flex flex-wrap items-center gap-2">
                 <RestroomRating rating={restroom.rating} reviewCount={restroom.reviewCount} />

@@ -5,6 +5,7 @@ import {
   type NewRestroom,
 } from "@/lib/restrooms/mappers";
 import { LocalizedError } from "@/lib/i18n/errors";
+import { toAppError } from "@/lib/moderation/errors";
 import { createClient } from "@/lib/supabase/client";
 import type { Restroom } from "@/types/restroom";
 
@@ -111,25 +112,33 @@ export async function addRestroom(data: NewRestroom, userId: string): Promise<Re
     .insert(newRestroomToInsert(data, userId))
     .select(RESTROOM_COLUMNS)
     .single();
-  if (error) throw new Error(error.message);
+  // Rate limit / ban → RateLimitError / BannedError (see lib/moderation/errors.ts)
+  if (error) throw toAppError(error);
 
   const restroom = rowToRestroom(row);
   setState({ restrooms: [restroom, ...state.restrooms] });
   return restroom;
 }
 
-/** Bulk insert (used to upload localStorage restrooms). Returns how many were saved. */
-export async function addRestrooms(items: NewRestroom[], userId: string): Promise<number> {
-  if (items.length === 0) return 0;
-
-  const { data: rows, error } = await createClient()
-    .from("restrooms")
-    .insert(items.map((item) => newRestroomToInsert(item, userId)))
-    .select(RESTROOM_COLUMNS);
-  if (error) throw new Error(error.message);
-
-  setState({ restrooms: [...rows.map(rowToRestroom), ...state.restrooms] });
-  return rows.length;
+/**
+ * Uploads restrooms one at a time, in order (used for localStorage restrooms).
+ * Each one counts toward the rate limit, so it stops at the first error:
+ * `saved` = how many from the start of the list were saved, `error` = what stopped it.
+ */
+export async function addRestrooms(
+  items: NewRestroom[],
+  userId: string
+): Promise<{ saved: number; error: Error | null }> {
+  let saved = 0;
+  for (const item of items) {
+    try {
+      await addRestroom(item, userId);
+      saved++;
+    } catch (error) {
+      return { saved, error: error instanceof Error ? error : new Error(String(error)) };
+    }
+  }
+  return { saved, error: null };
 }
 
 /**
@@ -145,7 +154,7 @@ export async function removeRestroom(id: string): Promise<void> {
   if (error || data.length === 0) {
     // Only roll back if nothing else changed the list meanwhile
     if (state.restrooms !== previous) setState({ restrooms: previous });
-    throw error ? new Error(error.message) : new LocalizedError("restroomDeleteForbidden");
+    throw error ? toAppError(error) : new LocalizedError("restroomDeleteForbidden");
   }
 }
 
