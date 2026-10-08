@@ -198,7 +198,7 @@ export function AccountSettings({ userId, email, username: initialUsername, avat
       {/* Email (read-only) */}
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="settings-email">{t.auth.email}</Label>
-        <Input id="settings-email" value={email} readOnly aria-readonly="true" className="bg-muted/50 text-muted-foreground" />
+        <Input id="settings-email" value={email} readOnly aria-readonly="true" className="bg-muted/50 text-foreground/80" />
       </div>
     </div>
   );

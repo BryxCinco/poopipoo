@@ -7,6 +7,7 @@ import { errorText } from "@/lib/i18n/errors";
 import { getLocale } from "@/lib/i18n/server";
 import { BannedError, RateLimitError, toAppError } from "@/lib/moderation/errors";
 import { createClient } from "@/lib/supabase/server";
+import { isCrossSiteRequest } from "@/lib/security/same-origin";
 
 /**
  * POST /api/report — report a restroom or review as fake, spam, etc.
@@ -38,6 +39,8 @@ function errorResponse(status: number, code: ErrorCode, error: string, extra: Re
 }
 
 export async function POST(request: Request) {
+  // CSRF: refuse POSTs sent from other websites
+  if (isCrossSiteRequest(request)) return NextResponse.json({ code: "forbidden" }, { status: 403 });
   const t = getDictionary(getLocale());
   const tr = t.moderation.report;
 

@@ -48,7 +48,9 @@ function formatAddress(address: Record<string, unknown>): string {
 export async function reverseGeocode(
   latitude: number,
   longitude: number,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  /** Scripts (Node) must identify themselves; browsers send their own User-Agent. */
+  userAgent?: string
 ): Promise<string | null> {
   const url = new URL("https://nominatim.openstreetmap.org/reverse");
   url.search = new URLSearchParams({
@@ -62,7 +64,10 @@ export async function reverseGeocode(
   }).toString();
 
   try {
-    const response = await fetch(url, { signal, headers: { Accept: "application/json" } });
+    const response = await fetch(url, {
+      signal,
+      headers: { Accept: "application/json", ...(userAgent ? { "User-Agent": userAgent } : {}) },
+    });
     if (!response.ok) return null;
 
     const data: unknown = await response.json();

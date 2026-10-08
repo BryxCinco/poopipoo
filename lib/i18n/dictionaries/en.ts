@@ -95,12 +95,16 @@ export const en: Dictionary = {
       "The \"Waze for restrooms.\" Find the nearest clean restroom in the Philippines: map, reviews, directions and an AI assistant. Every restroom and review comes from the community, so each one you add helps the next person in a hurry.",
     credits: "Credits",
     creditRoles: {
-      osm: "Map data, search (Nominatim) and routing (OSRM)",
+      osm: "Map data, imported restrooms, search (Nominatim) and routing (OSRM)",
       carto: "Map tiles (Voyager and Dark Matter)",
       supabase: "Database, login and storage",
       groq: "AI assistant (LLM)",
       huggingface: "Embeddings for AI search",
     },
+    dataLicenseHeading: "Data license",
+    dataLicense:
+      "Map data and restrooms imported from OpenStreetMap are © OpenStreetMap contributors, available under the Open Database License (ODbL).",
+    dataLicenseLink: "Data © OpenStreetMap contributors, ODbL license",
     links: "Links",
     privacy: "Privacy Policy",
     terms: "Terms of Use",
@@ -141,6 +145,8 @@ export const en: Dictionary = {
           "OpenStreetMap Nominatim: what you type in the map's search bar.",
           "CARTO / OpenStreetMap: map tiles.",
           "Groq and Hugging Face: process questions sent to the AI assistant.",
+          "Groq: an AI checks every new restroom for spam or fake data.",
+          "Vercel Web Analytics and Speed Insights: visitor counts and page speed. No cookies, and it doesn't identify you.",
         ],
       },
       {
@@ -223,6 +229,7 @@ export const en: Dictionary = {
     locating: "Locating...",
     locationErrorTitle: "Couldn't get your location",
     showingManila: "{error} Showing Manila for now.",
+    clusterLabel: { one: "{count} restroom here, tap to zoom in", other: "{count} restrooms here, tap to zoom in" },
   },
   geo: {
     denied: "Location access was denied.",
@@ -321,6 +328,7 @@ export const en: Dictionary = {
     clearFilters: "Clear filters",
     loadingLabel: "Loading",
     moreAmenities: "+{count} more",
+    showMore: "Show more ({count})",
   },
   restroom: {
     free: "Free",
@@ -353,6 +361,8 @@ export const en: Dictionary = {
     deleteCancel: "Keep it",
     deleted: "Restroom deleted.",
     deleteFailed: "Couldn't delete the restroom",
+    osmSource: "This restroom comes from OpenStreetMap.",
+    osmAttribution: "© OpenStreetMap contributors (ODbL)",
   },
   localUpload: {
     label: "Restrooms on this device",

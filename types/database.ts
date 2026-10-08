@@ -54,7 +54,11 @@ export type RestroomRow = {
   /** Phase 11: moderation status + "Nakita ko na ito" votes (read-only for users) */
   status: RestroomStatus;
   verified_count: number;
+  /** Phase 12: where it came from (read-only for users) */
+  source: RestroomSource;
 };
+
+export type RestroomSource = "user" | "osm" | "seed";
 
 /**
  * The restrooms table also has `embedding vector(384)` (Phase 8). It's left out
@@ -72,10 +76,13 @@ export type RestroomTableRow = RestroomRow & {
   ai_flag_reason: string | null;
   /** When the AI check ran; null = not checked yet */
   ai_checked_at: string | null;
+  /** Phase 12: the OpenStreetMap element (OSM imports only) */
+  osm_type: "node" | "way" | "relation" | null;
+  osm_id: string | null;
 };
 
-/** A row from the match_restrooms() vector search. */
-export type RestroomMatchRow = RestroomRow & { similarity: number };
+/** A row from the match_restrooms() vector search (doesn't return `source`). */
+export type RestroomMatchRow = Omit<RestroomRow, "source"> & { similarity: number };
 
 export type AgentQueryRow = {
   id: number;
@@ -150,9 +157,14 @@ export type RestroomInsert = {
   is_free?: boolean;
   images?: string[];
   created_by: string | null;
-  // Writable by the secret (admin) key only, used by the seed script.
+  // Writable by the secret (admin) key only, used by the seed/import scripts.
   // rating/review_count are maintained by the reviews trigger.
   created_at?: string;
+  status?: RestroomStatus;
+  ai_checked_at?: string | null;
+  source?: RestroomSource;
+  osm_type?: "node" | "way" | "relation" | null;
+  osm_id?: string | null;
 };
 
 export type RestroomUpdate = Partial<

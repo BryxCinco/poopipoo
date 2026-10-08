@@ -7,6 +7,7 @@ import { errorText } from "@/lib/i18n/errors";
 import { getLocale } from "@/lib/i18n/server";
 import { BannedError, toAppError } from "@/lib/moderation/errors";
 import { createClient } from "@/lib/supabase/server";
+import { isCrossSiteRequest } from "@/lib/security/same-origin";
 
 /**
  * POST /api/verify — "Nakita ko na ito": confirm (or take back) that a
@@ -35,6 +36,8 @@ function errorResponse(status: number, code: ErrorCode, error: string) {
 }
 
 export async function POST(request: Request) {
+  // CSRF: refuse POSTs sent from other websites
+  if (isCrossSiteRequest(request)) return NextResponse.json({ code: "forbidden" }, { status: 403 });
   const t = getDictionary(getLocale());
   const tv = t.moderation.verify;
 

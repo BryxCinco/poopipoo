@@ -5,7 +5,6 @@ import dynamic from "next/dynamic";
 import { AnimatePresence, motion } from "framer-motion";
 import { LocateFixed, Loader2, RefreshCw, Sparkles } from "lucide-react";
 
-import { AgentChat } from "@/components/agent/AgentChat";
 import type { MapTarget } from "@/components/map/MapController";
 import { NearMeButton, type LocateResult } from "@/components/map/NearMeButton";
 import { SearchBar } from "@/components/map/SearchBar";
@@ -32,6 +31,9 @@ const RestroomMap = dynamic(() => import("@/components/map/RestroomMap"), {
   loading: () => <Skeleton className="h-full w-full rounded-none" />,
 });
 
+// The AI chat (and its markdown/message code) only downloads when first opened
+const AgentChat = dynamic(() => import("@/components/agent/AgentChat").then((m) => m.AgentChat), { ssr: false });
+
 export default function HomePage() {
   const { restrooms, isUserAdded, loading, error, retry } = useRestrooms();
   const [selectedRestroom, setSelectedRestroom] = useState<Restroom | null>(null);
@@ -39,6 +41,11 @@ export default function HomePage() {
   const [flyTo, setFlyTo] = useState<MapTarget | null>(null);
   const [nearMeLocation, setNearMeLocation] = useState<LocateResult | null>(null);
   const [chatOpen, setChatOpen] = useState(false);
+  // Stays true after the first open, so closing keeps the conversation and exit animation
+  const [chatLoaded, setChatLoaded] = useState(false);
+  useEffect(() => {
+    if (chatOpen) setChatLoaded(true);
+  }, [chatOpen]);
   const [agentEnabled] = useAgentEnabled();
   const { t } = useI18n();
 
@@ -213,7 +220,7 @@ export default function HomePage() {
           </motion.div>
         )}
       </AnimatePresence>
-      <AgentChat open={chatOpen} onOpenChange={setChatOpen} />
+      {chatLoaded && <AgentChat open={chatOpen} onOpenChange={setChatOpen} />}
 
       {/* Keeps the last restroom while closing so the slide-out animation still has content */}
       <RestroomSheet

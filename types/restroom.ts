@@ -20,6 +20,8 @@ export interface Restroom {
   status?: RestroomStatus;
   /** How many people confirmed it exists ("Nakita ko na ito") */
   verifiedCount?: number;
+  /** Phase 12: 'osm' = imported from OpenStreetMap (needs attribution) */
+  source?: 'user' | 'osm' | 'seed';
 }
 
 export type RestroomStatus = 'pending' | 'approved' | 'rejected' | 'flagged';

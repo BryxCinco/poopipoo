@@ -435,7 +435,7 @@ export function ProfileView({ account, restrooms, reviews, reports }: ProfileVie
                         </time>
                       </p>
                     </div>
-                    <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                    <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-foreground/80">
                       {tm.profile.reportStatus[report.status]}
                     </span>
                   </li>

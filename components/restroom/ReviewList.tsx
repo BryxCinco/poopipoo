@@ -97,7 +97,7 @@ export function ReviewItem({
     >
       <Avatar className="h-9 w-9 shrink-0">
         {review.author.avatarUrl && <AvatarImage src={review.author.avatarUrl} alt="" />}
-        <AvatarFallback className="bg-muted text-sm font-semibold uppercase text-muted-foreground">
+        <AvatarFallback className="bg-muted text-sm font-semibold uppercase text-foreground/80">
           {review.author.username.slice(0, 1)}
         </AvatarFallback>
       </Avatar>

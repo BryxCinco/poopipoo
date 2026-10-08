@@ -8,6 +8,7 @@ import { getDictionary } from "@/lib/i18n/dictionaries";
 import { format } from "@/lib/i18n/format";
 import { getLocale } from "@/lib/i18n/server";
 import { createClient } from "@/lib/supabase/server";
+import { isCrossSiteRequest } from "@/lib/security/same-origin";
 
 /**
  * POST /api/agent — ask Poopipoo Assistant a question.
@@ -54,6 +55,8 @@ function errorResponse(status: number, code: ErrorCode, error: string, retryAfte
 }
 
 export async function POST(request: Request) {
+  // CSRF: refuse POSTs sent from other websites
+  if (isCrossSiteRequest(request)) return NextResponse.json({ code: "forbidden" }, { status: 403 });
   const locale = getLocale();
   const errors = getDictionary(locale).agent.errors;
   const user = await getCurrentUser();

@@ -1,9 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { CloudOff, Loader2, LocateOff, Plus, RefreshCw, SearchX, Toilet } from "lucide-react";
+import { ChevronDown, CloudOff, Loader2, LocateOff, Plus, RefreshCw, SearchX, Toilet } from "lucide-react";
 
 import {
   applyFilters,
@@ -38,6 +38,9 @@ function matchesQuery(restroom: Restroom, words: string[]): boolean {
   return words.every((word) => haystack.includes(word));
 }
 
+// Hundreds of restrooms (OSM import): render the nearest ones first, more on demand
+const PAGE_SIZE = 40;
+
 interface RestroomWithDistance {
   restroom: Restroom;
   distanceKm: number | null;
@@ -61,10 +64,14 @@ export function RestroomList() {
   } = useGeolocation({ requestOnMount: true });
   const [activeFilters, setActiveFilters] = useState<FilterId[]>([]);
   const [query, setQuery] = useState("");
+  const [limit, setLimit] = useState(PAGE_SIZE);
   const { t } = useI18n();
-  const queryWords = useMemo(() => normalize(query).split(/s+/).filter(Boolean), [query]);
+  const queryWords = useMemo(() => normalize(query).split(/\s+/).filter(Boolean), [query]);
 
   useErrorToast(dataError, t.list.loadError, retry);
+
+  // A new search/filter starts from the top again
+  useEffect(() => setLimit(PAGE_SIZE), [activeFilters, query]);
 
   // Wait for the location too, so the list doesn't reorder right after appearing.
   const loading = dataLoading || locationLoading;
@@ -104,7 +111,8 @@ export function RestroomList() {
           {t.list.gettingLocation}
         </p>
       ) : !hasLocation ? (
-        <div className="flex items-center justify-between gap-2 rounded-md bg-muted px-3 py-2 text-xs text-muted-foreground">
+        // text-foreground/80: muted-foreground on bg-muted is below WCAG AA contrast (4.3:1)
+        <div className="flex items-center justify-between gap-2 rounded-md bg-muted px-3 py-2 text-xs text-foreground/80">
           <span className="flex items-center gap-1.5">
             <LocateOff className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
             {locationError ?? t.list.noLocation} {t.list.sortedByRating}
@@ -184,8 +192,9 @@ export function RestroomList() {
           }
         />
       ) : (
+        <>
         <ul className="flex flex-col gap-2">
-          {items.map(({ restroom, distanceKm }, index) => (
+          {items.slice(0, limit).map(({ restroom, distanceKm }, index) => (
             // Staggered entrance (capped so long lists appear quickly); items shown by a filter change animate in too
             <motion.li key={restroom.id} custom={index} variants={staggerItemCapped} initial="hidden" animate="visible">
               <RestroomListItem
@@ -196,6 +205,13 @@ export function RestroomList() {
             </motion.li>
           ))}
         </ul>
+        {items.length > limit && (
+          <Button variant="outline" onClick={() => setLimit((n) => n + PAGE_SIZE)} className="w-full">
+            <ChevronDown aria-hidden="true" />
+            {format(t.list.showMore, { count: items.length - limit })}
+          </Button>
+        )}
+        </>
       )}
     </div>
   );

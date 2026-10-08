@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useMemo } from "react";
-import { MapContainer, Marker, Popup, useMap } from "react-leaflet";
+import { MapContainer, useMap } from "react-leaflet";
 
 import { BaseTileLayer } from "@/components/map/BaseTileLayer";
+import { ClusteredMarkers } from "@/components/map/ClusteredMarkers";
 import { MapController, type MapTarget } from "@/components/map/MapController";
 import { createRestroomIcon } from "@/components/map/marker-icon";
 import { RouteLayer } from "@/components/map/RouteLayer";
@@ -111,18 +112,12 @@ export default function RestroomMap({
         />
       )}
 
-      {restrooms.map((restroom) => (
-        <Marker
-          key={restroom.id}
-          position={[restroom.latitude, restroom.longitude]}
-          icon={restroomIcon}
-          title={restroom.name}
-        >
-          <Popup>
-            <RestroomPopupContent restroom={restroom} onSelectRestroom={onSelectRestroom} />
-          </Popup>
-        </Marker>
-      ))}
+      {/* Grouped into count bubbles when zoomed out (hundreds of OSM restrooms) */}
+      <ClusteredMarkers
+        restrooms={restrooms}
+        restroomIcon={restroomIcon}
+        renderPopup={(restroom) => <RestroomPopupContent restroom={restroom} onSelectRestroom={onSelectRestroom} />}
+      />
     </MapContainer>
   );
 }

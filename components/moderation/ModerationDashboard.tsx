@@ -254,7 +254,7 @@ export function ModerationDashboard({ viewerId, flagged, reported, banned, unche
                 <span
                   className={cn(
                     "min-w-5 rounded-full px-1.5 text-center text-xs tabular-nums",
-                    section.count > 0 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                    section.count > 0 ? "bg-primary text-primary-foreground" : "bg-muted text-foreground/80"
                   )}
                 >
                   {section.count}

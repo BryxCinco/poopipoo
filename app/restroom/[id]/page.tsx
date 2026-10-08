@@ -5,7 +5,8 @@ import { RestroomDetail } from "@/components/restroom/RestroomDetail";
 import type { ReviewViewer } from "@/components/restroom/ReviewsSection";
 import { getCurrentUser } from "@/lib/auth/server";
 import { getT } from "@/lib/i18n/server";
-import { pageMetadata } from "@/lib/metadata";
+import { getSiteUrl, pageMetadata } from "@/lib/metadata";
+import { restroomJsonLd, toJsonLdScript } from "@/lib/structured-data";
 import { getRestroomByIdServer } from "@/lib/restrooms/server";
 import { fetchReviewsPage, fetchUserReview } from "@/lib/reviews/queries";
 import { createClient } from "@/lib/supabase/server";
@@ -71,7 +72,12 @@ export default async function RestroomPage({ params, searchParams }: RestroomPag
   const initialVerified =
     verifiedResult.status === "fulfilled" && verifiedResult.value !== null && verifiedResult.value.data !== null;
 
+  const jsonLd = toJsonLdScript(restroomJsonLd(restroom, new URL(`/restroom/${restroom.id}`, getSiteUrl()).toString()));
+
   return (
+    <>
+    {/* schema.org PublicToilet for search engines (see lib/structured-data.ts) */}
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />
     <RestroomDetail
       restroom={restroom}
       isOwner={user !== null && restroom.createdBy === user.id}
@@ -86,5 +92,6 @@ export default async function RestroomPage({ params, searchParams }: RestroomPag
         startEditing: searchParams.review === "edit",
       }}
     />
+    </>
   );
 }

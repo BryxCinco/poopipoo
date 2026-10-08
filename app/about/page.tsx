@@ -13,10 +13,11 @@ export function generateMetadata(): Metadata {
 }
 
 const GITHUB_URL = "https://github.com/BryxCinco/poopipoo";
+const OSM_COPYRIGHT_URL = "https://www.openstreetmap.org/copyright";
 
 // role = key in t.about.creditRoles
 const CREDITS = [
-  { name: "OpenStreetMap", role: "osm", href: "https://www.openstreetmap.org/copyright" },
+  { name: "OpenStreetMap", role: "osm", href: OSM_COPYRIGHT_URL },
   { name: "CARTO", role: "carto", href: "https://carto.com/attributions" },
   { name: "Supabase", role: "supabase", href: "https://supabase.com" },
   { name: "Groq", role: "groq", href: "https://groq.com" },
@@ -67,6 +68,26 @@ export default function AboutPage() {
             </li>
           ))}
         </ul>
+      </section>
+
+      {/* OpenStreetMap attribution (required by the ODbL for the imported restrooms) */}
+      <section className="flex flex-col gap-2" aria-labelledby="license-heading">
+        <h2 id="license-heading" className="font-semibold">
+          {t.about.dataLicenseHeading}
+        </h2>
+        <div className="flex flex-col gap-2 rounded-xl border bg-card p-3 text-sm shadow-sm">
+          <p className="text-muted-foreground">{t.about.dataLicense}</p>
+          <a
+            href={OSM_COPYRIGHT_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="link-underline inline-flex w-fit items-center gap-1 font-medium"
+          >
+            {t.about.dataLicenseLink}
+            <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+            <span className="sr-only">{t.common.newTab}</span>
+          </a>
+        </div>
       </section>
 
       {/* Links */}

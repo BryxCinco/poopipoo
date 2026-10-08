@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import type { RestroomStatus } from "@/types/restroom";
 
 const STYLES: Record<RestroomStatus, { icon: LucideIcon; className: string }> = {
-  pending: { icon: Clock, className: "bg-muted text-muted-foreground hover:bg-muted" },
+  pending: { icon: Clock, className: "bg-muted text-foreground/80 hover:bg-muted" },
   approved: { icon: ShieldCheck, className: "bg-primary/10 text-primary hover:bg-primary/10" },
   flagged: {
     icon: AlertTriangle,

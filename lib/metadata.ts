@@ -66,6 +66,8 @@ export function rootMetadata(): Metadata {
     description: t.siteDescription,
     applicationName: SITE_NAME,
     keywords: ["CR", "restroom", "banyo", "comfort room", "Philippines", "Pilipinas", "toilet finder"],
+    // The map (home). Every other page sets its own canonical via pageMetadata().
+    alternates: { canonical: "/" },
     openGraph: { ...openGraphDefaults(), title: t.siteTitle, description: t.siteDescription, url: "/" },
     twitter: { card: "summary_large_image", title: t.siteTitle, description: t.siteDescription },
     manifest: "/manifest.json",

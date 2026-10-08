@@ -7,6 +7,7 @@ import { calculateDistance } from "@/lib/distance";
 import { getViewerModeration } from "@/lib/moderation/server";
 import { RESTROOM_COLUMNS, rowToRestroom } from "@/lib/restrooms/mappers";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isCrossSiteRequest } from "@/lib/security/same-origin";
 
 /**
  * POST /api/moderate — AI check of a newly added restroom.
@@ -34,6 +35,8 @@ const NEARBY_DEGREES = 0.001;
 const NEARBY_MAX_METERS = 100;
 
 export async function POST(request: Request) {
+  // CSRF: refuse POSTs sent from other websites
+  if (isCrossSiteRequest(request)) return NextResponse.json({ code: "forbidden" }, { status: 403 });
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ code: "unauthorized" }, { status: 401 });
 

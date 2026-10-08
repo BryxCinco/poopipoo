@@ -99,12 +99,16 @@ export const tl = {
       "Ang \"Waze ng CR.\" Hanapin ang pinakamalapit na malinis na CR sa Pilipinas: mapa, reviews, direksyon at AI assistant. Lahat ng CR at review ay galing sa komunidad, kaya bawat dagdag mo ay nakakatulong sa susunod na nagmamadali.",
     credits: "Credits",
     creditRoles: {
-      osm: "Map data, search (Nominatim) at routing (OSRM)",
+      osm: "Map data, mga imported na CR, search (Nominatim) at routing (OSRM)",
       carto: "Map tiles (Voyager at Dark Matter)",
       supabase: "Database, login at storage",
       groq: "AI assistant (LLM)",
       huggingface: "Embeddings para sa AI search",
     },
+    dataLicenseHeading: "Data license",
+    dataLicense:
+      "Ang map data at ang mga CR na galing sa OpenStreetMap ay © OpenStreetMap contributors, sa ilalim ng Open Database License (ODbL).",
+    dataLicenseLink: "Data © OpenStreetMap contributors, ODbL license",
     links: "Links",
     privacy: "Privacy Policy",
     terms: "Terms of Use",
@@ -145,6 +149,8 @@ export const tl = {
           "OpenStreetMap Nominatim: ang tina-type mo sa search bar ng mapa.",
           "CARTO / OpenStreetMap: map tiles.",
           "Groq at Hugging Face: pinoproseso ang mga tanong sa AI assistant.",
+          "Groq: sinusuri ng AI ang bawat bagong CR para sa spam o fake na data.",
+          "Vercel Web Analytics at Speed Insights: bilang ng bisita at bilis ng page. Walang cookies at hindi ka nito kinikilala.",
         ],
       },
       {
@@ -227,6 +233,7 @@ export const tl = {
     locating: "Hinahanap...",
     locationErrorTitle: "Hindi makuha ang location",
     showingManila: "{error} Ipinapakita muna ang Manila.",
+    clusterLabel: { one: "{count} CR dito, i-tap para mag-zoom", other: "{count} CR dito, i-tap para mag-zoom" },
   },
   geo: {
     denied: "Hindi pinayagan ang location access.",
@@ -325,6 +332,7 @@ export const tl = {
     clearFilters: "I-clear ang mga filter",
     loadingLabel: "Naglo-load",
     moreAmenities: "+{count} pa",
+    showMore: "Tingnan pa ({count})",
   },
   restroom: {
     free: "Libre",
@@ -357,6 +365,8 @@ export const tl = {
     deleteCancel: "Huwag",
     deleted: "Naburang CR.",
     deleteFailed: "Hindi mabura ang CR",
+    osmSource: "Galing ang CR na ito sa OpenStreetMap.",
+    osmAttribution: "© OpenStreetMap contributors (ODbL)",
   },
   localUpload: {
     label: "Mga CR sa device na ito",

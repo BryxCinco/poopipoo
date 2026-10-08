@@ -10,14 +10,17 @@ const AMENITY_SET = new Set<string>(ALL_AMENITIES);
  * row type (RestroomRow) from this literal string.
  */
 export const RESTROOM_COLUMNS =
-  "id, name, description, address, latitude, longitude, amenities, is_free, images, rating, review_count, created_by, created_at, updated_at, status, verified_count" as const;
+  "id, name, description, address, latitude, longitude, amenities, is_free, images, rating, review_count, created_by, created_at, updated_at, status, verified_count, source" as const;
 
 function isAmenity(value: string): value is Amenity {
   return AMENITY_SET.has(value);
 }
 
-/** DB row (snake_case) → app type (camelCase). Unknown amenities are dropped. */
-export function rowToRestroom(row: RestroomRow): Restroom {
+/**
+ * DB row (snake_case) → app type (camelCase). Unknown amenities are dropped.
+ * `source` is optional because the vector search (match_restrooms) doesn't return it.
+ */
+export function rowToRestroom(row: Omit<RestroomRow, "source"> & { source?: RestroomRow["source"] }): Restroom {
   return {
     id: row.id,
     name: row.name,
@@ -34,6 +37,7 @@ export function rowToRestroom(row: RestroomRow): Restroom {
     createdBy: row.created_by,
     status: row.status,
     verifiedCount: row.verified_count,
+    source: row.source,
   };
 }
 

@@ -225,6 +225,22 @@ export function RestroomDetail({ restroom, isOwner, viewerId, initialVerified, r
         </section>
       )}
 
+      {/* ODbL attribution for restrooms imported from OpenStreetMap */}
+      {restroom.source === "osm" && (
+        <p className="text-xs text-muted-foreground">
+          {t.restroom.osmSource}{" "}
+          <a
+            href="https://www.openstreetmap.org/copyright"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="link-underline"
+          >
+            {t.restroom.osmAttribution}
+            <span className="sr-only"> {t.common.newTab}</span>
+          </a>
+        </p>
+      )}
+
       <ReviewsSection restroomId={restroom.id} {...reviews} />
 
       {planning && (
