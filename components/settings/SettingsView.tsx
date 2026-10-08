@@ -1,8 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
-import { Bell, Languages, LogIn, UserX } from "lucide-react";
+import { Bell, Languages, LogIn } from "lucide-react";
 
 import { LanguageSwitch } from "@/components/i18n/LanguageSwitch";
 
@@ -11,9 +10,9 @@ import { AgentSettings, type AgentUsage } from "@/components/profile/AgentSettin
 import { ThemeSetting } from "@/components/profile/ThemeSetting";
 import { AccountSettings } from "@/components/settings/AccountSettings";
 import { DataSettings } from "@/components/settings/DataSettings";
+import { DeleteAccountButton } from "@/components/settings/DeleteAccountButton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { useI18n } from "@/hooks/use-i18n";
 import { useToast } from "@/hooks/use-toast";
 import { loginUrl } from "@/lib/auth/return-url";
@@ -36,7 +35,6 @@ interface SettingsViewProps {
 export function SettingsView({ account, agentUsage }: SettingsViewProps) {
   const { toast } = useToast();
   const { t } = useI18n();
-  const [deleteOpen, setDeleteOpen] = useState(false);
   // Not built yet: shown with a "Soon" badge
   const placeholders = [{ label: t.settings.notifications, description: t.settings.notificationsDescription, icon: Bell }];
 
@@ -117,26 +115,7 @@ export function SettingsView({ account, agentUsage }: SettingsViewProps) {
       {account && (
         <section className="flex flex-col gap-2" aria-label={t.settings.accountActions}>
           <LogoutButton />
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={() => setDeleteOpen(true)}
-            aria-label={t.settings.deleteAccount}
-            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-          >
-            <UserX aria-hidden="true" />
-            {t.settings.deleteAccount}
-          </Button>
-          {/* Placeholder: deleting accounts isn't available yet */}
-          <ConfirmModal
-            open={deleteOpen}
-            onOpenChange={setDeleteOpen}
-            icon={UserX}
-            title={t.settings.deleteTitle}
-            description={t.settings.deleteDescription}
-            confirmLabel={t.common.okay}
-            onConfirm={() => undefined}
-          />
+          <DeleteAccountButton username={account.username} />
         </section>
       )}
     </>

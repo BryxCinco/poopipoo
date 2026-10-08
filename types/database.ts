@@ -34,7 +34,7 @@ import type { ReviewStatus } from "@/types/review";
 export type ReportTargetType = "restroom" | "review" | "user";
 export type ReportReason = "fake" | "inappropriate" | "spam" | "duplicate" | "other";
 export type ReportStatus = "pending" | "reviewed" | "resolved" | "dismissed";
-export type ModerationAction = "approve" | "reject" | "flag" | "ban" | "unban";
+export type ModerationAction = "approve" | "reject" | "flag" | "ban" | "unban" | "delete_account";
 
 export type RestroomRow = {
   id: string;
@@ -265,7 +265,9 @@ export type Database = {
       };
       moderation_log: {
         Row: ModerationLogRow;
-        Insert: Record<string, never>;
+        // Only the server (secret key) inserts directly: the account-deletion log
+        Insert: Pick<ModerationLogRow, "action" | "target_type" | "target_id"> &
+          Partial<Pick<ModerationLogRow, "moderator_id" | "reason">>;
         Update: Record<string, never>;
         Relationships: [];
       };

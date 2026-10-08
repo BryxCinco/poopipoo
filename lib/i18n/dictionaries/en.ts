@@ -39,7 +39,7 @@ export const en: Dictionary = {
   meta: {
     siteTitle: "Poopipoo — Where's the restroom?",
     siteDescription:
-      "Find the nearest clean restroom in the Philippines. Crowdsourced restroom finder: map, reviews, directions and an AI assistant.",
+      "Find the nearest clean restroom in Metro Manila, Cebu, Davao, Iloilo and Bacolod. Crowdsourced restroom finder: map, reviews, directions and an AI assistant.",
     shareImageAlt: "Poopipoo — Where's the restroom? Crowdsourced restroom finder for the Philippines",
     list: {
       title: "Restrooms Near You",
@@ -86,6 +86,10 @@ export const en: Dictionary = {
       title: "Moderation",
       description: "Flagged restrooms, reports and banned users.",
     },
+    city: {
+      title: "Public restrooms in {city}",
+      description: "{count} public restrooms (CR) in {city}: ratings, amenities and directions on Poopipoo.",
+    },
     restroomFallbackDescription: "Restroom details, rating and reviews on Poopipoo.",
     notFound: "Not found",
   },
@@ -100,7 +104,7 @@ export const en: Dictionary = {
       carto: "Map tiles (Voyager and Dark Matter)",
       supabase: "Database, login and storage",
       groq: "AI assistant (LLM)",
-      huggingface: "Embeddings for AI search",
+      huggingface: "Embedding model for AI search (all-MiniLM-L6-v2, runs on our server)",
     },
     dataLicenseHeading: "Data license",
     dataLicense:
@@ -112,6 +116,20 @@ export const en: Dictionary = {
     madeWith: "Made with",
     love: "love",
     inPhilippines: "in the Philippines",
+    coverageHeading: "Coverage",
+    coverage: "Available in {cities}.",
+    and: "and",
+    restroomCount: { one: "{count} restroom and counting", other: "{count} restrooms and counting" },
+  },
+  city: {
+    heading: "Restrooms in {city}",
+    count: { one: "{count} public restroom", other: "{count} public restrooms" },
+    intro: "From the community and OpenStreetMap. Tap a restroom for its rating, amenities and directions.",
+    topRated: "Showing the {shown} top-rated.",
+    empty: "No restrooms here yet. Be the first to add one!",
+    openMap: "Open the map",
+    otherCities: "Other cities",
+    listLabel: "Restrooms in {city}",
   },
   legal: {
     updated: "Last updated: {date}",
@@ -145,7 +163,7 @@ export const en: Dictionary = {
           "Supabase: database, login and photo storage.",
           "OpenStreetMap Nominatim: what you type in the map's search bar.",
           "CARTO / OpenStreetMap: map tiles.",
-          "Groq and Hugging Face: process questions sent to the AI assistant.",
+          "Groq: processes questions sent to the AI assistant. Hugging Face may also receive them for search, only while its API is in use; otherwise search runs on our own server.",
           "Groq: an AI checks every new restroom for spam or fake data.",
           "Vercel Web Analytics and Speed Insights: visitor counts and page speed. No cookies, and it doesn't identify you.",
         ],
@@ -161,7 +179,7 @@ export const en: Dictionary = {
         items: [
           "You can export all your data as JSON in Settings.",
           "You can edit or delete your restrooms and reviews at any time.",
-          "Deleting your whole account is coming in a future update.",
+          "You can delete your whole account in Settings. This removes your profile, reviews, votes and points; restrooms you added stay on the map without your name.",
         ],
       },
     ],
@@ -670,7 +688,18 @@ export const en: Dictionary = {
     deleteAccount: "Delete account",
     deleteTitle: "Delete your account?",
     deleteDescription:
-      "This isn't available yet. In a future update, this will permanently delete your account, including your reviews and points. You can export your data above first.",
+      "This permanently deletes your account, profile, reviews, votes and points. Restrooms you added stay on the map, without your name. This can't be undone. You can export your data above first.",
+    deleteAccountFlow: {
+      confirmLabel: "Type your username to confirm",
+      confirmHint: "Type \"{username}\" to confirm.",
+      confirm: "Delete my account",
+      cancel: "Keep my account",
+      mismatch: "The username doesn't match.",
+      failed: "Couldn't delete your account. Try again later.",
+      loginRequired: "Log in first to delete your account.",
+      done: "Your account was deleted.",
+      doneDescription: "Thanks for helping people find a CR.",
+    },
     photo: {
       uploading: "Uploading...",
       choose: "Choose a profile photo",

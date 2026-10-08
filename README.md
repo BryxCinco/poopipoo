@@ -23,7 +23,7 @@ Find the nearest clean restroom (CR), see what it has (bidet, tissue, PWD access
 | UI | Tailwind CSS, shadcn/ui (Radix), Framer Motion, Lucide icons |
 | Backend | Supabase: Postgres, Auth, Storage, Row Level Security, pgvector |
 | Maps | Leaflet + OpenStreetMap data, CARTO tiles, OSRM routing, Nominatim search |
-| AI | Groq (`openai/gpt-oss-120b`) for chat and moderation; Hugging Face (`all-MiniLM-L6-v2`) for embeddings |
+| AI | Groq (`openai/gpt-oss-120b`) for chat and moderation; `all-MiniLM-L6-v2` embeddings, run locally with transformers.js (Hugging Face API used if it has credits) |
 | PWA | Serwist |
 | Hosting | Vercel (with Web Analytics and Speed Insights) |
 
@@ -39,6 +39,7 @@ Supabase Postgres ── triggers: ratings, points, rate limits, bans, reports, 
    ▲
    │  server-only secret key (badges, AI results, imports)
 Next.js server (Server Components, route handlers)
+   ├─ /api/account/delete  permanent account deletion (secret key, logged)
    ├─ /api/agent     AI assistant: Groq tool calling over a RAG search (pgvector, keyword fallback)
    ├─ /api/moderate  AI check of a new restroom (Groq, JSON output)
    ├─ /api/report    report a restroom or review
@@ -59,14 +60,16 @@ npm install
 cp .env.example .env.local   # then fill it in (see below)
 ```
 
-1. **Database.** In Supabase → SQL Editor, run the files in `supabase/migrations/` in order (`0001` to `0006`). Each one is safe to re-run.
+1. **Database.** In Supabase → SQL Editor, run the files in `supabase/migrations/` in order (`0001` to `0007`). Each one is safe to re-run.
 2. **Auth.** In Supabase → Authentication → URL Configuration, set the Site URL to `http://localhost:3000` (and your production URL later) and add `/auth/callback` to the redirect URLs.
 3. **Data (optional):**
    ```bash
    npx tsx scripts/seed-restrooms.ts          # 10 sample restrooms
    npx tsx scripts/import-osm.ts --dry-run    # preview the OpenStreetMap import
-   npx tsx scripts/import-osm.ts              # import Metro Manila public toilets
-   npx tsx scripts/generate-embeddings.ts     # vectors for the AI search
+   npx tsx scripts/import-osm.ts              # import public toilets (Metro Manila, Cebu, Davao, Iloilo, Bacolod)
+   npx tsx scripts/import-osm.ts --city=cebu  # or only some cities (slugs in lib/cities.ts)
+   npx tsx scripts/rename-osm-restrooms.ts    # name old "Public CR" imports after a nearby landmark or street
+   npx tsx scripts/generate-embeddings.ts     # vectors for the AI search (local model, ~23 MB download once)
    ```
    `scripts/seed-manila-cr.sql` adds 20 hand-picked Manila restrooms (run it in the SQL Editor).
 4. **Run:**
@@ -89,7 +92,7 @@ update public.profiles set role = 'admin' where username = 'your-username';
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | browser + server | Publishable key (`sb_publishable_...`); RLS limits what it can do |
 | `SUPABASE_SECRET_KEY` | **server only** | Secret key (`sb_secret_...`); bypasses RLS. Never expose it |
 | `GROQ_API_KEY` | server only | AI assistant and AI moderation |
-| `HUGGINGFACE_API_KEY` | server only | Embeddings; token with "Inference Providers" permission. Without credits the assistant falls back to keyword search |
+| `HUGGINGFACE_API_KEY` | server only | Optional. Embeddings via the API (token with "Inference Providers" permission). Without it or without credits, the same model runs locally |
 | `NEXT_PUBLIC_CARTO_API_KEY` | browser | Optional CARTO basemap key; without it, OpenStreetMap tiles are used |
 | `NEXT_PUBLIC_SITE_URL` | server | Optional. Canonical site URL for metadata and the sitemap (Vercel's production URL is used by default) |
 

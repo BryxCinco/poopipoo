@@ -1,4 +1,5 @@
 import type { Config } from "tailwindcss";
+import plugin from "tailwindcss/plugin";
 
 const config: Config = {
     darkMode: ["class"],
@@ -100,6 +101,15 @@ const config: Config = {
   		}
   	}
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [
+    require("tailwindcss-animate"),
+    // Custom media variants (as plugins, not `screens`, so min-[..]/max-[..] keep working)
+    plugin(({ addVariant }) => {
+      // Short viewports (small phones, or a desktop at 150%+ browser zoom)
+      addVariant("short", "@media (max-height: 720px)");
+      // Room for two columns: md and up, or a wide-ish landscape window (desktop at 175-200% zoom)
+      addVariant("split", "@media (min-width: 768px), (min-width: 600px) and (orientation: landscape)");
+    }),
+  ],
 };
 export default config;

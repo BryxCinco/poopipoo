@@ -1,5 +1,6 @@
 /**
- * Text embeddings via the Hugging Face Inference API (free tier).
+ * Text embeddings via the Hugging Face Inference API, with a local fallback
+ * (same model through transformers.js) when the API has no credits or is down.
  *
  * Model: sentence-transformers/all-MiniLM-L6-v2 — 384 dimensions, English.
  * Server-only (uses HUGGINGFACE_API_KEY). Also used by
@@ -89,7 +90,17 @@ function retryDelay(response: Response, attempt: number): number {
 
 // ---------- API ----------
 
-/** Embeds `text` into a 384-dimension unit vector. Throws EmbeddingError. */
+// After the API says "no credits" (HTTP 402), skip it for a while instead of
+// paying a failed request on every question.
+const API_COOLDOWN_MS = 30 * 60 * 1000;
+let apiSkippedUntil = 0;
+
+/**
+ * Embeds `text` into a 384-dimension unit vector. Throws EmbeddingError.
+ *
+ * Tries the Hugging Face API first; if there's no key, no credits, or it's
+ * down, falls back to the same model running locally (lib/ai/local-embeddings.ts).
+ */
 export async function generateEmbedding(text: string): Promise<number[]> {
   const input = text.trim().slice(0, MAX_INPUT_CHARS);
   if (!input) throw new EmbeddingError("invalid-response", "Walang text na ie-embed.");
@@ -101,6 +112,38 @@ export async function generateEmbedding(text: string): Promise<number[]> {
     return cached;
   }
 
+  let vector: number[] | null = null;
+  if (process.env.HUGGINGFACE_API_KEY && Date.now() >= apiSkippedUntil) {
+    try {
+      vector = await embedViaApi(input);
+    } catch (error) {
+      if (!(error instanceof EmbeddingError)) throw error;
+      if (error.message.includes("HTTP 402")) apiSkippedUntil = Date.now() + API_COOLDOWN_MS;
+    }
+  }
+  if (!vector) vector = await embedLocally(input);
+
+  remember(key, vector);
+  return vector;
+}
+
+async function embedLocally(input: string): Promise<number[]> {
+  try {
+    const { generateLocalEmbeddings } = await import("@/lib/ai/local-embeddings");
+    const [vector] = await generateLocalEmbeddings([input]);
+    if (!vector || vector.length !== EMBEDDING_DIMENSIONS) {
+      throw new EmbeddingError("invalid-response", "Hindi inaasahang sagot mula sa local model.");
+    }
+    return vector;
+  } catch (error) {
+    if (error instanceof EmbeddingError) throw error;
+    console.error("local embedding failed", error);
+    throw new EmbeddingError("unavailable", "Hindi available ang AI search ngayon.");
+  }
+}
+
+/** The Hugging Face Inference API (needs credits). Throws EmbeddingError. */
+async function embedViaApi(input: string): Promise<number[]> {
   const token = process.env.HUGGINGFACE_API_KEY;
   if (!token) throw new EmbeddingError("config", "Missing environment variable HUGGINGFACE_API_KEY.");
 
@@ -132,9 +175,7 @@ export async function generateEmbedding(text: string): Promise<number[]> {
       if (!vector || vector.length !== EMBEDDING_DIMENSIONS) {
         throw new EmbeddingError("invalid-response", "Hindi inaasahang sagot mula sa Hugging Face.");
       }
-      const normalized = normalize(vector);
-      remember(key, normalized);
-      return normalized;
+      return normalize(vector);
     }
 
     if (response.status === 401 || response.status === 403) {

@@ -1,10 +1,15 @@
 /**
- * Imports public restrooms (amenity=toilets) in Metro Manila from
- * OpenStreetMap into Supabase.
+ * Imports public restrooms (amenity=toilets) from OpenStreetMap into
+ * Supabase, for the cities in lib/cities.ts (Metro Manila, Cebu, Davao,
+ * Iloilo, Bacolod).
  *
- *   npx tsx scripts/import-osm.ts              # import
- *   npx tsx scripts/import-osm.ts --dry-run    # fetch + show what would happen, no writes
- *   npx tsx scripts/import-osm.ts --no-geocode # skip filling missing addresses
+ *   npx tsx scripts/import-osm.ts                       # every city
+ *   npx tsx scripts/import-osm.ts --city=cebu,davao     # only these (slugs from lib/cities.ts)
+ *   npx tsx scripts/import-osm.ts --dry-run             # fetch + show what would happen, no writes
+ *   npx tsx scripts/import-osm.ts --no-geocode          # skip filling missing addresses
+ *
+ * Toilets without a name in OSM get a descriptive one (lib/osm-naming.ts),
+ * e.g. "CR sa Ayala Center Cebu", instead of "Public CR".
  *
  * Requires migration 0006_osm.sql. Uses the secret key (bypasses RLS and the
  * Phase 11 rate limit, which only applies to signed-in users).
@@ -21,8 +26,10 @@
  * Data © OpenStreetMap contributors, ODbL 1.0 — credited on the About page
  * and on each imported restroom's page.
  */
+import { CITIES, type City } from "@/lib/cities";
 import { reverseGeocode } from "@/lib/geocode";
-import { distanceMeters, fetchOsmRestrooms, normalizeName, type OsmRestroom } from "@/lib/osm";
+import { distanceMeters, fetchOsmLandmarks, fetchOsmRestrooms, normalizeName, type OsmLandmark, type OsmRestroom } from "@/lib/osm";
+import { describeRestroom, pickLandmark, uniqueName } from "@/lib/osm-naming";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { RestroomInsert } from "@/types/database";
 
@@ -30,6 +37,7 @@ import type { RestroomInsert } from "@/types/database";
 process.loadEnvFile(".env.local");
 
 const DRY_RUN = process.argv.includes("--dry-run");
+const CITY_ARG = process.argv.find((arg) => arg.startsWith("--city="))?.slice("--city=".length);
 const GEOCODE = !process.argv.includes("--no-geocode");
 
 // Overpass and Nominatim ask scripts to identify themselves
@@ -57,12 +65,30 @@ function similarNames(a: string, b: string): boolean {
   return shared / Math.min(wa.size, wb.size) >= 0.5;
 }
 
+/** An OSM restroom plus the city it was fetched for. */
+type CityRestroom = OsmRestroom & { city: City };
+
+function selectedCities(): City[] {
+  if (!CITY_ARG) return [...CITIES];
+  const slugs = CITY_ARG.split(",").map((slug) => slug.trim());
+  const unknown = slugs.filter((slug) => !CITIES.some((city) => city.slug === slug));
+  if (unknown.length > 0) {
+    throw new Error(`Unknown city: ${unknown.join(", ")}. Use: ${CITIES.map((city) => city.slug).join(", ")}`);
+  }
+  return CITIES.filter((city) => slugs.includes(city.slug));
+}
+
 async function main(): Promise<void> {
   const supabase = createAdminClient();
+  const cities = selectedCities();
 
-  console.log("Fetching amenity=toilets in Metro Manila from Overpass...");
-  const osm = await fetchOsmRestrooms(USER_AGENT);
-  console.log(`  ${osm.length} usable restrooms from OSM (after removing invalid, private and duplicate elements)`);
+  const osm: CityRestroom[] = [];
+  for (const city of cities) {
+    console.log(`Fetching amenity=toilets in ${city.name} from Overpass...`);
+    const found = await fetchOsmRestrooms(city, USER_AGENT);
+    console.log(`  ${found.length} usable restrooms (after removing invalid, private and duplicate elements)`);
+    osm.push(...found.map((restroom) => ({ ...restroom, city })));
+  }
 
   const { data: existing, error: readError } = await supabase
     .from("restrooms")
@@ -72,9 +98,9 @@ async function main(): Promise<void> {
   const imported = new Set(existing.filter((r) => r.osm_id).map((r) => `${r.osm_type}/${r.osm_id}`));
   const others = existing.filter((r) => r.source !== "osm");
 
-  const skippedImported: OsmRestroom[] = [];
-  const skippedNearby: { osm: OsmRestroom; existing: string; meters: number }[] = [];
-  const toImport: OsmRestroom[] = [];
+  const skippedImported: CityRestroom[] = [];
+  const skippedNearby: { osm: CityRestroom; existing: string; meters: number }[] = [];
+  const toImport: CityRestroom[] = [];
   for (const restroom of osm) {
     if (imported.has(`${restroom.osmType}/${restroom.osmId}`)) {
       skippedImported.push(restroom);
@@ -96,8 +122,18 @@ async function main(): Promise<void> {
   skippedNearby.forEach(({ osm: o, existing: e, meters }) => console.log(`    - "${o.name}" ~ "${e}" (${meters} m)`));
   console.log(`  to import: ${toImport.length} (${toImport.filter((r) => !r.address).length} without an address)`);
 
+  // ---- landmarks for naming toilets without one (before geocoding, so an
+  //      Overpass failure stops the run before minutes of Nominatim lookups) ----
+  const unnamed = toImport.filter((r) => !r.named);
+  const landmarks: OsmLandmark[] = [];
+  for (const city of cities) {
+    if (!unnamed.some((r) => r.city === city)) continue;
+    console.log(`Fetching landmarks near toilets in ${city.name} (to name ${unnamed.filter((r) => r.city === city).length} unnamed)...`);
+    landmarks.push(...(await fetchOsmLandmarks(city, USER_AGENT)));
+  }
+
   // ---- fill missing addresses (Nominatim, 1 request/second) ----
-  const addresses = new Map<OsmRestroom, string>();
+  const addresses = new Map<CityRestroom, string>();
   const missing = toImport.filter((r) => !r.address);
   if (GEOCODE && !DRY_RUN && missing.length > 0) {
     console.log(`Looking up ${missing.length} addresses with Nominatim (~${Math.ceil((missing.length * GEOCODE_DELAY_MS) / 60000)} min)...`);
@@ -110,10 +146,21 @@ async function main(): Promise<void> {
     }
   }
 
+  // ---- names: nearby landmark, else the address ----
+  const taken = new Set(existing.map((r) => r.name.toLowerCase()));
+  const addressOf = (r: CityRestroom) => r.address ?? addresses.get(r) ?? r.city.fallbackAddress;
+  const nameOf = new Map<CityRestroom, string>();
+  for (const r of toImport) {
+    const name = r.named
+      ? r.name
+      : uniqueName(describeRestroom(addressOf(r), pickLandmark(r.latitude, r.longitude, landmarks)), addressOf(r), taken);
+    nameOf.set(r, name);
+  }
+
   const rows: RestroomInsert[] = toImport.map((r) => ({
-    name: r.name,
+    name: nameOf.get(r) ?? r.name,
     description: r.description,
-    address: r.address ?? addresses.get(r) ?? "Metro Manila",
+    address: addressOf(r),
     latitude: r.latitude,
     longitude: r.longitude,
     amenities: r.amenities,
@@ -128,8 +175,12 @@ async function main(): Promise<void> {
   }));
 
   if (DRY_RUN) {
-    console.log("\nDry run: nothing written. Sample:");
-    rows.slice(0, 8).forEach((row) => console.log(`  ${row.name} | ${row.address} | ${row.amenities?.join(",")} | free=${row.is_free}`));
+    console.log("\nDry run: nothing written. Sample per city:");
+    for (const city of cities) {
+      const cityRows = rows.filter((_, i) => toImport[i].city === city);
+      console.log(`  ${city.name}: ${cityRows.length} to import`);
+      cityRows.slice(0, 6).forEach((row) => console.log(`    ${row.name} | ${row.address} | free=${row.is_free}`));
+    }
     return;
   }
 

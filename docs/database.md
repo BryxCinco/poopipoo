@@ -10,6 +10,7 @@ Supabase Postgres. The schema lives in `supabase/migrations/` (run in order; eac
 | `0004_gamification.sql` | Points, levels, badges, `review_votes`, avatars bucket |
 | `0005_moderation.sql` | Roles, bans, trust score, statuses, reports, verifications, rate limits, moderation log |
 | `0006_osm.sql` | `source`, `osm_type`, `osm_id` for OpenStreetMap imports |
+| `0007_account_deletion.sql` | `delete_account` as a `moderation_log` action |
 
 ## Tables
 
@@ -50,7 +51,7 @@ One row per auth user (created by a trigger on sign-up).
 | `restroom_verifications` | "I've seen this" votes; one per user per restroom; not on your own |
 | `reports` | Reports on restrooms/reviews; one per reporter per item |
 | `restroom_submissions` | One row per restroom a user added (kept after deletes); used by the rate limit |
-| `moderation_log` | Every moderator action and AI flag (`moderator_id` `NULL` = AI) |
+| `moderation_log` | Every moderator action, AI flag and account deletion (`moderator_id` `NULL` = AI, or a deleted user) |
 | `agent_queries` | When each user asked the assistant (rate limit and stats) |
 
 ## Rules enforced in the database

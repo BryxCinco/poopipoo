@@ -43,7 +43,7 @@ export const tl = {
   meta: {
     siteTitle: "Poopipoo — Saan ang CR?",
     siteDescription:
-      "Hanapin ang pinakamalapit na malinis na CR sa Pilipinas. Crowdsourced restroom finder: mapa, reviews, direksyon at AI assistant.",
+      "Hanapin ang pinakamalapit na malinis na CR sa Metro Manila, Cebu, Davao, Iloilo at Bacolod. Crowdsourced restroom finder: mapa, reviews, direksyon at AI assistant.",
     shareImageAlt: "Poopipoo — Saan ang CR? Crowdsourced restroom finder para sa Pilipinas",
     list: {
       title: "Mga CR Malapit Sa'yo",
@@ -90,6 +90,10 @@ export const tl = {
       title: "Moderation",
       description: "Mga flagged na CR, report at naka-ban na user.",
     },
+    city: {
+      title: "Mga CR sa {city}",
+      description: "{count} pampublikong CR sa {city}: rating, amenities at direksyon sa Poopipoo.",
+    },
     restroomFallbackDescription: "CR details, rating at reviews sa Poopipoo.",
     notFound: "Hindi mahanap",
   },
@@ -104,7 +108,7 @@ export const tl = {
       carto: "Map tiles (Voyager at Dark Matter)",
       supabase: "Database, login at storage",
       groq: "AI assistant (LLM)",
-      huggingface: "Embeddings para sa AI search",
+      huggingface: "Embedding model para sa AI search (all-MiniLM-L6-v2, tumatakbo sa server namin)",
     },
     dataLicenseHeading: "Data license",
     dataLicense:
@@ -116,6 +120,20 @@ export const tl = {
     madeWith: "Ginawa nang may",
     love: "pagmamahal",
     inPhilippines: "sa Pilipinas",
+    coverageHeading: "Saan available",
+    coverage: "Available sa {cities}.",
+    and: "at",
+    restroomCount: { one: "{count} CR at dumarami pa", other: "{count} CR at dumarami pa" },
+  },
+  city: {
+    heading: "Mga CR sa {city}",
+    count: { one: "{count} pampublikong CR", other: "{count} pampublikong CR" },
+    intro: "Mula sa community at sa OpenStreetMap. Pindutin ang isang CR para sa rating, amenities at direksyon.",
+    topRated: "Ipinapakita ang {shown} na may pinakamataas na rating.",
+    empty: "Wala pang CR dito. Ikaw na ang unang magdagdag!",
+    openMap: "Buksan ang mapa",
+    otherCities: "Iba pang lungsod",
+    listLabel: "Listahan ng CR sa {city}",
   },
   legal: {
     updated: "Huling update: {date}",
@@ -149,7 +167,7 @@ export const tl = {
           "Supabase: database, login at storage ng photo.",
           "OpenStreetMap Nominatim: ang tina-type mo sa search bar ng mapa.",
           "CARTO / OpenStreetMap: map tiles.",
-          "Groq at Hugging Face: pinoproseso ang mga tanong sa AI assistant.",
+          "Groq: pinoproseso ang mga tanong sa AI assistant. Maaari ring matanggap ng Hugging Face ang mga ito para sa search, kapag ginagamit lang ang API nila; kung hindi, sa sarili naming server tumatakbo ang search.",
           "Groq: sinusuri ng AI ang bawat bagong CR para sa spam o fake na data.",
           "Vercel Web Analytics at Speed Insights: bilang ng bisita at bilis ng page. Walang cookies at hindi ka nito kinikilala.",
         ],
@@ -165,7 +183,7 @@ export const tl = {
         items: [
           "Pwede mong i-export ang lahat ng data mo bilang JSON sa Settings.",
           "Pwede mong i-edit o burahin ang mga CR at review mo anumang oras.",
-          "Ang pag-delete ng buong account ay paparating sa susunod na update.",
+          "Pwede mong burahin ang buong account mo sa Settings. Mabubura ang profile, mga review, vote at points mo; mananatili sa mapa ang mga CR na idinagdag mo, pero wala na ang pangalan mo.",
         ],
       },
     ],
@@ -674,7 +692,18 @@ export const tl = {
     deleteAccount: "I-delete ang account",
     deleteTitle: "I-delete ang account?",
     deleteDescription:
-      "Hindi pa ito available. Sa susunod na update, permanenteng mabubura rito ang account mo, kasama ang mga review at points mo. Pwede mo munang i-export ang data mo sa itaas.",
+      "Permanenteng mabubura ang account, profile, mga review, vote at points mo. Mananatili sa mapa ang mga CR na idinagdag mo, pero wala na ang pangalan mo. Hindi na ito maibabalik. Pwede mo munang i-export ang data mo sa itaas.",
+    deleteAccountFlow: {
+      confirmLabel: "I-type ang username mo para kumpirmahin",
+      confirmHint: "I-type ang \"{username}\" para kumpirmahin.",
+      confirm: "Burahin ang account ko",
+      cancel: "Huwag na",
+      mismatch: "Hindi tugma ang username.",
+      failed: "Hindi mabura ang account mo. Subukan ulit mamaya.",
+      loginRequired: "Mag-login muna para mabura ang account mo.",
+      done: "Nabura na ang account mo.",
+      doneDescription: "Salamat sa pagtulong sa paghahanap ng CR.",
+    },
     photo: {
       uploading: "Ina-upload...",
       choose: "Pumili ng profile photo",

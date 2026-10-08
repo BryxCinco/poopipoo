@@ -113,9 +113,10 @@ const TOOLS = [
           filters: {
             type: "object",
             properties: {
-              is_free: { type: "boolean", description: "true = libre lang, false = may bayad lang" },
+              // null allowed: the model sends it for "any" (a plain boolean fails Groq's validation)
+              is_free: { type: ["boolean", "null"], description: "true = libre lang, false = may bayad lang, null = kahit ano" },
               amenities: {
-                type: "array",
+                type: ["array", "null"],
                 items: { type: "string", enum: AMENITY_VALUES },
                 description: "Mga kailangang amenities",
               },
@@ -163,8 +164,8 @@ const searchArgs = z.object({
   query: z.string().trim().min(1).max(300),
   filters: z
     .object({
-      is_free: z.boolean().optional(),
-      amenities: z.array(z.string()).optional(),
+      is_free: z.boolean().nullish(),
+      amenities: z.array(z.string()).nullish(),
     })
     .nullish(),
   sort_by: z.enum(["relevance", "distance"]).nullish(),
@@ -222,7 +223,7 @@ async function runTool(call: ToolCall, input: AgentInput, run: RunState): Promis
         location: input.location,
         sortBy: wantsDistance ? "distance" : "relevance",
         filters: filters
-          ? { isFree: filters.is_free, amenities: filters.amenities?.filter(isAmenity) }
+          ? { isFree: filters.is_free ?? undefined, amenities: filters.amenities?.filter(isAmenity) }
           : undefined,
       });
       results.forEach((restroom) => run.found.set(restroom.id, restroom));

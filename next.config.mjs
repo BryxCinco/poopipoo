@@ -23,6 +23,23 @@ const securityHeaders = [
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  experimental: {
+    // Local embeddings (lib/ai/local-embeddings.ts) use ONNX Runtime's native
+    // addon: load it from node_modules instead of bundling it with webpack.
+    serverComponentsExternalPackages: ["@huggingface/transformers", "onnxruntime-node", "sharp"],
+    // Keep the serverless functions small (Vercel limit 250 MB): Vercel runs
+    // Linux, so the Windows/macOS binaries and the browser (WASM) runtime aren't needed.
+    outputFileTracingExcludes: {
+      "*": [
+        "node_modules/onnxruntime-web/**",
+        "node_modules/onnxruntime-node/bin/napi-v*/darwin/**",
+        "node_modules/onnxruntime-node/bin/napi-v*/win32/**",
+        "node_modules/@img/sharp-darwin*/**",
+        "node_modules/@img/sharp-win32*/**",
+        "node_modules/@huggingface/transformers/.cache/**",
+      ],
+    },
+  },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

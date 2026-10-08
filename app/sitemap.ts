@@ -1,10 +1,11 @@
 import type { MetadataRoute } from "next";
 
+import { CITIES } from "@/lib/cities";
 import { getSiteUrl } from "@/lib/metadata";
 import { createAnonClient } from "@/lib/supabase/anon";
 
 /**
- * /sitemap.xml — public pages plus every restroom page.
+ * /sitemap.xml — public pages, the city pages and every restroom page.
  * Rebuilt at most once an hour. Uses guest access, so rejected (hidden)
  * restrooms are never listed.
  */
@@ -21,6 +22,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: url("/"), changeFrequency: "daily", priority: 1 },
     { url: url("/list"), changeFrequency: "daily", priority: 0.9 },
     { url: url("/leaderboard"), changeFrequency: "daily", priority: 0.5 },
+    ...CITIES.map((city) => ({ url: url(`/city/${city.slug}`), changeFrequency: "weekly" as const, priority: 0.8 })),
     { url: url("/about"), changeFrequency: "monthly", priority: 0.4 },
     { url: url("/privacy"), changeFrequency: "yearly", priority: 0.2 },
     { url: url("/terms"), changeFrequency: "yearly", priority: 0.2 },

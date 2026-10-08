@@ -28,7 +28,7 @@ Ask the AI assistant.
 - Rate limit: 10 questions per minute per user (`429 rate_limited`, with `retry_after` seconds).
 - Other errors: `429 ai_busy` (Groq limit), `502/504 upstream`, `503 config`.
 
-How it works: Groq (`openai/gpt-oss-120b`) with tool calling. The `search_restrooms` tool does a vector search (`match_restrooms`, pgvector, Hugging Face embeddings). If embeddings are unavailable it falls back to a keyword search, and "near me" questions use distance only.
+How it works: Groq (`openai/gpt-oss-120b`) with tool calling. The `search_restrooms` tool does a vector search (`match_restrooms`, pgvector, all-MiniLM-L6-v2 embeddings: Hugging Face API if it has credits, otherwise the same model run locally with transformers.js). If embeddings are unavailable it falls back to a keyword search, and "near me" questions use distance only.
 
 ## POST /api/report
 
@@ -62,6 +62,19 @@ The database does the rest: `flag_count + 1`; at 3 reports the item becomes `fla
 
 One vote per user per restroom. At 5 votes a `pending` restroom becomes `approved`.
 
+## POST /api/account/delete
+
+Permanently deletes the signed-in user's account.
+
+```json
+{ "username": "<the account's username>" }
+```
+
+- `200 { "ok": true }`: the account is gone and the session cookies are cleared.
+- `400 mismatch` (username doesn't match), `401 unauthorized`, `500 server`.
+
+Logs `delete_account` in `moderation_log` first, removes the avatar files, then deletes the auth user with the secret key. Foreign keys delete the profile, reviews, votes, reports, verifications and assistant history; restrooms the user added stay, with `created_by` set to `NULL`.
+
 ## POST /api/moderate
 
 AI check of a restroom (fake name or address, duplicate, spam, suspicious pattern).
@@ -90,7 +103,8 @@ Called with the Supabase client (`supabase.rpc(...)`):
 
 ## Other routes
 
-- `GET /sitemap.xml`: public pages and every non-rejected restroom (rebuilt hourly).
+- `GET /city/[slug]`: public restrooms in a city (`metro-manila`, `cebu`, `davao`, `iloilo`, `bacolod`).
+- `GET /sitemap.xml`: public pages, city pages and every non-rejected restroom (rebuilt hourly).
 - `GET /robots.txt`
 - `GET /opengraph-image`: the share image.
 - `GET /auth/callback`, `POST /auth/logout`: Supabase auth.

@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
-import { ChevronRight, CodeXml, ExternalLink, FileText, Heart, Shield } from "lucide-react";
+import { ChevronRight, CodeXml, ExternalLink, FileText, Heart, MapPin, Shield } from "lucide-react";
 
-import { format } from "@/lib/i18n/format";
+import { CITIES, cityList } from "@/lib/cities";
+import { format, plural } from "@/lib/i18n/format";
 import { getT } from "@/lib/i18n/server";
 import { pageMetadata } from "@/lib/metadata";
+import { countRestroomsByCity } from "@/lib/restrooms/cities";
 import packageJson from "@/package.json";
 
 export function generateMetadata(): Metadata {
@@ -28,8 +30,10 @@ const CREDITS = [
 const rowClass =
   "group flex items-center gap-3 px-3 py-3 text-sm transition-colors duration-150 hover:bg-muted/50 focus-visible:bg-muted/50 focus-visible:outline-none";
 
-export default function AboutPage() {
+export default async function AboutPage() {
   const t = getT();
+  const counts = await countRestroomsByCity(CITIES);
+  const total = Object.values(counts).reduce((sum, count) => sum + count, 0);
   const links = [
     { label: "GitHub", href: GITHUB_URL, icon: CodeXml, external: true },
     { label: t.about.privacy, href: "/privacy", icon: Shield, external: false },
@@ -53,6 +57,33 @@ export default function AboutPage() {
           <p className="text-sm text-muted-foreground">{format(t.about.version, { version: packageJson.version })}</p>
         </div>
         <p className="max-w-md text-sm leading-relaxed">{t.about.description}</p>
+      </section>
+
+      {/* Coverage: the cities with restrooms, each linking to its city page */}
+      <section className="flex flex-col gap-2" aria-labelledby="coverage-heading">
+        <h2 id="coverage-heading" className="font-semibold">
+          {t.about.coverageHeading}
+        </h2>
+        <div className="flex flex-col gap-3 rounded-xl border bg-card p-3 text-sm shadow-sm">
+          <p>
+            {format(t.about.coverage, { cities: cityList(t.about.and) })}{" "}
+            <span className="font-medium">{plural(t.about.restroomCount, total)}</span>
+          </p>
+          <ul className="flex flex-wrap gap-2">
+            {CITIES.map((city) => (
+              <li key={city.slug}>
+                <Link
+                  href={`/city/${city.slug}`}
+                  className="inline-flex min-h-10 items-center gap-1.5 rounded-full border bg-background px-3 font-medium transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <MapPin className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
+                  {city.name}
+                  <span className="text-xs font-normal text-muted-foreground">({counts[city.slug] ?? 0})</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
       </section>
 
       {/* Credits */}
