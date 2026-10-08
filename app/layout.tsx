@@ -30,7 +30,11 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#8B4513",
+  // Browser/status bar matches the cream header (dark: the dark background)
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#F6F0E6" },
+    { media: "(prefers-color-scheme: dark)", color: "#16110D" },
+  ],
 };
 
 export default function RootLayout({

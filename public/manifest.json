@@ -2,22 +2,34 @@
   "name": "Poopipoo",
   "short_name": "Poopipoo",
   "description": "Crowdsourced restroom finder for the Philippines",
-  "theme_color": "#8B4513",
-  "background_color": "#ffffff",
+  "theme_color": "#F6F0E6",
+  "background_color": "#EBDDCA",
   "display": "standalone",
   "start_url": "/",
   "icons": [
     {
-      "src": "/icons/icon-192.svg",
+      "src": "/icons/icon-192.png",
       "sizes": "192x192",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icons/icon-512.svg",
+      "src": "/icons/icon-512.png",
       "sizes": "512x512",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "purpose": "any"
+    },
+    {
+      "src": "/icons/maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }

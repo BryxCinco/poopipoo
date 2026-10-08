@@ -4,70 +4,72 @@
 
 /*
  * Poopipoo design tokens (HSL, shadcn/ui format).
- * Light: warm stone neutrals + brown primary, amber highlight, emerald success.
+ * Light: cream "paper map" neutrals (from the logo) + brown primary, amber
+ * highlight, emerald success. Pages sit on a faint map pattern (see body below).
  *   primary   #8B4513   highlight #F59E0B   success #10B981   destructive #EF4444
- *   background #FAFAF9  foreground #1C1917  muted #F5F5F4      border #E7E5E4
+ *   background #F6F0E6  foreground #2A1D14  muted #EFE6D8      border #E3D7C5
+ *   muted-foreground #6B5E50 (WCAG AA on background and muted)
  * `accent` stays a neutral hover surface (shadcn uses it for ghost/outline hovers);
  * the amber brand accent is `highlight`.
  */
 @layer base {
   :root {
-    --background: 60 9% 98%;
-    --foreground: 24 10% 10%;
-    --card: 0 0% 100%;
-    --card-foreground: 24 10% 10%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 24 10% 10%;
+    --background: 37 47% 93%;
+    --foreground: 25 35% 12%;
+    --card: 40 60% 98%;
+    --card-foreground: 25 35% 12%;
+    --popover: 40 60% 98%;
+    --popover-foreground: 25 35% 12%;
     --primary: 25 76% 31%;
-    --primary-foreground: 60 9% 98%;
-    --secondary: 60 5% 96%;
-    --secondary-foreground: 24 10% 10%;
-    --muted: 60 5% 96%;
-    --muted-foreground: 25 5% 45%;
-    --accent: 60 5% 96%;
-    --accent-foreground: 24 10% 10%;
+    --primary-foreground: 40 60% 98%;
+    --secondary: 36 40% 89%;
+    --secondary-foreground: 25 35% 12%;
+    --muted: 36 40% 89%;
+    --muted-foreground: 31 15% 37%;
+    --accent: 36 40% 89%;
+    --accent-foreground: 25 35% 12%;
     --highlight: 38 92% 50%;
     --highlight-foreground: 26 83% 14%;
     --success: 160 84% 39%;
     --success-foreground: 0 0% 100%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-    --border: 20 6% 90%;
-    --input: 20 6% 90%;
+    --border: 35 33% 83%;
+    --input: 35 33% 80%;
     --ring: 25 76% 31%;
     --chart-1: 25 76% 31%;
     --chart-2: 38 92% 50%;
     --chart-3: 160 84% 39%;
     --chart-4: 0 84% 60%;
-    --chart-5: 25 5% 45%;
+    --chart-5: 31 15% 37%;
     --radius: 0.5rem;
     color-scheme: light;
   }
 
   .dark {
-    --background: 24 10% 7%;
-    --foreground: 60 9% 96%;
-    --card: 24 9% 10%;
-    --card-foreground: 60 9% 96%;
-    --popover: 24 9% 10%;
-    --popover-foreground: 60 9% 96%;
+    --background: 25 20% 7%;
+    --foreground: 38 40% 93%;
+    --card: 25 18% 10%;
+    --card-foreground: 38 40% 93%;
+    --popover: 25 18% 10%;
+    --popover-foreground: 38 40% 93%;
     /* Lighter brown so it reads on a dark background */
     --primary: 25 62% 52%;
     --primary-foreground: 24 10% 7%;
-    --secondary: 12 6% 15%;
-    --secondary-foreground: 60 9% 96%;
-    --muted: 12 6% 15%;
-    --muted-foreground: 24 5% 64%;
-    --accent: 12 6% 15%;
-    --accent-foreground: 60 9% 96%;
+    --secondary: 25 14% 15%;
+    --secondary-foreground: 38 40% 93%;
+    --muted: 25 14% 15%;
+    --muted-foreground: 35 14% 68%;
+    --accent: 25 14% 15%;
+    --accent-foreground: 38 40% 93%;
     --highlight: 38 92% 55%;
     --highlight-foreground: 26 83% 14%;
     --success: 160 70% 42%;
     --success-foreground: 0 0% 100%;
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
-    --border: 12 6% 18%;
-    --input: 12 6% 20%;
+    --border: 25 14% 19%;
+    --input: 25 14% 22%;
     --ring: 25 62% 52%;
     color-scheme: dark;
   }
@@ -82,6 +84,14 @@
   }
   body {
     @apply bg-background text-foreground;
+    /* Faint paper-map pattern (roads, compass, pins) behind every page; the
+       map page covers it with the real map. Fixed to the body because <main>
+       scrolls, so it reads like the paper the cards sit on. */
+    background-image: url("/patterns/map-light.svg");
+    background-size: 600px 600px;
+  }
+  .dark body {
+    background-image: url("/patterns/map-dark.svg");
   }
   /* Main scrolls (not the window), so smooth-scroll there too (e.g. #reviews links) */
   main {

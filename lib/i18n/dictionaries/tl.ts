@@ -95,6 +95,7 @@ export const tl = {
   },
   about: {
     version: "Version {version}",
+    logoAlt: "Poopipoo logo: inidoro na may map pin at arrow papunta rito",
     description:
       "Ang \"Waze ng CR.\" Hanapin ang pinakamalapit na malinis na CR sa Pilipinas: mapa, reviews, direksyon at AI assistant. Lahat ng CR at review ay galing sa komunidad, kaya bawat dagdag mo ay nakakatulong sa susunod na nagmamadali.",
     credits: "Credits",

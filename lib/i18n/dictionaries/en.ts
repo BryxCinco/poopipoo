@@ -91,6 +91,7 @@ export const en: Dictionary = {
   },
   about: {
     version: "Version {version}",
+    logoAlt: "Poopipoo logo: a toilet with a map pin and an arrow leading to it",
     description:
       "The \"Waze for restrooms.\" Find the nearest clean restroom in the Philippines: map, reviews, directions and an AI assistant. Every restroom and review comes from the community, so each one you add helps the next person in a hurry.",
     credits: "Credits",

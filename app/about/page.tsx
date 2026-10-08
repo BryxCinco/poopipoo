@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ChevronRight, CodeXml, ExternalLink, FileText, Heart, Shield, Toilet } from "lucide-react";
+import Image from "next/image";
+import { ChevronRight, CodeXml, ExternalLink, FileText, Heart, Shield } from "lucide-react";
 
 import { format } from "@/lib/i18n/format";
 import { getT } from "@/lib/i18n/server";
@@ -39,9 +40,14 @@ export default function AboutPage() {
     <div className="mx-auto flex w-full max-w-screen-md flex-col gap-6 px-4 py-6">
       {/* App */}
       <section className="flex flex-col items-center gap-3 text-center">
-        <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-md">
-          <Toilet className="h-8 w-8" aria-hidden="true" />
-        </span>
+        <Image
+          src="/logo.png"
+          alt={t.about.logoAlt}
+          width={120}
+          height={120}
+          priority
+          className="h-[120px] w-[120px] rounded-3xl shadow-lg ring-1 ring-primary/15"
+        />
         <div>
           <h1 className="text-2xl font-bold">Poopipoo</h1>
           <p className="text-sm text-muted-foreground">{format(t.about.version, { version: packageJson.version })}</p>

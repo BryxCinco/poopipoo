@@ -1,5 +1,5 @@
+import Image from "next/image";
 import Link from "next/link";
-import { Toilet } from "lucide-react";
 
 export function Header() {
   return (
@@ -9,9 +9,16 @@ export function Header() {
           href="/"
           className="group flex items-center gap-2 rounded-lg text-lg font-bold tracking-tight focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm transition-transform duration-200 group-hover:-rotate-12 group-hover:scale-110">
-            <Toilet className="h-[18px] w-[18px]" aria-hidden="true" />
-          </span>
+          {/* alt="" because the link already says "Poopipoo": screen readers
+              would otherwise read the name twice */}
+          <Image
+            src="/logo.png"
+            alt=""
+            width={36}
+            height={36}
+            priority
+            className="h-9 w-9 rounded-lg shadow-sm ring-1 ring-primary/15 transition-transform duration-200 group-hover:-rotate-6 group-hover:scale-105"
+          />
           Poopipoo
         </Link>
       </div>

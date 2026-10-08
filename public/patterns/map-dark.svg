@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <g stroke="#E8D5BC" stroke-opacity="0.05" stroke-width="1"><path d="M0 290 L600 290"/><path d="M300 0 L300 600"/><path d="M0 40 L600 40"/><path d="M60 0 L60 600"/><path d="M160 350 L300 290"/><path d="M300 160 L455 220"/><path d="M370 450 L455 520"/><path d="M60 520 L150 470"/><path d="M220 0 L240 160"/><path d="M520 290 L540 430"/><path d="M0 560 L600 560"/></g>
+  <g stroke="#E8D5BC" stroke-opacity="0.06" stroke-width="3"><path d="M0 140 C 120 110, 230 190, 330 160 S 510 110, 600 140"/><path d="M0 430 C 150 400, 250 480, 370 450 S 530 400, 600 430"/><path d="M150 0 C 175 120, 115 230, 160 350 S 185 520, 150 600"/><path d="M455 0 C 430 110, 490 210, 445 330 S 425 500, 455 600"/></g>
+  <path d="M90 560 C 130 500, 220 520, 250 470 S 300 400, 360 380" stroke="#E8D5BC" stroke-opacity="0.09" stroke-width="2" stroke-dasharray="6 8"/>
+  <path d="M350 372 L362 379 L352 390" stroke="#E8D5BC" stroke-opacity="0.09" stroke-width="2"/>
+  
+    <g stroke="#E8D5BC" stroke-opacity="0.09" fill="none" stroke-width="1.5">
+      <circle cx="520" cy="75" r="28.799999999999997"/>
+      <circle cx="520" cy="75" r="31.200000000000003" stroke-dasharray="2 4"/>
+      <polygon points="520.0,35.0 523.1,67.6 535.6,59.4 527.4,71.9 560.0,75.0 527.4,78.1 535.6,90.6 523.1,82.4 520.0,115.0 516.9,82.4 504.4,90.6 512.6,78.1 480.0,75.0 512.6,71.9 504.4,59.4 516.9,67.6" fill="#E8D5BC" fill-opacity="0.05"/>
+      <text x="520" y="29" text-anchor="middle" font-family="Georgia, serif" font-size="14" fill="#E8D5BC" fill-opacity="0.09" stroke="none">N</text>
+    </g>
+  
+    <g stroke="#E8D5BC" stroke-opacity="0.09" fill="none" stroke-width="1.5">
+      <circle cx="80" cy="330" r="20.16"/>
+      <circle cx="80" cy="330" r="21.84" stroke-dasharray="2 4"/>
+      <polygon points="80.0,302.0 82.1,324.8 90.9,319.1 85.2,327.9 108.0,330.0 85.2,332.1 90.9,340.9 82.1,335.2 80.0,358.0 77.9,335.2 69.1,340.9 74.8,332.1 52.0,330.0 74.8,327.9 69.1,319.1 77.9,324.8" fill="#E8D5BC" fill-opacity="0.05"/>
+      <text x="80" y="296" text-anchor="middle" font-family="Georgia, serif" font-size="14" fill="#E8D5BC" fill-opacity="0.09" stroke="none">N</text>
+    </g>
+  
+    <path transform="translate(360 352) scale(1)" d="M0 -22 C 9 -22 14 -15 14 -8 C 14 2 0 14 0 14 C 0 14 -14 2 -14 -8 C -14 -15 -9 -22 0 -22 Z M0 -13 a 5 5 0 1 0 0.01 0 Z"
+      fill="#E8D5BC" fill-opacity="0.07" fill-rule="evenodd"/>
+    <path transform="translate(250 230) scale(0.8)" d="M0 -22 C 9 -22 14 -15 14 -8 C 14 2 0 14 0 14 C 0 14 -14 2 -14 -8 C -14 -15 -9 -22 0 -22 Z M0 -13 a 5 5 0 1 0 0.01 0 Z"
+      fill="#E8D5BC" fill-opacity="0.07" fill-rule="evenodd"/>
+    <path transform="translate(540 520) scale(0.9)" d="M0 -22 C 9 -22 14 -15 14 -8 C 14 2 0 14 0 14 C 0 14 -14 2 -14 -8 C -14 -15 -9 -22 0 -22 Z M0 -13 a 5 5 0 1 0 0.01 0 Z"
+      fill="#E8D5BC" fill-opacity="0.07" fill-rule="evenodd"/>
+    <path transform="translate(90 120) scale(0.7)" d="M0 -22 C 9 -22 14 -15 14 -8 C 14 2 0 14 0 14 C 0 14 -14 2 -14 -8 C -14 -15 -9 -22 0 -22 Z M0 -13 a 5 5 0 1 0 0.01 0 Z"
+      fill="#E8D5BC" fill-opacity="0.07" fill-rule="evenodd"/>
+  <g stroke="#E8D5BC" stroke-opacity="0.09" stroke-width="2">
+    <path d="M395 250 l12 12 M407 250 l-12 12"/><path d="M40 470 l10 10 M50 470 l-10 10"/>
+  </g>
+</svg>
