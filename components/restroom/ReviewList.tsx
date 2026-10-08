@@ -231,7 +231,7 @@ export function ReviewList({
 
   if (error && reviews.length === 0) {
     return (
-      <div className="rounded-xl border border-dashed">
+      <div className="rounded-xl border border-dashed bg-card/80">
         <EmptyState
           compact
           icon={<CloudOff />}
@@ -251,7 +251,7 @@ export function ReviewList({
 
   if (reviews.length === 0) {
     return (
-      <div className="rounded-xl border border-dashed">
+      <div className="rounded-xl border border-dashed bg-card/80">
         <EmptyState compact icon={<MessageSquare />} title={emptyText ?? t.reviews.emptyFirst} />
       </div>
     );

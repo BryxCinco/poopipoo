@@ -98,7 +98,7 @@ export function SignupForm({ returnUrl }: { returnUrl: string }) {
 
   if (sentTo) {
     return (
-      <div className="flex flex-col items-center gap-3 rounded-lg border p-6 text-center" role="status">
+      <div className="flex flex-col items-center gap-3 rounded-lg border bg-card p-6 text-center shadow-sm" role="status">
         <MailCheck className="h-10 w-10 text-primary" aria-hidden="true" />
         <p className="font-semibold">{t.auth.signup.checkEmail}</p>
         <p className="text-sm text-muted-foreground">{format(t.auth.signup.sentTo, { email: sentTo })}</p>

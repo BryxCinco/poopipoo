@@ -10,6 +10,7 @@ import { Header } from "@/components/layout/Header";
 import { Providers } from "@/components/layout/Providers";
 import { UnsavedChangesGuard } from "@/components/layout/UnsavedChangesGuard";
 import { Toaster } from "@/components/ui/toaster";
+import { brandFont } from "@/lib/fonts";
 import { HTML_LANG } from "@/lib/i18n/config";
 import { getLocale } from "@/lib/i18n/server";
 import { rootMetadata } from "@/lib/metadata";
@@ -52,7 +53,7 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
       <body
-        className={`${geistSans.variable} flex h-dvh flex-col font-sans antialiased`}
+        className={`${geistSans.variable} ${brandFont.variable} flex h-dvh flex-col font-sans antialiased`}
       >
         <Providers locale={locale}>
           <Header />

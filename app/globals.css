@@ -28,6 +28,8 @@
     --muted-foreground: 31 15% 37%;
     --accent: 36 40% 89%;
     --accent-foreground: 25 35% 12%;
+    /* Dark brown of the logo outlines, for the wordmark */
+    --ink: 22 60% 23%;
     --highlight: 38 92% 50%;
     --highlight-foreground: 26 83% 14%;
     --success: 160 84% 39%;
@@ -62,6 +64,7 @@
     --muted-foreground: 35 14% 68%;
     --accent: 25 14% 15%;
     --accent-foreground: 38 40% 93%;
+    --ink: 38 40% 93%;
     --highlight: 38 92% 55%;
     --highlight-foreground: 26 83% 14%;
     --success: 160 70% 42%;
@@ -88,7 +91,7 @@
        map page covers it with the real map. Fixed to the body because <main>
        scrolls, so it reads like the paper the cards sit on. */
     background-image: url("/patterns/map-light.svg");
-    background-size: 600px 600px;
+    background-size: 640px 640px;
   }
   .dark body {
     background-image: url("/patterns/map-dark.svg");

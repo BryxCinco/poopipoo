@@ -1,32 +1,48 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600" fill="none" stroke-linecap="round" stroke-linejoin="round">
-  <g stroke="#E8D5BC" stroke-opacity="0.05" stroke-width="1"><path d="M0 290 L600 290"/><path d="M300 0 L300 600"/><path d="M0 40 L600 40"/><path d="M60 0 L60 600"/><path d="M160 350 L300 290"/><path d="M300 160 L455 220"/><path d="M370 450 L455 520"/><path d="M60 520 L150 470"/><path d="M220 0 L240 160"/><path d="M520 290 L540 430"/><path d="M0 560 L600 560"/></g>
-  <g stroke="#E8D5BC" stroke-opacity="0.06" stroke-width="3"><path d="M0 140 C 120 110, 230 190, 330 160 S 510 110, 600 140"/><path d="M0 430 C 150 400, 250 480, 370 450 S 530 400, 600 430"/><path d="M150 0 C 175 120, 115 230, 160 350 S 185 520, 150 600"/><path d="M455 0 C 430 110, 490 210, 445 330 S 425 500, 455 600"/></g>
-  <path d="M90 560 C 130 500, 220 520, 250 470 S 300 400, 360 380" stroke="#E8D5BC" stroke-opacity="0.09" stroke-width="2" stroke-dasharray="6 8"/>
-  <path d="M350 372 L362 379 L352 390" stroke="#E8D5BC" stroke-opacity="0.09" stroke-width="2"/>
-  
-    <g stroke="#E8D5BC" stroke-opacity="0.09" fill="none" stroke-width="1.5">
-      <circle cx="520" cy="75" r="28.799999999999997"/>
-      <circle cx="520" cy="75" r="31.200000000000003" stroke-dasharray="2 4"/>
-      <polygon points="520.0,35.0 523.1,67.6 535.6,59.4 527.4,71.9 560.0,75.0 527.4,78.1 535.6,90.6 523.1,82.4 520.0,115.0 516.9,82.4 504.4,90.6 512.6,78.1 480.0,75.0 512.6,71.9 504.4,59.4 516.9,67.6" fill="#E8D5BC" fill-opacity="0.05"/>
-      <text x="520" y="29" text-anchor="middle" font-family="Georgia, serif" font-size="14" fill="#E8D5BC" fill-opacity="0.09" stroke="none">N</text>
-    </g>
-  
-    <g stroke="#E8D5BC" stroke-opacity="0.09" fill="none" stroke-width="1.5">
-      <circle cx="80" cy="330" r="20.16"/>
-      <circle cx="80" cy="330" r="21.84" stroke-dasharray="2 4"/>
-      <polygon points="80.0,302.0 82.1,324.8 90.9,319.1 85.2,327.9 108.0,330.0 85.2,332.1 90.9,340.9 82.1,335.2 80.0,358.0 77.9,335.2 69.1,340.9 74.8,332.1 52.0,330.0 74.8,327.9 69.1,319.1 77.9,324.8" fill="#E8D5BC" fill-opacity="0.05"/>
-      <text x="80" y="296" text-anchor="middle" font-family="Georgia, serif" font-size="14" fill="#E8D5BC" fill-opacity="0.09" stroke="none">N</text>
-    </g>
-  
-    <path transform="translate(360 352) scale(1)" d="M0 -22 C 9 -22 14 -15 14 -8 C 14 2 0 14 0 14 C 0 14 -14 2 -14 -8 C -14 -15 -9 -22 0 -22 Z M0 -13 a 5 5 0 1 0 0.01 0 Z"
-      fill="#E8D5BC" fill-opacity="0.07" fill-rule="evenodd"/>
-    <path transform="translate(250 230) scale(0.8)" d="M0 -22 C 9 -22 14 -15 14 -8 C 14 2 0 14 0 14 C 0 14 -14 2 -14 -8 C -14 -15 -9 -22 0 -22 Z M0 -13 a 5 5 0 1 0 0.01 0 Z"
-      fill="#E8D5BC" fill-opacity="0.07" fill-rule="evenodd"/>
-    <path transform="translate(540 520) scale(0.9)" d="M0 -22 C 9 -22 14 -15 14 -8 C 14 2 0 14 0 14 C 0 14 -14 2 -14 -8 C -14 -15 -9 -22 0 -22 Z M0 -13 a 5 5 0 1 0 0.01 0 Z"
-      fill="#E8D5BC" fill-opacity="0.07" fill-rule="evenodd"/>
-    <path transform="translate(90 120) scale(0.7)" d="M0 -22 C 9 -22 14 -15 14 -8 C 14 2 0 14 0 14 C 0 14 -14 2 -14 -8 C -14 -15 -9 -22 0 -22 Z M0 -13 a 5 5 0 1 0 0.01 0 Z"
-      fill="#E8D5BC" fill-opacity="0.07" fill-rule="evenodd"/>
-  <g stroke="#E8D5BC" stroke-opacity="0.09" stroke-width="2">
-    <path d="M395 250 l12 12 M407 250 l-12 12"/><path d="M40 470 l10 10 M50 470 l-10 10"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="640" viewBox="0 0 640 640" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <g stroke="#E8D5BC" stroke-opacity="0.07" stroke-width="1.2"><path d="M0 300 L640 300"/><path d="M320 0 L320 640"/><path d="M0 40 L640 40"/><path d="M60 0 L60 640"/><path d="M0 600 L640 600"/><path d="M600 0 L600 640"/><path d="M178 380 L320 300"/><path d="M320 170 L478 235"/><path d="M400 488 L478 560"/><path d="M60 560 L170 500"/><path d="M230 0 L250 170"/><path d="M560 300 L580 470"/><path d="M60 220 L170 260"/><path d="M400 40 L420 170"/><path d="M250 560 L320 640"/><path d="M0 380 L60 400"/></g>
+  <path d="M0 150 C 140 120, 250 205, 360 170 S 540 120, 640 150" stroke="#E8D5BC" stroke-opacity="0.09" stroke-width="9"/><path d="M0 150 C 140 120, 250 205, 360 170 S 540 120, 640 150" stroke="#16110D" stroke-width="6"/><path d="M0 470 C 160 440, 270 520, 400 488 S 560 440, 640 470" stroke="#E8D5BC" stroke-opacity="0.09" stroke-width="9"/><path d="M0 470 C 160 440, 270 520, 400 488 S 560 440, 640 470" stroke="#16110D" stroke-width="6"/><path d="M170 0 C 195 130, 130 250, 178 380 S 205 560, 170 640" stroke="#E8D5BC" stroke-opacity="0.09" stroke-width="9"/><path d="M170 0 C 195 130, 130 250, 178 380 S 205 560, 170 640" stroke="#16110D" stroke-width="6"/><path d="M490 0 C 462 120, 525 230, 478 360 S 455 540, 490 640" stroke="#E8D5BC" stroke-opacity="0.09" stroke-width="9"/><path d="M490 0 C 462 120, 525 230, 478 360 S 455 540, 490 640" stroke="#16110D" stroke-width="6"/>
+  <path d="M95 610 C 140 540, 230 560, 262 505 S 318 425, 380 405" stroke="#E8D5BC" stroke-opacity="0.15" stroke-width="2" stroke-dasharray="7 8"/>
+  <g stroke="#E8D5BC" stroke-opacity="0.13" stroke-width="1.6" fill="none">
+    <path d="M368 412 L382 404"/><path d="M376.9 411.4 L382 404 L373.0 404.6"/></g>
+  <g stroke="#E8D5BC" stroke-opacity="0.13" stroke-width="1.4" fill="none">
+    <circle cx="545" cy="85" r="16.56"/>
+    <circle cx="545" cy="85" r="28.52" stroke-dasharray="1.5 3.5"/>
+    <polygon points="545.0,47.3 547.3,79.4 558.3,71.7 550.6,82.7 582.7,85.0 550.6,87.3 558.3,98.3 547.3,90.6 545.0,122.7 542.7,90.6 531.7,98.3 539.4,87.3 507.3,85.0 539.4,82.7 531.7,71.7 542.7,79.4" transform="rotate(22.5 545 85)" fill="#E8D5BC" fill-opacity="0.042"/>
+    <polygon points="545.0,39.0 547.8,78.2 561.3,68.7 551.8,82.2 591.0,85.0 551.8,87.8 561.3,101.3 547.8,91.8 545.0,131.0 542.2,91.8 528.7,101.3 538.2,87.8 499.0,85.0 538.2,82.2 528.7,68.7 542.2,78.2" fill="#E8D5BC" fill-opacity="0.07"/>
+    <circle cx="545" cy="85" r="3.68" fill="#E8D5BC" fill-opacity="0.13"/>
+  </g><text x="545.0" y="25.0" text-anchor="middle" dominant-baseline="middle" font-family="Georgia, 'Times New Roman', serif" font-size="16" fill="#E8D5BC" fill-opacity="0.22">N</text><text x="545.0" y="145.0" text-anchor="middle" dominant-baseline="middle" font-family="Georgia, 'Times New Roman', serif" font-size="16" fill="#E8D5BC" fill-opacity="0.22">S</text><text x="605.0" y="85.0" text-anchor="middle" dominant-baseline="middle" font-family="Georgia, 'Times New Roman', serif" font-size="16" fill="#E8D5BC" fill-opacity="0.22">E</text><text x="485.0" y="85.0" text-anchor="middle" dominant-baseline="middle" font-family="Georgia, 'Times New Roman', serif" font-size="16" fill="#E8D5BC" fill-opacity="0.22">W</text><text x="582.7" y="47.3" text-anchor="middle" dominant-baseline="middle" font-family="Georgia, 'Times New Roman', serif" font-size="10" fill="#E8D5BC" fill-opacity="0.22">NE</text><text x="507.3" y="47.3" text-anchor="middle" dominant-baseline="middle" font-family="Georgia, 'Times New Roman', serif" font-size="10" fill="#E8D5BC" fill-opacity="0.22">NW</text><text x="582.7" y="122.7" text-anchor="middle" dominant-baseline="middle" font-family="Georgia, 'Times New Roman', serif" font-size="10" fill="#E8D5BC" fill-opacity="0.22">SE</text><text x="507.3" y="122.7" text-anchor="middle" dominant-baseline="middle" font-family="Georgia, 'Times New Roman', serif" font-size="10" fill="#E8D5BC" fill-opacity="0.22">SW</text>
+  <g stroke="#E8D5BC" stroke-opacity="0.13" stroke-width="1.4" fill="none">
+    <circle cx="92" cy="330" r="10.799999999999999"/>
+    <circle cx="92" cy="330" r="18.6" stroke-dasharray="1.5 3.5"/>
+    <polygon points="92.0,305.4 93.5,326.4 100.7,321.3 95.6,328.5 116.6,330.0 95.6,331.5 100.7,338.7 93.5,333.6 92.0,354.6 90.5,333.6 83.3,338.7 88.4,331.5 67.4,330.0 88.4,328.5 83.3,321.3 90.5,326.4" transform="rotate(22.5 92 330)" fill="#E8D5BC" fill-opacity="0.042"/>
+    <polygon points="92.0,300.0 93.8,325.6 102.6,319.4 96.4,328.2 122.0,330.0 96.4,331.8 102.6,340.6 93.8,334.4 92.0,360.0 90.2,334.4 81.4,340.6 87.6,331.8 62.0,330.0 87.6,328.2 81.4,319.4 90.2,325.6" fill="#E8D5BC" fill-opacity="0.07"/>
+    <circle cx="92" cy="330" r="2.4" fill="#E8D5BC" fill-opacity="0.13"/>
+  </g><text x="92.0" y="286.0" text-anchor="middle" dominant-baseline="middle" font-family="Georgia, 'Times New Roman', serif" font-size="16" fill="#E8D5BC" fill-opacity="0.22">N</text><text x="92.0" y="374.0" text-anchor="middle" dominant-baseline="middle" font-family="Georgia, 'Times New Roman', serif" font-size="16" fill="#E8D5BC" fill-opacity="0.22">S</text><text x="136.0" y="330.0" text-anchor="middle" dominant-baseline="middle" font-family="Georgia, 'Times New Roman', serif" font-size="16" fill="#E8D5BC" fill-opacity="0.22">E</text><text x="48.0" y="330.0" text-anchor="middle" dominant-baseline="middle" font-family="Georgia, 'Times New Roman', serif" font-size="16" fill="#E8D5BC" fill-opacity="0.22">W</text><text x="116.6" y="305.4" text-anchor="middle" dominant-baseline="middle" font-family="Georgia, 'Times New Roman', serif" font-size="10" fill="#E8D5BC" fill-opacity="0.22">NE</text><text x="67.4" y="305.4" text-anchor="middle" dominant-baseline="middle" font-family="Georgia, 'Times New Roman', serif" font-size="10" fill="#E8D5BC" fill-opacity="0.22">NW</text><text x="116.6" y="354.6" text-anchor="middle" dominant-baseline="middle" font-family="Georgia, 'Times New Roman', serif" font-size="10" fill="#E8D5BC" fill-opacity="0.22">SE</text><text x="67.4" y="354.6" text-anchor="middle" dominant-baseline="middle" font-family="Georgia, 'Times New Roman', serif" font-size="10" fill="#E8D5BC" fill-opacity="0.22">SW</text>
+  <g transform="translate(372 384) scale(1)">
+    <path d="M0 -26 C 11 -26 17 -18 17 -9 C 17 3 0 16 0 16 C 0 16 -17 3 -17 -9 C -17 -18 -11 -26 0 -26 Z" fill="#E8D5BC" fill-opacity="0.06" stroke="#E8D5BC" stroke-opacity="0.13" stroke-width="1.4"/>
+    <text x="0" y="-8" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-weight="700" font-size="10" fill="#E8D5BC" fill-opacity="0.22">CR</text>
+  </g><g transform="translate(262 240) scale(0.85)">
+    <path d="M0 -26 C 11 -26 17 -18 17 -9 C 17 3 0 16 0 16 C 0 16 -17 3 -17 -9 C -17 -18 -11 -26 0 -26 Z" fill="#E8D5BC" fill-opacity="0.06" stroke="#E8D5BC" stroke-opacity="0.13" stroke-width="1.4"/>
+    <text x="0" y="-8" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-weight="700" font-size="10" fill="#E8D5BC" fill-opacity="0.22">CR</text>
+  </g><g transform="translate(560 548) scale(0.9)">
+    <path d="M0 -26 C 11 -26 17 -18 17 -9 C 17 3 0 16 0 16 C 0 16 -17 3 -17 -9 C -17 -18 -11 -26 0 -26 Z" fill="#E8D5BC" fill-opacity="0.06" stroke="#E8D5BC" stroke-opacity="0.13" stroke-width="1.4"/>
+    <text x="0" y="-8" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-weight="700" font-size="10" fill="#E8D5BC" fill-opacity="0.22">CR</text>
+  </g><g transform="translate(112 120) scale(0.75)">
+    <path d="M0 -26 C 11 -26 17 -18 17 -9 C 17 3 0 16 0 16 C 0 16 -17 3 -17 -9 C -17 -18 -11 -26 0 -26 Z" fill="#E8D5BC" fill-opacity="0.06" stroke="#E8D5BC" stroke-opacity="0.13" stroke-width="1.4"/>
+    <text x="0" y="-8" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-weight="700" font-size="10" fill="#E8D5BC" fill-opacity="0.22">CR</text>
+  </g><g transform="translate(450 300) scale(0.7)">
+    <path d="M0 -26 C 11 -26 17 -18 17 -9 C 17 3 0 16 0 16 C 0 16 -17 3 -17 -9 C -17 -18 -11 -26 0 -26 Z" fill="#E8D5BC" fill-opacity="0.06" stroke="#E8D5BC" stroke-opacity="0.13" stroke-width="1.4"/>
+    <text x="0" y="-8" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-weight="700" font-size="10" fill="#E8D5BC" fill-opacity="0.22">CR</text>
   </g>
+  <g stroke="#E8D5BC" stroke-opacity="0.13" stroke-width="1.6" fill="none">
+    <path d="M230 330 L290 270"/><path d="M287.0 278.5 L290 270 L281.5 273.0"/></g><g stroke="#E8D5BC" stroke-opacity="0.13" stroke-width="1.6" fill="none">
+    <path d="M590 380 L530 410"/><path d="M535.5 402.9 L530 410 L539.0 409.9"/></g><g stroke="#E8D5BC" stroke-opacity="0.13" stroke-width="1.6" fill="none">
+    <path d="M20 250 L60 210"/><path d="M57.0 218.5 L60 210 L51.5 213.0"/></g>
+  <path d="M403 243 L417 257 M417 243 L403 257" stroke="#E8D5BC" stroke-opacity="0.15" stroke-width="3"/><path d="M35 471 L49 485 M49 471 L35 485" stroke="#E8D5BC" stroke-opacity="0.15" stroke-width="3"/><path d="M605 231 L619 245 M619 231 L605 245" stroke="#E8D5BC" stroke-opacity="0.15" stroke-width="3"/>
+  <g stroke="#E8D5BC" stroke-opacity="0.13" stroke-width="1.3" fill="none">
+  <path d="M518 210 h24 l-4 8 h-16 z" fill="#E8D5BC" fill-opacity="0.06"/><path d="M530 210 v-12"/>
+  <path d="M530 198 c-4 -4 -9 -2 -10 3 M530 198 c4 -4 9 -2 10 3"/></g><g stroke="#E8D5BC" stroke-opacity="0.13" stroke-width="1.3" fill="none">
+  <path d="M268 600 h24 l-4 8 h-16 z" fill="#E8D5BC" fill-opacity="0.06"/><path d="M280 600 v-12"/>
+  <path d="M280 588 c-4 -4 -9 -2 -10 3 M280 588 c4 -4 9 -2 10 3"/></g>
+  <text x="196" y="92" transform="rotate(72 196 92)" font-family="Arial, sans-serif" font-size="9" letter-spacing="1.5" fill="#E8D5BC" fill-opacity="0.17600000000000002">STREET</text><text x="370" y="160" transform="rotate(-14 370 160)" font-family="Arial, sans-serif" font-size="9" letter-spacing="1.5" fill="#E8D5BC" fill-opacity="0.17600000000000002">AVENUE</text><text x="425" y="480" transform="rotate(-10 425 480)" font-family="Arial, sans-serif" font-size="9" letter-spacing="1.5" fill="#E8D5BC" fill-opacity="0.17600000000000002">STREET</text><text x="505" y="330" transform="rotate(80 505 330)" font-family="Arial, sans-serif" font-size="9" letter-spacing="1.5" fill="#E8D5BC" fill-opacity="0.17600000000000002">BLVD</text>
 </svg>

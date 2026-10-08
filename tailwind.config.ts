@@ -52,6 +52,7 @@ const config: Config = {
   			border: 'hsl(var(--border))',
   			input: 'hsl(var(--input))',
   			ring: 'hsl(var(--ring))',
+  			ink: "hsl(var(--ink))",
   			chart: {
   				'1': 'hsl(var(--chart-1))',
   				'2': 'hsl(var(--chart-2))',
@@ -61,7 +62,9 @@ const config: Config = {
   			}
   		},
   		fontFamily: {
-  			sans: ["var(--font-geist-sans)", "ui-sans-serif", "system-ui", "sans-serif"]
+  			sans: ["var(--font-geist-sans)", "ui-sans-serif", "system-ui", "sans-serif"],
+  			// Rounded wordmark font (lib/fonts.ts)
+  			brand: ["var(--font-brand)", "var(--font-geist-sans)", "ui-sans-serif", "sans-serif"]
   		},
   		// All UI animations stay at or under 300ms (loops like shimmer excepted)
   		keyframes: {

@@ -293,7 +293,7 @@ export function ReviewsSection({
             style={{ overflow: "clip", overflowClipMargin: 4 }}
           >
             {!viewer ? (
-              <div className="flex flex-col items-center gap-2 rounded-lg border p-4 text-center">
+              <div className="flex flex-col items-center gap-2 rounded-lg border bg-card p-4 text-center shadow-sm">
                 <p className="text-sm text-muted-foreground">{t.reviews.loginPrompt}</p>
                 <Button asChild className="w-full">
                   <Link href={loginUrl(`/restroom/${restroomId}#reviews`)}>

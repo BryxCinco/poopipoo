@@ -55,7 +55,7 @@ export function SettingsView({ account, agentUsage }: SettingsViewProps) {
             avatarUrl={account.avatarUrl}
           />
         ) : (
-          <div className="flex flex-col items-center gap-3 rounded-xl border p-5 text-center">
+          <div className="flex flex-col items-center gap-3 rounded-xl border bg-card p-5 text-center shadow-sm">
             <p className="text-sm text-muted-foreground">{t.settings.loginPrompt}</p>
             <Button asChild className="w-full">
               <Link href={loginUrl("/settings")}>

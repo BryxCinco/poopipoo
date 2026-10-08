@@ -597,6 +597,7 @@ export const en: Dictionary = {
     system: "Auto",
   },
   auth: {
+    tagline: "Where is the CR? Find it, rate it, share it.",
     email: "Email",
     password: "Password",
     emailPlaceholder: "you@email.com",

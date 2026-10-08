@@ -19,7 +19,7 @@ export function Header() {
             priority
             className="h-9 w-9 rounded-lg shadow-sm ring-1 ring-primary/15 transition-transform duration-200 group-hover:-rotate-6 group-hover:scale-105"
           />
-          Poopipoo
+          <span className="font-brand text-xl font-bold tracking-normal text-ink">Poopipoo</span>
         </Link>
       </div>
     </header>

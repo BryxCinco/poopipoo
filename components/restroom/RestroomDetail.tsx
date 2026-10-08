@@ -200,10 +200,11 @@ export function RestroomDetail({ restroom, isOwner, viewerId, initialVerified, r
                 key={amenity}
                 variants={staggerItem}
                 className={cn(
-                  "flex items-center gap-2 rounded-lg border px-3 py-2 text-sm",
+                  // Solid card background: the paper-map pattern must not show through the text
+                  "flex items-center gap-2 rounded-lg border bg-card px-3 py-2 text-sm",
                   available
-                    ? "border-primary/30 bg-primary/5"
-                    : "text-muted-foreground opacity-60"
+                    ? "border-primary/40 font-medium"
+                    : "text-muted-foreground"
                 )}
               >
                 <Icon

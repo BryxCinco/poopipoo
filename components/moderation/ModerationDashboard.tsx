@@ -435,7 +435,7 @@ function Section({
         {title} <span className="font-normal text-muted-foreground">({count})</span>
       </h2>
       {count === 0 ? (
-        <div className="rounded-xl border border-dashed">
+        <div className="rounded-xl border border-dashed bg-card/80">
           <EmptyState compact icon={icon} title={emptyText} />
         </div>
       ) : (

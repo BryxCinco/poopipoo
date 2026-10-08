@@ -31,7 +31,7 @@ export function AgentSettings({ usage }: AgentSettingsProps) {
       <h2 id="ai-agent-heading" className="font-semibold">
         {t.agent.settingsHeading}
       </h2>
-      <div className="flex flex-col gap-3 rounded-lg border p-3">
+      <div className="flex flex-col gap-3 rounded-lg border bg-card p-3">
         <div className="flex items-center gap-3">
           <Sparkles className="h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
           <div className="min-w-0 flex-1">

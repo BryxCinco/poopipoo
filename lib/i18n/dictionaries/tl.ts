@@ -601,6 +601,7 @@ export const tl = {
     system: "Auto",
   },
   auth: {
+    tagline: "Saan ang CR? Hanapin, i-rate at i-share.",
     email: "Email",
     password: "Password",
     emailPlaceholder: "ikaw@email.com",

@@ -300,7 +300,7 @@ export function ProfileView({ account, restrooms, reviews, reports }: ProfileVie
             </div>
 
             {visibleRestrooms.length === 0 ? (
-              <div className="rounded-xl border border-dashed">
+              <div className="rounded-xl border border-dashed bg-card/80">
                 <EmptyState
                   compact
                   icon={<Toilet />}
@@ -348,7 +348,7 @@ export function ProfileView({ account, restrooms, reviews, reports }: ProfileVie
           <section className="flex flex-col gap-2">
             <h2 className="font-semibold">{t.profile.myReviews}</h2>
             {visibleReviews.length === 0 ? (
-              <div className="rounded-xl border border-dashed">
+              <div className="rounded-xl border border-dashed bg-card/80">
                 <EmptyState
                   compact
                   icon={<MessageSquare />}
@@ -485,7 +485,7 @@ export function ProfileView({ account, restrooms, reviews, reports }: ProfileVie
 function GuestPrompt() {
   const { t } = useI18n();
   return (
-    <section className="flex flex-col items-center gap-3 rounded-lg border p-6 text-center">
+    <section className="flex flex-col items-center gap-3 rounded-lg border bg-card p-6 text-center shadow-sm">
       <p className="font-semibold">{t.profile.guestTitle}</p>
       <p className="text-sm text-muted-foreground">{t.profile.guestDescription}</p>
       <div className="flex w-full flex-col gap-2">
