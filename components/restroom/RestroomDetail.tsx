@@ -16,6 +16,7 @@ import { BackButton } from "@/components/restroom/BackButton";
 import { DeleteRestroomButton } from "@/components/restroom/DeleteRestroomButton";
 import { DistanceFromUser } from "@/components/restroom/DistanceFromUser";
 import { PriceBadge, UserAddedBadge } from "@/components/restroom/RestroomBadges";
+import { RestroomPhotoPrompt } from "@/components/restroom/RestroomPhotoPrompt";
 import { RestroomPhotos } from "@/components/restroom/RestroomPhotos";
 import { RestroomRating } from "@/components/restroom/RestroomRating";
 import { ReviewsSection, type ReviewViewer } from "@/components/restroom/ReviewsSection";
@@ -244,6 +245,10 @@ export function RestroomDetail({ restroom, isOwner, viewerId, initialVerified, r
           </a>
         </p>
       )}
+
+      {/* No photos: "No photos yet" card (add photos for the author, review for others).
+          Down here so it never pushes Navigate below the fold. */}
+      <RestroomPhotoPrompt restroom={restroom} isOwner={isOwner} />
 
       <ReviewsSection restroomId={restroom.id} {...reviews} />
 
