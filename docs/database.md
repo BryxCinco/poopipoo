@@ -12,6 +12,7 @@ Supabase Postgres. The schema lives in `supabase/migrations/` (run in order; eac
 | `0006_osm.sql` | `source`, `osm_type`, `osm_id` for OpenStreetMap imports |
 | `0007_account_deletion.sql` | `delete_account` as a `moderation_log` action |
 | `0009_demo_mode.sql` | Demo account: `profiles.is_demo`, `reviews.is_demo`, `agent_queries.session_id`, read-only triggers (there is no `0008`) |
+| `0010_photo_uploads.sql` | `restroom-images` bucket (public, 5 MB, JPEG/PNG/WebP), upload policies, `restrooms.images` check |
 
 ## Tables
 
@@ -62,10 +63,13 @@ One row per auth user (created by a trigger on sign-up).
 - **Rate limits** (trigger `before_restroom_insert`): 1 restroom per 5 minutes, 5 per 24 hours, 20 per 7 days. Reports: 10 per 24 hours. The error detail says when it's allowed again.
 - **Bans** (`assert_not_banned()`): banned users can't add, edit, review, vote, verify, report or change their profile.
 - **Demo account** (`is_demo_user()`, 0009): can only write reviews. Its reviews are visible only to itself and don't count toward ratings; it earns no points (so it's never on the leaderboard); restroom, report, verification, vote, profile and avatar writes raise `Demo mode`.
+- **Restroom photos** (`check_restroom_images()`, 0010): at most 5 per restroom, each must be the user's own upload in `restroom-images/<user id>/`, and only for restrooms in Metro Manila for now. Errors: `Photos not available here`, `Invalid restroom photo`.
 - Inserts with the secret key (seed and import scripts) skip the rate limit; they have no signed-in user.
 
-Error messages the app recognizes (`lib/moderation/errors.ts`): `Rate limit exceeded`, `Report limit exceeded`, `Account banned`, `Forbidden`, `Demo mode`.
+Error messages the app recognizes (`lib/moderation/errors.ts`): `Rate limit exceeded`, `Report limit exceeded`, `Account banned`, `Forbidden`, `Demo mode`, `Photos not available here`, `Invalid restroom photo`.
 
 ## Storage
 
 Bucket `avatars` (public): `avatars/<user id>/...`, JPG/PNG/WebP, max 2 MB, each user writes only their own folder.
+
+Bucket `restroom-images` (public, 0010): `restroom-images/<user id>/<uuid>.webp`, JPG/PNG/WebP, max 5 MB. Signed-in users upload only into their own folder (never the demo account) and can delete their own files. Photos are compressed in the browser first (`lib/restroom-photos.ts`).
