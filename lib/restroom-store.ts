@@ -12,6 +12,11 @@ import type { Restroom } from "@/types/restroom";
 /**
  * Client-side cache of restrooms from Supabase, shared by the map and list.
  *
+ * - Holds the restrooms inside one area (a bounding box): the map's view, or
+ *   the area around the user on the list. Never the whole table: Supabase
+ *   returns at most 1000 rows, so a full load would silently drop restrooms.
+ * - At most MAX_RESTROOMS_PER_VIEW per area; `truncated` says there are more
+ *   (the map asks the user to zoom in).
  * - Exposes `subscribe` + `getSnapshot` for React's `useSyncExternalStore`.
  * - The snapshot object only changes when data/status changes (a new object on
  *   every call would make useSyncExternalStore re-render forever).
@@ -27,16 +32,39 @@ export interface RestroomStoreState {
   error: string | null;
   /** True once the first fetch succeeded (refetches don't show skeletons again). */
   loaded: boolean;
+  /** The area has more than MAX_RESTROOMS_PER_VIEW restrooms; only those were loaded. */
+  truncated: boolean;
 }
 
-// Re-fetch when the cached list is older than this (picks up other people's additions).
+/** Bounding box in degrees. */
+export interface MapBounds {
+  south: number;
+  west: number;
+  north: number;
+  east: number;
+}
+
+/** Pins per area: enough for a city view, light enough for a phone. */
+export const MAX_RESTROOMS_PER_VIEW = 200;
+
+// Re-fetch when the cached area is older than this (picks up other people's additions).
 const STALE_AFTER_MS = 60_000;
 
-const SERVER_STATE: RestroomStoreState = { restrooms: [], status: "idle", error: null, loaded: false };
+const SERVER_STATE: RestroomStoreState = {
+  restrooms: [],
+  status: "idle",
+  error: null,
+  loaded: false,
+  truncated: false,
+};
 
 let state: RestroomStoreState = SERVER_STATE;
 let fetchedAt = 0;
-let inflight: Promise<void> | null = null;
+/** Area of the current `restrooms` (null before the first successful fetch). */
+let fetchedBounds: MapBounds | null = null;
+/** Area of the newest request (what retry fetches again). */
+let requestedBounds: MapBounds | null = null;
+let controller: AbortController | null = null;
 const listeners = new Set<() => void>();
 
 function setState(partial: Partial<RestroomStoreState>): void {
@@ -49,36 +77,84 @@ const errorMessage = (error: unknown): string =>
 
 // ---------- reads ----------
 
-/** Loads (or reloads) all restrooms. Concurrent calls share one request. */
-export function fetchRestrooms(): Promise<void> {
-  if (inflight) return inflight;
+const contains = (outer: MapBounds, inner: MapBounds): boolean =>
+  inner.south >= outer.south && inner.north <= outer.north && inner.west >= outer.west && inner.east <= outer.east;
+
+/** Square area about `radiusKm` from the center in each direction. */
+export function boundsAround(center: { latitude: number; longitude: number }, radiusKm: number): MapBounds {
+  const latDelta = radiusKm / 111; // ~111 km per degree of latitude
+  const lngDelta = radiusKm / (111 * Math.cos((center.latitude * Math.PI) / 180));
+  return {
+    south: center.latitude - latDelta,
+    north: center.latitude + latDelta,
+    west: center.longitude - lngDelta,
+    east: center.longitude + lngDelta,
+  };
+}
+
+/**
+ * Loads the restrooms inside `bounds`, replacing the current ones.
+ * A newer call cancels an older one that is still running.
+ * The most reviewed come first, so a busy area keeps its best-known restrooms.
+ */
+export function fetchRestroomsInBounds(bounds: MapBounds): Promise<void> {
+  controller?.abort();
+  const current = new AbortController();
+  controller = current;
+  requestedBounds = bounds;
 
   setState({ status: "loading", error: null });
-  inflight = (async () => {
+  return (async () => {
     try {
       const { data, error } = await createClient()
         .from("restrooms")
         .select(RESTROOM_COLUMNS)
-        .order("created_at", { ascending: false });
+        .gte("latitude", bounds.south)
+        .lte("latitude", bounds.north)
+        .gte("longitude", bounds.west)
+        .lte("longitude", bounds.east)
+        .order("review_count", { ascending: false })
+        .order("created_at", { ascending: false })
+        // One extra row tells us whether the area has more than the cap
+        .limit(MAX_RESTROOMS_PER_VIEW + 1)
+        .abortSignal(current.signal);
+      if (current.signal.aborted) return;
       if (error) throw new Error(error.message);
 
       fetchedAt = Date.now();
-      setState({ restrooms: data.map(rowToRestroom), status: "success", loaded: true });
+      fetchedBounds = bounds;
+      setState({
+        restrooms: data.slice(0, MAX_RESTROOMS_PER_VIEW).map(rowToRestroom),
+        truncated: data.length > MAX_RESTROOMS_PER_VIEW,
+        status: "success",
+        loaded: true,
+      });
     } catch (error) {
+      if (current.signal.aborted) return;
       setState({ status: "error", error: errorMessage(error) });
     } finally {
-      inflight = null;
+      if (controller === current) controller = null;
     }
   })();
-  return inflight;
 }
 
-/** Fetches if never loaded, after an error, or when the cache is stale. */
-export function ensureFreshRestrooms(): void {
-  const stale = Date.now() - fetchedAt > STALE_AFTER_MS;
-  if (state.status === "idle" || (state.status !== "loading" && stale)) {
-    void fetchRestrooms();
-  }
+/**
+ * Fetches `bounds` unless the loaded area already covers it, is fresh, and was
+ * complete (a truncated area can show more restrooms in a smaller view).
+ */
+export function ensureRestroomsInBounds(bounds: MapBounds): void {
+  const fresh = Date.now() - fetchedAt <= STALE_AFTER_MS;
+  const covered =
+    fetchedBounds !== null && contains(fetchedBounds, bounds) && !state.truncated && state.status === "success";
+  if (fresh && covered) return;
+  // Same area already on its way
+  if (state.status === "loading" && requestedBounds !== null && contains(requestedBounds, bounds)) return;
+  void fetchRestroomsInBounds(bounds);
+}
+
+/** Fetches the last requested area again (retry button). */
+export function refetchRestrooms(): Promise<void> {
+  return requestedBounds ? fetchRestroomsInBounds(requestedBounds) : Promise.resolve();
 }
 
 /**

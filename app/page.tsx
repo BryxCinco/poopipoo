@@ -35,7 +35,7 @@ const RestroomMap = dynamic(() => import("@/components/map/RestroomMap"), {
 const AgentChat = dynamic(() => import("@/components/agent/AgentChat").then((m) => m.AgentChat), { ssr: false });
 
 export default function HomePage() {
-  const { restrooms, isUserAdded, loading, error, retry } = useRestrooms();
+  const { restrooms, isUserAdded, loading, error, retry, truncated } = useRestrooms();
   const [selectedRestroom, setSelectedRestroom] = useState<Restroom | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [flyTo, setFlyTo] = useState<MapTarget | null>(null);
@@ -156,6 +156,15 @@ export default function HomePage() {
         >
           <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
           <span className="animate-pulse">{t.home.loadingPins}</span>
+        </p>
+      )}
+      {/* Only the first MAX_RESTROOMS_PER_VIEW pins of a busy area are loaded */}
+      {!loading && !error && truncated && !navActive && (
+        <p
+          role="status"
+          className="absolute left-14 top-[4.75rem] z-[1000] rounded-full bg-background px-3 py-1.5 text-xs shadow-md"
+        >
+          {t.home.zoomInForMore}
         </p>
       )}
       {error && !navActive && (

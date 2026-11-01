@@ -237,6 +237,7 @@ export const en: Dictionary = {
     loadError: "Couldn't load restrooms",
     loadErrorRetry: "Couldn't load restrooms. Try again",
     loadingPins: "Loading restrooms...",
+    zoomInForMore: "Zoom in to see all restrooms",
     recenter: "Re-center",
     openAssistant: "Open Poopipoo Assistant",
     assistant: "Poopipoo Assistant",

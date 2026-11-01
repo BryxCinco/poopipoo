@@ -6,7 +6,7 @@ Find the nearest clean restroom (CR), see what it has (bidet, tissue, PWD access
 
 ## Features
 
-- **Map and list.** Restrooms near you, sorted by distance, with filters (free, bidet, wheelchair, baby changing...) and place search. Pins group into count bubbles when zoomed out.
+- **Map and list.** Restrooms near you, sorted by distance, with filters (free, bidet, wheelchair, tissue, soap, aircon) and place search. Pins group into count bubbles when zoomed out.
 - **Restroom pages.** Amenities, ratings and reviews, a share link, and turn-by-turn navigation with voice (OSRM routing).
 - **Contribute.** Add a restroom in four steps (pin on a map, details, amenities, review), write reviews, and vote reviews "helpful".
 - **AI assistant.** Ask in Tagalog or English ("May CR ba na may bidet sa Makati?"). It searches our own data with retrieval (pgvector) and tool calling, then answers with restroom cards.

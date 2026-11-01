@@ -241,6 +241,7 @@ export const tl = {
     loadError: "Hindi makuha ang mga CR",
     loadErrorRetry: "Hindi makuha ang mga CR. Subukan ulit",
     loadingPins: "Kinukuha ang mga CR...",
+    zoomInForMore: "Mag-zoom in para makita lahat ng CR",
     recenter: "I-center",
     openAssistant: "Buksan ang Poopipoo Assistant",
     assistant: "Poopipoo Assistant",

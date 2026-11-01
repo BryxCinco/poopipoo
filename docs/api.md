@@ -1,8 +1,8 @@
 # API
 
-Poopipoo has four route handlers. Everything else (reading restrooms, adding one, reviews, votes) goes straight from the browser to Supabase with the publishable key, and Row Level Security plus database triggers decide what's allowed (see [database.md](database.md)).
+Poopipoo has five route handlers. Everything else (reading restrooms, adding one, reviews, votes) goes straight from the browser to Supabase with the publishable key, and Row Level Security plus database triggers decide what's allowed (see [database.md](database.md)).
 
-Common rules for all four:
+Common rules for all five:
 
 - `POST` with a JSON body. Responses are JSON.
 - Auth is the Supabase session cookie. Without it you get `401`.

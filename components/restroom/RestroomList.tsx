@@ -16,10 +16,11 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useErrorToast } from "@/hooks/use-error-toast";
-import { useGeolocation } from "@/hooks/use-geolocation";
+import { MANILA_COORDS, useGeolocation } from "@/hooks/use-geolocation";
 import { useRestrooms } from "@/hooks/use-restrooms";
 import { staggerItemCapped } from "@/lib/animations";
 import { calculateDistance } from "@/lib/distance";
+import { boundsAround, ensureRestroomsInBounds } from "@/lib/restroom-store";
 import type { Restroom } from "@/types/restroom";
 import { useI18n } from "@/hooks/use-i18n";
 import { format } from "@/lib/i18n/format";
@@ -40,6 +41,8 @@ function matchesQuery(restroom: Restroom, words: string[]): boolean {
 
 // Hundreds of restrooms (OSM import): render the nearest ones first, more on demand
 const PAGE_SIZE = 40;
+// The list loads the restrooms within this distance (the store caps the count)
+const LIST_RADIUS_KM = 10;
 
 interface RestroomWithDistance {
   restroom: Restroom;
@@ -69,6 +72,14 @@ export function RestroomList() {
   const queryWords = useMemo(() => normalize(query).split(/\s+/).filter(Boolean), [query]);
 
   useErrorToast(dataError, t.list.loadError, retry);
+
+  // Once we know where the user is (or that we can't), load the area around
+  // them; Manila when there's no location.
+  useEffect(() => {
+    if (locationLoading) return;
+    const center = hasLocation ? { latitude, longitude } : MANILA_COORDS;
+    ensureRestroomsInBounds(boundsAround(center, LIST_RADIUS_KM));
+  }, [locationLoading, hasLocation, latitude, longitude]);
 
   // A new search/filter starts from the top again
   useEffect(() => setLimit(PAGE_SIZE), [activeFilters, query]);

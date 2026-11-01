@@ -1,3 +1,4 @@
+import { withSentryConfig } from "@sentry/nextjs/config";
 import withSerwistInit from "@serwist/next";
 
 // Serwist compiles app/sw.ts into public/sw.js at build time.
@@ -24,6 +25,8 @@ const securityHeaders = [
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   experimental: {
+    // Loads instrumentation.ts (Sentry on the server and edge)
+    instrumentationHook: true,
     // Local embeddings (lib/ai/local-embeddings.ts) use ONNX Runtime's native
     // addon: load it from node_modules instead of bundling it with webpack.
     serverComponentsExternalPackages: ["@huggingface/transformers", "onnxruntime-node", "sharp"],
@@ -45,4 +48,9 @@ const nextConfig = {
   },
 };
 
-export default withSerwist(nextConfig);
+// Sentry: wraps the build to report errors with readable stack traces.
+// Source maps are only uploaded when SENTRY_AUTH_TOKEN, SENTRY_ORG and
+// SENTRY_PROJECT are set (e.g. on Vercel); without them the build still works.
+export default withSentryConfig(withSerwist(nextConfig), {
+  silent: !process.env.CI,
+});

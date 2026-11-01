@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo } from "react";
-import { MapContainer, useMap } from "react-leaflet";
+import { MapContainer, useMap, useMapEvents } from "react-leaflet";
 
 import { BaseTileLayer } from "@/components/map/BaseTileLayer";
 import { ClusteredMarkers } from "@/components/map/ClusteredMarkers";
@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { RestroomRating } from "@/components/restroom/RestroomRating";
 import { MANILA_COORDS } from "@/hooks/use-geolocation";
 import { useI18n } from "@/hooks/use-i18n";
+import { ensureRestroomsInBounds } from "@/lib/restroom-store";
 import type { LatLng } from "@/types/geo";
 import type { Restroom } from "@/types/restroom";
 
@@ -35,6 +36,11 @@ interface RestroomMapProps {
 }
 
 const DEFAULT_ZOOM = 12;
+
+// Wait for the map to settle before fetching (flyTo and quick pans fire several moveends)
+const FETCH_DEBOUNCE_MS = 300;
+// Fetch a bit beyond the edges so small pans don't need a new request
+const FETCH_PAD = 0.25;
 
 interface RestroomPopupContentProps {
   restroom: Restroom;
@@ -61,6 +67,39 @@ function RestroomPopupContent({ restroom, onSelectRestroom }: RestroomPopupConte
       </Button>
     </div>
   );
+}
+
+/**
+ * Loads the restrooms in view: on mount and after every pan/zoom (moveend).
+ * The store skips the request when the loaded area already covers the view.
+ */
+function RestroomBoundsLoader() {
+  const map = useMap();
+
+  const load = useMemo(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const run = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        const bounds = map.getBounds().pad(FETCH_PAD);
+        ensureRestroomsInBounds({
+          south: bounds.getSouth(),
+          west: bounds.getWest(),
+          north: bounds.getNorth(),
+          east: bounds.getEast(),
+        });
+      }, FETCH_DEBOUNCE_MS);
+    };
+    return { run, cancel: () => clearTimeout(timer) };
+  }, [map]);
+
+  useMapEvents({ moveend: load.run });
+  useEffect(() => {
+    load.run();
+    return load.cancel;
+  }, [load]);
+
+  return null;
 }
 
 /**
@@ -100,6 +139,7 @@ export default function RestroomMap({
       <AttributionBottomLeft />
 
       <MapController target={flyTo} />
+      <RestroomBoundsLoader />
 
       {route && route.length > 1 && <RouteLayer coordinates={route} fit={fitRoute} fitPadding={fitPadding} />}
 

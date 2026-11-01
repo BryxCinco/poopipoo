@@ -32,7 +32,7 @@ Relevance: Poopipoo uses a similar points-and-levels model, but keeps the data o
 | --- | --- | --- | --- |
 | SitOrSquat | 2008 (Charmin sponsorship from 2009) | Crowdsourced | One of the first restroom-finder apps; users marked restrooms "sit" (clean) or "squat" (not clean). Sponsored by the toilet-paper brand Charmin (Procter & Gamble). |
 | Flush Toilet Finder & Map | 2015 | Public datasets + user additions | Developed by Jake Ruston (JRustonApps) as a university student; free with ads, plus a paid version. |
-| OSM-based "toilet finder" apps | various | OpenStreetMap | Several apps (for example, "Toilet Finder – WC Map" and LavSeeker) display OSM `amenity=toilets` data. They display the OSM data. |
+| OSM-based "toilet finder" apps | various | OpenStreetMap | Several apps (for example, "Toilet Finder – WC Map" and LavSeeker) display OSM `amenity=toilets` data. |
 
 Sources: Drug Store News (2009); App Pricing Lab listings for Flush (2015); Capital FM (2015); App Store and AlternativeTo listings.
 

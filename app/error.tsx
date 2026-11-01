@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
+import * as Sentry from "@sentry/nextjs";
 import { AlertTriangle, Home, RefreshCw } from "lucide-react";
 
 import { StatusScreen } from "@/components/layout/StatusScreen";
@@ -19,6 +20,7 @@ export default function Error({
   const { t } = useI18n();
   useEffect(() => {
     console.error(error);
+    Sentry.captureException(error);
   }, [error]);
 
   return (
