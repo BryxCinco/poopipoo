@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 
 import { AuthCard } from "@/components/auth/AuthCard";
 import { SignupForm } from "@/components/auth/SignupForm";
+import { TryDemoButton } from "@/components/auth/TryDemoButton";
+import { getDemoUserId } from "@/lib/auth/demo";
 import { safeReturnUrl } from "@/lib/auth/return-url";
 import { getCurrentUser } from "@/lib/auth/server";
 import { getT } from "@/lib/i18n/server";
@@ -25,6 +27,7 @@ export default async function SignupPage({ searchParams }: SignupPageProps) {
   return (
     <AuthCard title={getT().auth.signup.title} subtitle={getT().auth.signup.subtitle}>
       <SignupForm returnUrl={returnUrl} />
+      {getDemoUserId() && <TryDemoButton returnUrl={returnUrl} />}
     </AuthCard>
   );
 }

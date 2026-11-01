@@ -6,6 +6,7 @@ import "leaflet/dist/leaflet.css";
 import "./globals.css";
 
 import { BottomNav } from "@/components/layout/BottomNav";
+import { DemoBanner } from "@/components/layout/DemoBanner";
 import { Header } from "@/components/layout/Header";
 import { Providers } from "@/components/layout/Providers";
 import { UnsavedChangesGuard } from "@/components/layout/UnsavedChangesGuard";
@@ -57,6 +58,7 @@ export default function RootLayout({
       >
         <Providers locale={locale}>
           <Header />
+          <DemoBanner />
           {/* Fills the space between header and bottom nav; pages scroll inside it.
               Full width so the map can go edge to edge; pages set their own max-width. */}
           <main className="flex min-h-0 w-full flex-1 flex-col overflow-y-auto">

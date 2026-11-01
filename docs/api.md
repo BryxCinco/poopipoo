@@ -1,8 +1,8 @@
 # API
 
-Poopipoo has five route handlers. Everything else (reading restrooms, adding one, reviews, votes) goes straight from the browser to Supabase with the publishable key, and Row Level Security plus database triggers decide what's allowed (see [database.md](database.md)).
+Poopipoo has six route handlers. Everything else (reading restrooms, adding one, reviews, votes) goes straight from the browser to Supabase with the publishable key, and Row Level Security plus database triggers decide what's allowed (see [database.md](database.md)).
 
-Common rules for all five:
+Common rules for all six:
 
 - `POST` with a JSON body. Responses are JSON.
 - Auth is the Supabase session cookie. Without it you get `401`.
@@ -27,6 +27,7 @@ Ask the AI assistant.
 - `200`: `{ "message": string, "restrooms"?: RankedRestroom[], "action"?: { "type": "navigate", "restroom_id": "<uuid>" } }`
 - Rate limit: 10 questions per minute per user (`429 rate_limited`, with `retry_after` seconds).
 - Other errors: `429 ai_busy` (Groq limit), `502/504 upstream`, `503 config`.
+- Demo account: 3 questions per sign-in session and 30 per hour in total (`429 demo_limit`). The session comes from the JWT's `session_id`, stored by the database in `agent_queries.session_id`.
 
 How it works: Groq (`openai/gpt-oss-120b`) with tool calling. The `search_restrooms` tool does a vector search (`match_restrooms`, pgvector, all-MiniLM-L6-v2 embeddings: Hugging Face API if it has credits, otherwise the same model run locally with transformers.js). If embeddings are unavailable it falls back to a keyword search, and "near me" questions use distance only.
 
@@ -71,9 +72,18 @@ Permanently deletes the signed-in user's account.
 ```
 
 - `200 { "ok": true }`: the account is gone and the session cookies are cleared.
-- `400 mismatch` (username doesn't match), `401 unauthorized`, `500 server`.
+- `400 mismatch` (username doesn't match), `401 unauthorized`, `403 demo` (the shared demo account), `500 server`.
 
 Logs `delete_account` in `moderation_log` first, removes the avatar files, then deletes the auth user with the secret key. Foreign keys delete the profile, reviews, votes, reports, verifications and assistant history; restrooms the user added stay, with `created_by` set to `NULL`.
+
+## POST /api/auth/demo
+
+Signs the visitor in to the shared demo account (the "Try demo" button). No body, no session needed.
+
+- `200 { "ok": true }`: the session cookies are set. Each call is a new session.
+- `503 unavailable`: demo mode isn't set up (`DEMO_USER_ID` missing, or that account isn't marked `app_metadata.demo`). `500 server`.
+
+The server makes a one-time magic-link token with the secret key and redeems it right away, so there's no shared password. It also deletes demo reviews older than an hour. What the demo account can and can't do is enforced in the database (`0009_demo_mode.sql`, see [database.md](database.md)).
 
 ## POST /api/moderate
 

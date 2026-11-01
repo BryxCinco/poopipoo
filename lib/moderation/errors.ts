@@ -50,6 +50,9 @@ export function toAppError(error: DbError): Error {
       return new RateLimitError("report", parseRetryAt(error.details));
     case "Forbidden":
       return new LocalizedError("forbidden");
+    // 0009_demo_mode.sql: the demo account is read-only except for reviews
+    case "Demo mode":
+      return new LocalizedError("demoReadOnly");
     default:
       return new Error(error.message);
   }
