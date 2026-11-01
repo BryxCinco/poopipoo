@@ -57,6 +57,7 @@ Profile editing, account deletion, adding restrooms, reporting and verifying are
 - **Map and list.** Restrooms near you with filters (free, bidet, wheelchair, tissue, soap, aircon) and place search. Pins group into count bubbles when zoomed out.
 - **Restroom pages.** Amenities, ratings and reviews, a share link, and turn-by-turn navigation with voice (OSRM routing).
 - **Contribute.** Add a restroom in four steps (pin on a map, details, amenities, review), write reviews, and vote reviews "helpful".
+- **Photos.** Add up to 3 photos when adding a restroom (Metro Manila for now). They're compressed to WebP in the browser before upload, and shown as a swipeable gallery optimized by `next/image`.
 - **AI assistant.** Ask in Tagalog or English. It searches our own data with retrieval (pgvector) and tool calling, then answers with restroom cards.
 - **Gamification.** Points, five levels, badges, and a leaderboard.
 - **Anti-spam and moderation.** Rate limits, reports, community verification ("I've seen this", 5 = verified), AI moderation of new restrooms, a moderator dashboard, bans, and a trust score.
@@ -194,7 +195,7 @@ npm install
 cp .env.example .env.local   # then fill it in (see below)
 ```
 
-1. **Database.** In Supabase → SQL Editor, run the files in `supabase/migrations/` in order (`0001` to `0007`, then `0009`; there is no `0008`). Each one is safe to re-run.
+1. **Database.** In Supabase → SQL Editor, run the files in `supabase/migrations/` in order (`0001` to `0007`, then `0009` and `0010`; there is no `0008`). Each one is safe to re-run.
 2. **Auth.** In Supabase → Authentication → URL Configuration, set the Site URL to `http://localhost:3000` (and your production URL later) and add `/auth/callback` to the redirect URLs.
 3. **Data (optional):**
    ```bash

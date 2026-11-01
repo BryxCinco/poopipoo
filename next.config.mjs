@@ -22,8 +22,21 @@ const securityHeaders = [
   { key: "Strict-Transport-Security", value: "max-age=63072000" },
 ];
 
+// next/image may optimize restroom photos from our Supabase Storage bucket only
+// (lib/restroom-photos.ts). Read at build time, like every NEXT_PUBLIC_ value.
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL) : null;
+const restroomPhotoPattern = supabaseUrl && {
+  protocol: supabaseUrl.protocol.replace(":", ""),
+  hostname: supabaseUrl.hostname,
+  port: supabaseUrl.port,
+  pathname: "/storage/v1/object/public/restroom-images/**",
+};
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  images: {
+    remotePatterns: restroomPhotoPattern ? [restroomPhotoPattern] : [],
+  },
   experimental: {
     // Loads instrumentation.ts (Sentry on the server and edge)
     instrumentationHook: true,

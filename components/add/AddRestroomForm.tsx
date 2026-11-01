@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -22,6 +23,7 @@ import type { MapTarget } from "@/components/map/MapController";
 import type { LatLng } from "@/components/map/LocationPicker";
 import { MiniMapLoader } from "@/components/map/MiniMapLoader";
 import { RateLimitNotice } from "@/components/moderation/Notices";
+import { ImageUploader, type PendingPhoto } from "@/components/restroom/ImageUploader";
 import { AmenityBadge, PriceBadge } from "@/components/restroom/RestroomBadges";
 import { AnimatedButton } from "@/components/ui/AnimatedButton";
 import { AnimatedCheck } from "@/components/ui/AnimatedCheck";
@@ -31,16 +33,20 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
+import { useAuthUser } from "@/hooks/use-auth-user";
 import { useGeolocation } from "@/hooks/use-geolocation";
 import { useI18n } from "@/hooks/use-i18n";
 import { useToast } from "@/hooks/use-toast";
 import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
 import { DURATION, EASE_OUT, scaleIn, SPRING, stepSlide, tapScale } from "@/lib/animations";
+import { isDemoUser } from "@/lib/auth/demo";
 import { reverseGeocode } from "@/lib/geocode";
 import { errorText } from "@/lib/i18n/errors";
 import { format } from "@/lib/i18n/format";
 import { RateLimitError } from "@/lib/moderation/errors";
 import { addRestroom } from "@/lib/restroom-store";
+import { isInPhotoArea, removeRestroomPhotos, uploadRestroomPhotos, type UploadedPhotos } from "@/lib/restroom-photos";
+import { createClient } from "@/lib/supabase/client";
 import { ALL_AMENITIES, getAmenityIcon, getDisplayAmenities } from "@/lib/icons";
 import { cn } from "@/lib/utils";
 import type { Amenity } from "@/types/restroom";
@@ -137,6 +143,20 @@ export function AddRestroomForm({ userId }: AddRestroomFormProps) {
   const [rateLimitedUntil, setRateLimitedUntil] = useState<string | null>(null);
   const clearRateLimit = useCallback(() => setRateLimitedUntil(null), []);
 
+  // Photos (optional): compressed on pick, uploaded on submit (lib/restroom-photos.ts)
+  const [photos, setPhotos] = useState<PendingPhoto[]>([]);
+  const [uploadProgress, setUploadProgress] = useState<{ done: number; total: number } | null>(null);
+  const { user } = useAuthUser();
+  const photosOffReason = isDemoUser(user)
+    ? ta.photosDemo
+    : form.location && !isInPhotoArea(form.location.latitude, form.location.longitude)
+      ? ta.photosOutsideArea
+      : null;
+  // Previews are object URLs: free them when leaving the page
+  const photosRef = useRef(photos);
+  photosRef.current = photos;
+  useEffect(() => () => photosRef.current.forEach((photo) => URL.revokeObjectURL(photo.previewUrl)), []);
+
   const setStep = (next: number) => {
     setDirection(next >= step ? 1 : -1);
     setStepState(next);
@@ -156,7 +176,8 @@ export function AddRestroomForm({ userId }: AddRestroomFormProps) {
     form.name !== "" ||
     form.description !== "" ||
     form.address !== "" ||
-    form.amenities.length > 0;
+    form.amenities.length > 0 ||
+    photos.length > 0;
 
   // "May hindi ka pa na-save." when leaving via a link (not after saving)
   useUnsavedChanges("add-restroom", isDirty && !submitting && !saved);
@@ -253,7 +274,16 @@ export function AddRestroomForm({ userId }: AddRestroomFormProps) {
     if (!form.location) return;
 
     setSubmitting(true);
+    // Photos picked earlier are dropped if the pin moved outside the photo area since
+    const photoFiles = photosOffReason ? [] : photos.map((photo) => photo.file);
+    let uploaded: UploadedPhotos | null = null;
     try {
+      if (photoFiles.length > 0) {
+        setUploadProgress({ done: 0, total: photoFiles.length });
+        uploaded = await uploadRestroomPhotos(createClient(), userId, photoFiles, (done, total) =>
+          setUploadProgress({ done, total })
+        );
+      }
       const restroom = await addRestroom(
         {
           name: form.name,
@@ -262,11 +292,12 @@ export function AddRestroomForm({ userId }: AddRestroomFormProps) {
           latitude: form.location.latitude,
           longitude: form.location.longitude,
           amenities: form.amenities,
-          images: [],
+          images: uploaded?.urls ?? [],
           isFree: form.isFree,
         },
         userId
       );
+      setUploadProgress(null);
       // AI moderation runs on the server in the background (Groq). Not awaited:
       // the result only matters to moderators. keepalive lets it finish even
       // if the page changes right away.
@@ -283,6 +314,9 @@ export function AddRestroomForm({ userId }: AddRestroomFormProps) {
       window.setTimeout(() => router.push(`/restroom/${restroom.id}`), SUCCESS_HOLD_MS);
     } catch (error) {
       setSubmitting(false);
+      setUploadProgress(null);
+      // The restroom wasn't saved: don't leave its photos behind in storage
+      if (uploaded) void removeRestroomPhotos(createClient(), uploaded.paths);
       // Too many restrooms: keep the form as is and count down to the next try
       if (error instanceof RateLimitError) setRateLimitedUntil(error.retryAt.toISOString());
       toast({
@@ -546,6 +580,13 @@ export function AddRestroomForm({ userId }: AddRestroomFormProps) {
                     ))}
                   </div>
                 </fieldset>
+
+                <ImageUploader
+                  photos={photos}
+                  onChange={setPhotos}
+                  disabledReason={photosOffReason}
+                  uploadProgress={uploadProgress}
+                />
               </>
             )}
 
@@ -590,6 +631,22 @@ export function AddRestroomForm({ userId }: AddRestroomFormProps) {
                   {form.amenities.length === 0 && (
                     <p className="text-xs text-muted-foreground">{ta.noAmenities}</p>
                   )}
+                  {!photosOffReason && photos.length > 0 && (
+                    <ul className="mt-1 grid grid-cols-3 gap-2" aria-label={ta.photos}>
+                      {photos.map((photo, index) => (
+                        <li key={photo.id} className="relative aspect-square overflow-hidden rounded-md border bg-muted">
+                          <Image
+                            src={photo.previewUrl}
+                            alt={format(ta.photoAlt, { n: index + 1 })}
+                            fill
+                            sizes="33vw"
+                            className="object-cover"
+                            unoptimized
+                          />
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </ReviewSection>
               </div>
             )}
@@ -616,7 +673,7 @@ export function AddRestroomForm({ userId }: AddRestroomFormProps) {
             size="lg"
             onClick={() => void handleSubmit()}
             loading={submitting || saved}
-            loadingText={ta.saving}
+            loadingText={uploadProgress ? format(ta.uploadingPhotos, uploadProgress) : ta.saving}
             disabled={rateLimitedUntil !== null}
             className="flex-1"
           >

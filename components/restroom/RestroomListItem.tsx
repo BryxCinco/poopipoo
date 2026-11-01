@@ -14,6 +14,7 @@ import { RestroomRating } from "@/components/restroom/RestroomRating";
 import { AnimatedCard } from "@/components/ui/AnimatedCard";
 import { Badge } from "@/components/ui/badge";
 import { useI18n } from "@/hooks/use-i18n";
+import { isRestroomPhotoUrl } from "@/lib/restroom-photos";
 import { formatDistance } from "@/lib/distance";
 import { format } from "@/lib/i18n/format";
 import { getDisplayAmenities } from "@/lib/icons";
@@ -36,7 +37,7 @@ export function RestroomListItem({
   const amenities = getDisplayAmenities(restroom.amenities);
   const shownAmenities = amenities.slice(0, MAX_AMENITY_BADGES);
   const hiddenCount = amenities.length - shownAmenities.length;
-  const thumbnail = restroom.images[0];
+  const thumbnail = restroom.images.find(isRestroomPhotoUrl);
   const { t } = useI18n();
 
   return (
@@ -47,14 +48,12 @@ export function RestroomListItem({
       >
         <div className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-primary/10 text-primary">
           {thumbnail ? (
-            // `unoptimized`: image hosts aren't configured yet (no next.config remotePatterns)
             <Image
               src={thumbnail}
               alt=""
               fill
               sizes="56px"
               className="object-cover transition-transform duration-300 group-hover:scale-105"
-              unoptimized
             />
           ) : (
             <Toilet className="h-6 w-6 transition-transform duration-200 group-hover:scale-110" aria-hidden="true" />

@@ -53,6 +53,11 @@ export function toAppError(error: DbError): Error {
     // 0009_demo_mode.sql: the demo account is read-only except for reviews
     case "Demo mode":
       return new LocalizedError("demoReadOnly");
+    // 0010_photo_uploads.sql
+    case "Photos not available here":
+      return new LocalizedError("photosManilaOnly");
+    case "Invalid restroom photo":
+      return new LocalizedError("photoInvalid");
     default:
       return new Error(error.message);
   }

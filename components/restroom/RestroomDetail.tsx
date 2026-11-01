@@ -16,6 +16,7 @@ import { BackButton } from "@/components/restroom/BackButton";
 import { DeleteRestroomButton } from "@/components/restroom/DeleteRestroomButton";
 import { DistanceFromUser } from "@/components/restroom/DistanceFromUser";
 import { PriceBadge, UserAddedBadge } from "@/components/restroom/RestroomBadges";
+import { RestroomPhotos } from "@/components/restroom/RestroomPhotos";
 import { RestroomRating } from "@/components/restroom/RestroomRating";
 import { ReviewsSection, type ReviewViewer } from "@/components/restroom/ReviewsSection";
 import { ShareButton } from "@/components/restroom/ShareButton";
@@ -131,6 +132,8 @@ export function RestroomDetail({ restroom, isOwner, viewerId, initialVerified, r
           <DistanceFromUser latitude={restroom.latitude} longitude={restroom.longitude} />
         </motion.div>
       </header>
+
+      <RestroomPhotos name={restroom.name} images={restroom.images} />
 
       {/* `isolate` keeps Leaflet's z-indexes from covering the header/nav/toasts */}
       {/* Grows to show the route preview */}
