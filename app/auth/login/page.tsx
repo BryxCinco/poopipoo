@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 
 import { AuthCard } from "@/components/auth/AuthCard";
 import { LoginForm } from "@/components/auth/LoginForm";
+import { TryDemoButton } from "@/components/auth/TryDemoButton";
+import { getDemoUserId } from "@/lib/auth/demo";
 import { safeReturnUrl } from "@/lib/auth/return-url";
 import { getCurrentUser } from "@/lib/auth/server";
 import { getT } from "@/lib/i18n/server";
@@ -31,6 +33,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   return (
     <AuthCard title={t.title} subtitle={t.subtitle}>
       <LoginForm returnUrl={returnUrl} initialError={initialError} />
+      {getDemoUserId() && <TryDemoButton returnUrl={returnUrl} />}
     </AuthCard>
   );
 }

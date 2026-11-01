@@ -23,6 +23,8 @@ export type ProfileRow = {
   ban_reason: string | null;
   banned_at: string | null;
   role: UserRole;
+  /** Phase 15: the shared demo account (set with the secret key, see 0009) */
+  is_demo: boolean;
   created_at: string;
 };
 
@@ -88,6 +90,8 @@ export type AgentQueryRow = {
   id: number;
   user_id: string;
   created_at: string;
+  /** Phase 15: the asker's auth session (filled from the JWT, see 0009) */
+  session_id: string | null;
 };
 
 export type ReviewRow = {
@@ -102,6 +106,8 @@ export type ReviewRow = {
   /** Phase 11 (read-only for users) */
   status: ReviewStatus;
   flag_count: number;
+  /** Phase 15: written by the demo account (only it sees the review, see 0009) */
+  is_demo: boolean;
   created_at: string;
 };
 
@@ -180,8 +186,8 @@ export type Database = {
       profiles: {
         Row: ProfileRow;
         Insert: Pick<ProfileRow, "id"> & Partial<Omit<ProfileRow, "id">>;
-        // points/level are trigger-only; badges are writable by the secret (admin) key only
-        Update: Partial<Pick<ProfileRow, "username" | "avatar_url" | "badges">>;
+        // points/level are trigger-only; badges and is_demo are writable by the secret (admin) key only
+        Update: Partial<Pick<ProfileRow, "username" | "avatar_url" | "badges" | "is_demo">>;
         Relationships: [];
       };
       review_votes: {

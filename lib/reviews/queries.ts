@@ -22,7 +22,7 @@ export const REVIEW_COMMENT_MAX = 500;
 const REVIEW_SELECT =
   "id, restroom_id, user_id, rating, comment, images, helpful_count, status, created_at, profiles!reviews_user_id_fkey(username, avatar_url)";
 
-type ReviewRowWithAuthor = Omit<ReviewRow, "flag_count"> & {
+type ReviewRowWithAuthor = Omit<ReviewRow, "flag_count" | "is_demo"> & {
   profiles: { username: string | null; avatar_url: string | null } | null;
 };
 

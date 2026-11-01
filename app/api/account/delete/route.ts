@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import { isDemoUser } from "@/lib/auth/demo";
 import { getCurrentUser } from "@/lib/auth/server";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { getLocale } from "@/lib/i18n/server";
@@ -15,7 +16,7 @@ import { createClient } from "@/lib/supabase/server";
  *       confirmation modal), so a stray request can't delete an account.
  * 200:  { ok: true } — the session cookies are cleared too.
  * Errors: { error (in the visitor's language), code }
- *   401 unauthorized · 400 invalid / mismatch · 500 server
+ *   401 unauthorized · 400 invalid / mismatch · 403 demo · 500 server
  *
  * Steps (secret key, server only):
  * 1. Log it in moderation_log (action 'delete_account', needs 0007).
@@ -29,7 +30,7 @@ export const dynamic = "force-dynamic";
 
 const bodySchema = z.object({ username: z.string().trim().min(1).max(40) });
 
-type ErrorCode = "unauthorized" | "invalid" | "mismatch" | "server";
+type ErrorCode = "unauthorized" | "invalid" | "mismatch" | "demo" | "server";
 
 function errorResponse(status: number, code: ErrorCode, error: string) {
   return NextResponse.json({ error, code }, { status });
@@ -43,6 +44,8 @@ export async function POST(request: Request) {
 
   const user = await getCurrentUser();
   if (!user) return errorResponse(401, "unauthorized", td.loginRequired);
+  // The shared demo account can't be deleted (lib/auth/demo.ts)
+  if (isDemoUser(user)) return errorResponse(403, "demo", t.errors.demoReadOnly);
 
   const parsed = bodySchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return errorResponse(400, "invalid", td.mismatch);

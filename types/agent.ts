@@ -31,7 +31,15 @@ export interface AgentResponse {
   action?: AgentAction;
 }
 
-export type AgentErrorCode = "unauthorized" | "invalid" | "rate_limited" | "ai_busy" | "upstream" | "config";
+export type AgentErrorCode =
+  | "unauthorized"
+  | "invalid"
+  | "rate_limited"
+  | "ai_busy"
+  | "upstream"
+  | "config"
+  /** Demo account: used its questions for this session */
+  | "demo_limit";
 
 /** Error response of POST /api/agent */
 export interface AgentErrorResponse {

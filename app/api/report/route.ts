@@ -3,7 +3,7 @@ import { z } from "zod";
 
 import { getCurrentUser } from "@/lib/auth/server";
 import { getDictionary } from "@/lib/i18n/dictionaries";
-import { errorText } from "@/lib/i18n/errors";
+import { errorText, LocalizedError } from "@/lib/i18n/errors";
 import { getLocale } from "@/lib/i18n/server";
 import { BannedError, RateLimitError, toAppError } from "@/lib/moderation/errors";
 import { createClient } from "@/lib/supabase/server";
@@ -15,7 +15,7 @@ import { isCrossSiteRequest } from "@/lib/security/same-origin";
  * Body: { target_type: "restroom" | "review", target_id, reason, details? }
  * 201:  { ok: true }
  * Errors: { error (in the visitor's language), code }
- *   401 unauthorized · 400 invalid / own · 403 banned · 404 not_found
+ *   401 unauthorized · 400 invalid / own · 403 banned / not_allowed (demo) · 404 not_found
  *   409 already_reported · 429 rate_limited (+ retry_at)
  *
  * The insert runs as the signed-in user (RLS). Database triggers
@@ -32,7 +32,16 @@ const bodySchema = z.object({
   details: z.string().trim().max(500).optional(),
 });
 
-type ErrorCode = "unauthorized" | "invalid" | "own" | "banned" | "not_found" | "already_reported" | "rate_limited" | "server";
+type ErrorCode =
+  | "unauthorized"
+  | "invalid"
+  | "own"
+  | "banned"
+  | "not_allowed"
+  | "not_found"
+  | "already_reported"
+  | "rate_limited"
+  | "server";
 
 function errorResponse(status: number, code: ErrorCode, error: string, extra: Record<string, string> = {}) {
   return NextResponse.json({ error, code, ...extra }, { status });
@@ -63,6 +72,8 @@ export async function POST(request: Request) {
 
   const appError = toAppError(error);
   if (appError instanceof BannedError) return errorResponse(403, "banned", errorText(appError, t));
+  // Demo account (0009_demo_mode.sql)
+  if (appError instanceof LocalizedError) return errorResponse(403, "not_allowed", errorText(appError, t));
   if (appError instanceof RateLimitError) {
     return errorResponse(429, "rate_limited", errorText(appError, t), { retry_at: appError.retryAt.toISOString() });
   }

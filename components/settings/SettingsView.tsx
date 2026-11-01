@@ -23,6 +23,8 @@ export interface SettingsAccount {
   email: string;
   username: string;
   avatarUrl: string | null;
+  /** The shared demo account: no profile editing or account deletion */
+  isDemo: boolean;
 }
 
 interface SettingsViewProps {
@@ -45,7 +47,12 @@ export function SettingsView({ account, agentUsage }: SettingsViewProps) {
         <h2 id="account-heading" className="font-semibold">
           {t.settings.account}
         </h2>
-        {account ? (
+        {account?.isDemo ? (
+          <div className="flex flex-col gap-1 rounded-xl border bg-card p-5 text-center shadow-sm">
+            <p className="text-sm font-semibold">{t.demo.settingsTitle}</p>
+            <p className="text-sm text-muted-foreground">{t.demo.settingsDescription}</p>
+          </div>
+        ) : account ? (
           <AccountSettings
             userId={account.id}
             email={account.email}
@@ -115,7 +122,7 @@ export function SettingsView({ account, agentUsage }: SettingsViewProps) {
       {account && (
         <section className="flex flex-col gap-2" aria-label={t.settings.accountActions}>
           <LogoutButton />
-          <DeleteAccountButton username={account.username} />
+          {!account.isDemo && <DeleteAccountButton username={account.username} />}
         </section>
       )}
     </>

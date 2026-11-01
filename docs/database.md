@@ -11,6 +11,7 @@ Supabase Postgres. The schema lives in `supabase/migrations/` (run in order; eac
 | `0005_moderation.sql` | Roles, bans, trust score, statuses, reports, verifications, rate limits, moderation log |
 | `0006_osm.sql` | `source`, `osm_type`, `osm_id` for OpenStreetMap imports |
 | `0007_account_deletion.sql` | `delete_account` as a `moderation_log` action |
+| `0009_demo_mode.sql` | Demo account: `profiles.is_demo`, `reviews.is_demo`, `agent_queries.session_id`, read-only triggers (there is no `0008`) |
 
 ## Tables
 
@@ -60,9 +61,10 @@ One row per auth user (created by a trigger on sign-up).
 - **Column grants**: users can only write the columns listed as user-editable above. Status, counts, points, roles and AI fields are read-only for them.
 - **Rate limits** (trigger `before_restroom_insert`): 1 restroom per 5 minutes, 5 per 24 hours, 20 per 7 days. Reports: 10 per 24 hours. The error detail says when it's allowed again.
 - **Bans** (`assert_not_banned()`): banned users can't add, edit, review, vote, verify, report or change their profile.
+- **Demo account** (`is_demo_user()`, 0009): can only write reviews. Its reviews are visible only to itself and don't count toward ratings; it earns no points (so it's never on the leaderboard); restroom, report, verification, vote, profile and avatar writes raise `Demo mode`.
 - Inserts with the secret key (seed and import scripts) skip the rate limit; they have no signed-in user.
 
-Error messages the app recognizes (`lib/moderation/errors.ts`): `Rate limit exceeded`, `Report limit exceeded`, `Account banned`, `Forbidden`.
+Error messages the app recognizes (`lib/moderation/errors.ts`): `Rate limit exceeded`, `Report limit exceeded`, `Account banned`, `Forbidden`, `Demo mode`.
 
 ## Storage
 

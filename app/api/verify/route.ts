@@ -3,7 +3,7 @@ import { z } from "zod";
 
 import { getCurrentUser } from "@/lib/auth/server";
 import { getDictionary } from "@/lib/i18n/dictionaries";
-import { errorText } from "@/lib/i18n/errors";
+import { errorText, LocalizedError } from "@/lib/i18n/errors";
 import { getLocale } from "@/lib/i18n/server";
 import { BannedError, toAppError } from "@/lib/moderation/errors";
 import { createClient } from "@/lib/supabase/server";
@@ -58,6 +58,8 @@ export async function POST(request: Request) {
   if (error && error.code !== "23505") {
     const appError = toAppError(error);
     if (appError instanceof BannedError) return errorResponse(403, "banned", errorText(appError, t));
+    // Demo account (0009_demo_mode.sql)
+    if (appError instanceof LocalizedError) return errorResponse(403, "not_allowed", errorText(appError, t));
     // 42501 = RLS refused: own restroom, rejected restroom, or it doesn't exist
     if (error.code === "42501") {
       return errorResponse(403, "not_allowed", tv.unavailable);

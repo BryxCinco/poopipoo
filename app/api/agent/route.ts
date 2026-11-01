@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { AgentError, runAgent } from "@/lib/ai/agent";
 import { embedMissingRestrooms } from "@/lib/ai/restroom-document";
+import { DEMO_AI_PER_HOUR, DEMO_AI_PER_SESSION, isDemoUser } from "@/lib/auth/demo";
 import { getCurrentUser } from "@/lib/auth/server";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { format } from "@/lib/i18n/format";
@@ -17,7 +18,8 @@ import { isCrossSiteRequest } from "@/lib/security/same-origin";
  * 200:  { message, restrooms?, action? }
  * Errors: { error: string (in the visitor's language, for the UI), code }
  * Language: the app's language cookie (or Accept-Language); the answer uses it too.
- *   401 unauthorized · 400 invalid · 429 rate_limited / ai_busy · 502/503/504 upstream
+ *   401 unauthorized · 400 invalid · 429 rate_limited / ai_busy / demo_limit · 502/503/504 upstream
+ * Demo account (lib/auth/demo.ts): 3 questions per session, 30 per hour in total.
  */
 
 export const dynamic = "force-dynamic";
@@ -45,7 +47,7 @@ const bodySchema = z
   // Both coordinates or neither
   .refine((body) => (body.user_lat === undefined) === (body.user_lng === undefined));
 
-type ErrorCode = "unauthorized" | "invalid" | "rate_limited" | "ai_busy" | "upstream" | "config";
+type ErrorCode = "unauthorized" | "invalid" | "rate_limited" | "ai_busy" | "upstream" | "config" | "demo_limit";
 
 function errorResponse(status: number, code: ErrorCode, error: string, retryAfter?: number) {
   return NextResponse.json(
@@ -93,6 +95,38 @@ export async function POST(request: Request) {
       format(errors.rateLimited, { seconds: retryAfter }),
       retryAfter
     );
+  }
+
+  // ---- demo account: a few questions per session, and a cap for everyone ----
+  // (session_id is filled from the JWT by the database, see 0009_demo_mode.sql)
+  if (isDemoUser(user)) {
+    const { data: auth } = await supabase.auth.getClaims();
+    const sessionId = auth?.claims.session_id;
+    if (!sessionId) return errorResponse(401, "unauthorized", errors.unauthorized);
+
+    const hourAgo = new Date(Date.now() - 60 * 60_000).toISOString();
+    const [sessionCount, hourCount] = await Promise.all([
+      supabase
+        .from("agent_queries")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .eq("session_id", sessionId),
+      supabase
+        .from("agent_queries")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .gte("created_at", hourAgo),
+    ]);
+    if (sessionCount.error || hourCount.error) {
+      console.error("agent demo limit check failed", (sessionCount.error ?? hourCount.error)?.message);
+      return errorResponse(503, "upstream", errors.server);
+    }
+    if ((sessionCount.count ?? 0) >= DEMO_AI_PER_SESSION) {
+      return errorResponse(429, "demo_limit", format(errors.demoLimit, { limit: DEMO_AI_PER_SESSION }));
+    }
+    if ((hourCount.count ?? 0) >= DEMO_AI_PER_HOUR) {
+      return errorResponse(429, "demo_limit", errors.demoBusy);
+    }
   }
 
   // Counts attempts (also used for the usage stats on the profile page)

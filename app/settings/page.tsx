@@ -3,6 +3,7 @@ import { Settings } from "lucide-react";
 
 import type { AgentUsage } from "@/components/profile/AgentSettings";
 import { SettingsView, type SettingsAccount } from "@/components/settings/SettingsView";
+import { isDemoUser } from "@/lib/auth/demo";
 import { getCurrentUser } from "@/lib/auth/server";
 import { getT } from "@/lib/i18n/server";
 import { pageMetadata } from "@/lib/metadata";
@@ -46,6 +47,7 @@ export default async function SettingsPage() {
       email: user.email ?? "",
       username: profileResult.data?.username ?? user.email?.split("@")[0] ?? getT().common.user,
       avatarUrl: profileResult.data?.avatar_url ?? null,
+      isDemo: isDemoUser(user),
     };
     // Usage stats are optional: show "-" instead of failing the whole page
     agentUsage =
