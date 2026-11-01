@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { CITIES } from "@/lib/cities";
 import { LocalizedError } from "@/lib/i18n/errors";
+import { toAppError } from "@/lib/moderation/errors";
 import type { Database } from "@/types/database";
 
 /**
@@ -105,6 +106,17 @@ export async function uploadRestroomPhotos(
     onProgress?.(uploaded.paths.length, files.length);
   }
   return uploaded;
+}
+
+/**
+ * Saves photo URLs on an existing restroom (its author only: RLS). The
+ * database checks the URLs, the count and the area (0010).
+ */
+export async function saveRestroomPhotos(supabase: Client, restroomId: string, urls: string[]): Promise<void> {
+  const { data, error } = await supabase.from("restrooms").update({ images: urls }).eq("id", restroomId).select("id");
+  if (error) throw toAppError(error);
+  // RLS matched no row: not the author
+  if (data.length === 0) throw new LocalizedError("forbidden");
 }
 
 /** Best effort: leftovers are harmless (nothing links to them). */
