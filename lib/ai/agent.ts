@@ -114,7 +114,12 @@ const TOOLS = [
             type: "object",
             properties: {
               // null allowed: the model sends it for "any" (a plain boolean fails Groq's validation)
-              is_free: { type: ["boolean", "null"], description: "true = libre lang, false = may bayad lang, null = kahit ano" },
+              is_free: {
+                type: ["boolean", "null"],
+                description:
+                  "Para LANG sa paghingi ng listahan (hal. 'libreng CR sa Makati'): true = libre lang, false = may bayad lang. " +
+                  "null kapag tinatanong kung libre o may bayad ang isang partikular na CR o lugar, at sa iba pang tanong.",
+              },
               amenities: {
                 type: ["array", "null"],
                 items: { type: "string", enum: AMENITY_VALUES },
@@ -187,9 +192,14 @@ const UNKNOWN_ID =
 
 const isAmenity = (value: string): value is Amenity => (AMENITY_VALUES as string[]).includes(value);
 
+// Matches a fee filter removed, shown to the model (keeps the prompt small on the free tier)
+const MAX_OTHER_FEE_MATCHES = 3;
+
 /** What the tools found during one agent run, returned to the client. */
 interface RunState {
   found: Map<string, RankedRestroom>;
+  /** Matches a fee filter removed: only become cards if the answer names them. */
+  otherFee: Map<string, RankedRestroom>;
   action: AgentAction | null;
 }
 
@@ -218,16 +228,32 @@ async function runTool(call: ToolCall, input: AgentInput, run: RunState): Promis
         return "Hindi alam ang lokasyon ng user. Sabihin sa user na i-allow ang location para makita ang pinakamalapit.";
       }
 
-      const results = await searchRestrooms(query, {
-        client: input.client,
-        location: input.location,
-        sortBy: wantsDistance ? "distance" : "relevance",
-        filters: filters
-          ? { isFree: filters.is_free ?? undefined, amenities: filters.amenities?.filter(isAmenity) }
-          : undefined,
-      });
+      const amenities = filters?.amenities?.filter(isAmenity);
+      const fee = filters?.is_free ?? null;
+      const search = (isFree: boolean | undefined) =>
+        searchRestrooms(query, {
+          client: input.client,
+          location: input.location,
+          sortBy: wantsDistance ? "distance" : "relevance",
+          filters: filters ? { isFree, amenities } : undefined,
+        });
+
+      // The model may still filter on "Libre ba ang X?". Most restrooms have no
+      // fee data, so the filter would hide X and it would answer "walang libre".
+      // Search without it too, and show what the filter removed with its real fee.
+      const [results, unfiltered] = await Promise.all([
+        search(fee ?? undefined),
+        fee !== null && !wantsDistance ? search(undefined) : Promise.resolve([]),
+      ]);
+      const removed = unfiltered.filter((restroom) => restroom.isFree !== fee).slice(0, MAX_OTHER_FEE_MATCHES);
+
       results.forEach((restroom) => run.found.set(restroom.id, restroom));
-      return buildContext(results, input.locale);
+      removed.forEach((restroom) => run.otherFee.set(restroom.id, restroom));
+
+      const context = buildContext(results, input.locale);
+      return removed.length === 0
+        ? context
+        : `${context}\n\nTinanggal ng filter pero tugma sa paghahanap (basahin ang presyo ng bawat isa). Kung isa rito ang tinatanong ng user, ito ang isagot:\n${buildContext(removed, input.locale)}`;
     }
 
     case "get_distance": {
@@ -279,6 +305,8 @@ function systemPrompt(location: LatLng | null | undefined, locale: Locale): stri
     where,
     "Mga patakaran:",
     "- Sa anumang tanong tungkol sa CR, gamitin muna ang search_restrooms. Ang sagot mo ay dapat galing LANG sa resulta ng tools. Huwag mag-imbento ng CR, lugar, address, presyo, o amenities.",
+    "- Kung tinatanong kung libre o may bayad ang isang partikular na CR o lugar: huwag gamitin ang is_free filter. Hanapin muna ang CR, tapos sabihin ang nakalagay na presyo nito: Libre, May bayad, o walang info sa bayad. Sagutin ang mismong CR na tinanong, hindi ibang CR.",
+    "- Huwag sabihing 'walang libre' o 'may bayad' kapag walang info sa bayad ang CR.",
     "- Kung walang nahanap, sabihin nang tapat at imungkahi na i-add ng user ang CR na alam niya.",
     "- Kung tinanong ang layo at alam ang lokasyon, gamitin ang get_distance gamit ang lokasyon sa itaas.",
     `- Kung gustong pumunta o magpa-direksyon ng user, gamitin ang start_navigation. Banggitin lang ang '${button}' button kung tinawag mo ang start_navigation sa sagot na ito.`,
@@ -404,7 +432,7 @@ export async function runAgent(input: AgentInput): Promise<AgentResponse> {
     ...history,
     { role: "user", content: input.message },
   ];
-  const run: RunState = { found: new Map(), action: null };
+  const run: RunState = { found: new Map(), otherFee: new Map(), action: null };
 
   let answer = "";
   for (let step = 0; step < MAX_STEPS; step++) {
@@ -438,7 +466,9 @@ export async function runAgent(input: AgentInput): Promise<AgentResponse> {
   // Cards: restrooms the answer mentions by name (or everything found, if none),
   // with the navigation target first.
   const found = Array.from(run.found.values());
-  const mentioned = found.filter((restroom) => message.toLowerCase().includes(restroom.name.toLowerCase()));
+  const mentioned = [...found, ...Array.from(run.otherFee.values()).filter((restroom) => !run.found.has(restroom.id))].filter(
+    (restroom) => message.toLowerCase().includes(restroom.name.toLowerCase())
+  );
   const cards = (mentioned.length > 0 ? mentioned : found).sort(
     (a, b) => Number(b.id === run.action?.restroom_id) - Number(a.id === run.action?.restroom_id)
   );
