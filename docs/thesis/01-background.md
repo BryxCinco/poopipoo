@@ -15,9 +15,9 @@ Crowdsourced platforms depend on their users for content, but users only join a 
 Poopipoo addresses this by **seeding** the database before launch:
 
 - 30 hand-entered restrooms at well-known Metro Manila locations (malls, parks, terminals), and
-- 829 public toilets imported from **OpenStreetMap** (OSM), where they are mapped as `amenity=toilets`.
+- 585 public toilets imported from **OpenStreetMap** (OSM), where they are mapped as `amenity=toilets`.
 
-At launch, the map therefore shows 859 restrooms in five cities, and community contributions add to that base instead of starting from zero.
+The map therefore shows 615 restrooms in Metro Manila, and community contributions add to that base instead of starting from zero.
 
 ## 1.3 The digital divide and mobile-first design
 

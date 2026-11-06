@@ -126,7 +126,7 @@ Cold loads of the production site were measured in a fresh incognito browser con
 
 Transferred sizes are compressed. The map page's total includes map tiles and the restroom data.
 
-On a slow 3G connection, server-rendered pages (restroom, city, about) show their content in about 2 seconds, while the map and list take about 6 seconds because they first download the JavaScript and the data for all 859 restrooms. After the first visit, the service worker serves cached assets, and a page that was visited before opens even without a connection (checked in the Phase 12 suite).
+On a slow 3G connection, server-rendered pages (restroom, city, about) show their content in about 2 seconds, while the map and list take about 6 seconds because they first download the JavaScript and the data for all 859 restrooms (the dataset when these measurements were taken). After the first visit, the service worker serves cached assets, and a page that was visited before opens even without a connection (checked in the Phase 12 suite).
 
 ## 7.6 Security testing
 

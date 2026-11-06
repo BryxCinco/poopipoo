@@ -61,7 +61,7 @@ Profile editing, account deletion, adding restrooms, reporting and verifying are
 - **AI assistant.** Ask in Tagalog or English. It searches our own data with retrieval (pgvector) and tool calling, then answers with restroom cards.
 - **Gamification.** Points, five levels, badges, and a leaderboard.
 - **Anti-spam and moderation.** Rate limits, reports, community verification ("I've seen this", 5 = verified), AI moderation of new restrooms, a moderator dashboard, bans, and a trust score.
-- **Real data.** Public toilets imported from OpenStreetMap (Metro Manila, Cebu, Davao, Iloilo, Bacolod), plus community additions.
+- **Real data.** 615 restrooms in Metro Manila: 585 public toilets imported from OpenStreetMap and 30 hand-picked entries. Users can still add restrooms anywhere in the Philippines.
 - **PWA.** Installable and works offline for pages you've visited. Light and dark mode. Mobile first, built for 375px screens.
 
 ## Architecture
@@ -201,8 +201,7 @@ cp .env.example .env.local   # then fill it in (see below)
    ```bash
    npx tsx scripts/seed-restrooms.ts          # 10 sample restrooms
    npx tsx scripts/import-osm.ts --dry-run    # preview the OpenStreetMap import
-   npx tsx scripts/import-osm.ts              # import public toilets (Metro Manila, Cebu, Davao, Iloilo, Bacolod)
-   npx tsx scripts/import-osm.ts --city=cebu  # or only some cities (slugs in lib/cities.ts)
+   npx tsx scripts/import-osm.ts              # import public toilets (Metro Manila)
    npx tsx scripts/rename-osm-restrooms.ts    # name old "Public CR" imports after a nearby landmark or street
    npx tsx scripts/generate-embeddings.ts     # vectors for the AI search (local model, ~23 MB download once)
    ```

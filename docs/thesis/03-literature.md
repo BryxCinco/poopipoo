@@ -10,9 +10,9 @@ Goodchild (2007) described ordinary people acting as "sensors" who create and sh
 
 ### OpenStreetMap (2004)
 
-OpenStreetMap (OSM) was started in 2004 in the United Kingdom by Steve Coast as a free, editable map of the world (Haklay & Weber, 2008). Its data is released under the Open Database License (ODbL). Haklay (2010) compared OSM with the Ordnance Survey's official data for England and found that OSM was fairly accurate in areas with many contributors, but its completeness varied widely between places. The same pattern is visible in Poopipoo's import: 585 public toilets were imported for Metro Manila, but only 15 for Bacolod.
+OpenStreetMap (OSM) was started in 2004 in the United Kingdom by Steve Coast as a free, editable map of the world (Haklay & Weber, 2008). Its data is released under the Open Database License (ODbL). Haklay (2010) compared OSM with the Ordnance Survey's official data for England and found that OSM was fairly accurate in areas with many contributors, but its completeness varied widely between places. The same pattern was visible in Poopipoo's original five-city import: 585 public toilets for Metro Manila, but only 15 for Bacolod.
 
-Relevance to Poopipoo: OSM supplies the base map, the 829 imported restrooms, place search (Nominatim) and routing data (OSRM).
+Relevance to Poopipoo: OSM supplies the base map, the 585 imported restrooms, place search (Nominatim) and routing data (OSRM).
 
 ### Waze (2006)
 

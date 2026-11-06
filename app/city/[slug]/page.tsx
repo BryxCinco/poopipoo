@@ -14,7 +14,7 @@ import { countRestroomsByCity, getCityRestrooms } from "@/lib/restrooms/cities";
 
 /**
  * /city/[slug] — public restrooms in one city (lib/cities.ts). Mostly for
- * search engines and sharing ("CR in Cebu"); the map is the main way to browse.
+ * search engines and sharing ("CR in Metro Manila"); the map is the main way to browse.
  * Lists the top-rated restrooms, each linking to its detail page.
  */
 
@@ -100,23 +100,25 @@ export default async function CityPage({ params }: CityPageProps) {
         </section>
       )}
 
-      <nav aria-labelledby="other-cities-heading" className="flex flex-col gap-2">
-        <h2 id="other-cities-heading" className="font-semibold">
-          {tc.otherCities}
-        </h2>
-        <ul className="flex flex-wrap gap-2">
-          {others.map((other) => (
-            <li key={other.slug}>
-              <Link
-                href={`/city/${other.slug}`}
-                className="inline-flex min-h-10 items-center rounded-full border bg-card px-4 text-sm font-medium shadow-sm transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                {other.name}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </nav>
+      {others.length > 0 && (
+        <nav aria-labelledby="other-cities-heading" className="flex flex-col gap-2">
+          <h2 id="other-cities-heading" className="font-semibold">
+            {tc.otherCities}
+          </h2>
+          <ul className="flex flex-wrap gap-2">
+            {others.map((other) => (
+              <li key={other.slug}>
+                <Link
+                  href={`/city/${other.slug}`}
+                  className="inline-flex min-h-10 items-center rounded-full border bg-card px-4 text-sm font-medium shadow-sm transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  {other.name}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      )}
     </div>
   );
 }
