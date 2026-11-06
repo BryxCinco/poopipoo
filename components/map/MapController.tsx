@@ -7,6 +7,8 @@ export interface MapTarget {
   latitude: number;
   longitude: number;
   zoom: number;
+  /** Keep the target this many px left of the map's center (a panel covers the right side) */
+  offsetX?: number;
 }
 
 /**
@@ -18,7 +20,8 @@ export function MapController({ target }: { target: MapTarget | null }) {
 
   useEffect(() => {
     if (target) {
-      map.flyTo([target.latitude, target.longitude], target.zoom, { duration: 1 });
+      const point = map.project([target.latitude, target.longitude], target.zoom).add([target.offsetX ?? 0, 0]);
+      map.flyTo(map.unproject(point, target.zoom), target.zoom, { duration: 1 });
     }
   }, [map, target]);
 

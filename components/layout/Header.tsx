@@ -1,10 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import { TopNav } from "@/components/layout/TopNav";
+
 export function Header() {
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
-      <div className="mx-auto flex h-14 max-w-screen-md items-center px-4">
+      <div className="mx-auto flex h-14 max-w-screen-md items-center px-4 md:max-w-none md:px-6">
         <Link
           href="/"
           className="group flex min-h-11 items-center gap-2 rounded-lg text-lg font-bold tracking-tight focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -21,6 +23,7 @@ export function Header() {
           />
           <span className="font-brand text-xl font-bold tracking-normal text-ink">Poopipoo</span>
         </Link>
+        <TopNav />
       </div>
     </header>
   );

@@ -246,6 +246,7 @@ export const tl = {
     openAssistant: "Buksan ang Poopipoo Assistant",
     assistant: "Poopipoo Assistant",
     askAi: "Tanong sa AI",
+    listLabel: "Mga CR sa mapa",
     title: "Mapa ng mga CR sa Metro Manila",
   },
   map: {
@@ -342,6 +343,7 @@ export const tl = {
     noLocation: "Walang location.",
     sortedByRating: "Naka-sort ayon sa rating.",
     sortedByDistance: "Naka-sort mula sa pinakamalapit.",
+    sortedByMapCenter: "Naka-sort mula sa gitna ng mapa.",
     loadError: "Hindi makuha ang mga CR",
     checkInternet: "I-check ang internet connection mo.",
     emptyTitle: "Wala pang CR dito. Mag-add ka!",

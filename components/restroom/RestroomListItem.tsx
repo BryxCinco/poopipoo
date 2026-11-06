@@ -27,12 +27,15 @@ interface RestroomListItemProps {
   /** Kilometers from the user, or null when the location is unknown. */
   distanceKm: number | null;
   isUserAdded?: boolean;
+  /** Handle the click in place (keeps the link, so open-in-new-tab still works). */
+  onSelect?: (restroom: Restroom) => void;
 }
 
 export function RestroomListItem({
   restroom,
   distanceKm,
   isUserAdded = false,
+  onSelect,
 }: RestroomListItemProps) {
   const amenities = getDisplayAmenities(restroom.amenities);
   const shownAmenities = amenities.slice(0, MAX_AMENITY_BADGES);
@@ -41,10 +44,15 @@ export function RestroomListItem({
   const { t } = useI18n();
 
   return (
-    <AnimatedCard interactive className="group">
+    <AnimatedCard interactive className="group h-full">
       <Link
         href={`/restroom/${restroom.id}`}
-        className="flex gap-3 rounded-xl p-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        onClick={(event) => {
+          if (!onSelect || event.metaKey || event.ctrlKey || event.shiftKey) return;
+          event.preventDefault();
+          onSelect(restroom);
+        }}
+        className="flex h-full gap-3 rounded-xl p-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         <div className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-primary/10 text-primary">
           {thumbnail ? (

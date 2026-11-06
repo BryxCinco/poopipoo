@@ -21,6 +21,7 @@ import { useRestrooms } from "@/hooks/use-restrooms";
 import { staggerItemCapped } from "@/lib/animations";
 import { calculateDistance } from "@/lib/distance";
 import { boundsAround, ensureRestroomsInBounds } from "@/lib/restroom-store";
+import { cn } from "@/lib/utils";
 import type { Restroom } from "@/types/restroom";
 import { useI18n } from "@/hooks/use-i18n";
 import { format } from "@/lib/i18n/format";
@@ -29,7 +30,7 @@ import { format } from "@/lib/i18n/format";
 const normalize = (text: string) =>
   text
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[̀-ͯ]/g, "")
     .toLowerCase();
 
 /** Every word of the query must appear in the CR's name or address. */
@@ -44,11 +45,141 @@ const PAGE_SIZE = 40;
 // The list loads the restrooms within this distance (the store caps the count)
 const LIST_RADIUS_KM = 10;
 
-interface RestroomWithDistance {
+export interface RestroomWithDistance {
   restroom: Restroom;
   distanceKm: number | null;
 }
 
+interface RestroomResultsProps {
+  items: RestroomWithDistance[];
+  /** Loaded restrooms before filters and search (0 = nothing here at all) */
+  unfilteredCount: number;
+  loading: boolean;
+  error: string | null;
+  retry: () => void;
+  isUserAdded: (restroom: Restroom) => boolean;
+  noMatchDescription: string;
+  clearLabel: string;
+  onClear: () => void;
+  /** A change starts from the top again (the search and filters in use) */
+  resetKey: string;
+  /** Handle a card's click in place instead of opening its page */
+  onSelect?: (restroom: Restroom) => void;
+  /** Columns on md and up, for a full page */
+  grid?: boolean;
+}
+
+/** The results part of a list: loading, error and empty states, cards, "show more". */
+export function RestroomResults({
+  items,
+  unfilteredCount,
+  loading,
+  error,
+  retry,
+  isUserAdded,
+  noMatchDescription,
+  clearLabel,
+  onClear,
+  resetKey,
+  onSelect,
+  grid = false,
+}: RestroomResultsProps) {
+  const [limit, setLimit] = useState(PAGE_SIZE);
+  const { t } = useI18n();
+  const layout = cn("flex flex-col gap-2", grid && "md:grid md:grid-cols-2 xl:grid-cols-3");
+
+  useEffect(() => setLimit(PAGE_SIZE), [resetKey]);
+
+  if (error && unfilteredCount === 0) {
+    return (
+      // Error with nothing cached: full error state with retry
+      <EmptyState
+        icon={<CloudOff />}
+        tone="error"
+        role="alert"
+        title={t.list.loadError}
+        description={t.list.checkInternet}
+        action={
+          <Button variant="outline" size="sm" onClick={retry}>
+            <RefreshCw aria-hidden="true" />
+            {t.common.retry}
+          </Button>
+        }
+      />
+    );
+  }
+
+  if (loading) {
+    return (
+      <ul className={layout} aria-busy="true" aria-label={t.list.loadingLabel}>
+        {Array.from({ length: 4 }, (_, i) => (
+          <li key={i}>
+            <Skeleton className="h-[104px] w-full" />
+          </li>
+        ))}
+      </ul>
+    );
+  }
+
+  if (unfilteredCount === 0) {
+    return (
+      <EmptyState
+        icon={<Toilet />}
+        title={t.list.emptyTitle}
+        description={t.list.emptyDescription}
+        action={
+          <Button asChild size="sm">
+            <Link href="/add">
+              <Plus aria-hidden="true" />
+              {t.list.addRestroom}
+            </Link>
+          </Button>
+        }
+      />
+    );
+  }
+
+  if (items.length === 0) {
+    return (
+      <EmptyState
+        icon={<SearchX />}
+        title={t.list.noMatchTitle}
+        description={noMatchDescription}
+        action={
+          <Button variant="outline" size="sm" onClick={onClear}>
+            {clearLabel}
+          </Button>
+        }
+      />
+    );
+  }
+
+  return (
+    <>
+      <ul className={layout}>
+        {items.slice(0, limit).map(({ restroom, distanceKm }, index) => (
+          // Staggered entrance (capped so long lists appear quickly); items shown by a filter change animate in too
+          <motion.li key={restroom.id} custom={index} variants={staggerItemCapped} initial="hidden" animate="visible">
+            <RestroomListItem
+              restroom={restroom}
+              distanceKm={distanceKm}
+              isUserAdded={isUserAdded(restroom)}
+              onSelect={onSelect}
+            />
+          </motion.li>
+        ))}
+      </ul>
+      {items.length > limit && (
+        <Button variant="outline" onClick={() => setLimit((n) => n + PAGE_SIZE)} className="w-full">
+          <ChevronDown aria-hidden="true" />
+          {format(t.list.showMore, { count: items.length - limit })}
+        </Button>
+      )}
+    </>
+  );
+}
+
+/** The /list page: restrooms around the user, with its own search and filters. */
 export function RestroomList() {
   const {
     restrooms,
@@ -67,7 +198,6 @@ export function RestroomList() {
   } = useGeolocation({ requestOnMount: true });
   const [activeFilters, setActiveFilters] = useState<FilterId[]>([]);
   const [query, setQuery] = useState("");
-  const [limit, setLimit] = useState(PAGE_SIZE);
   const { t } = useI18n();
   const queryWords = useMemo(() => normalize(query).split(/\s+/).filter(Boolean), [query]);
 
@@ -80,9 +210,6 @@ export function RestroomList() {
     const center = hasLocation ? { latitude, longitude } : MANILA_COORDS;
     ensureRestroomsInBounds(boundsAround(center, LIST_RADIUS_KM));
   }, [locationLoading, hasLocation, latitude, longitude]);
-
-  // A new search/filter starts from the top again
-  useEffect(() => setLimit(PAGE_SIZE), [activeFilters, query]);
 
   // Wait for the location too, so the list doesn't reorder right after appearing.
   const loading = dataLoading || locationLoading;
@@ -143,87 +270,22 @@ export function RestroomList() {
         <p className="text-xs text-muted-foreground">{t.list.sortedByDistance}</p>
       )}
 
-      {dataError && restrooms.length === 0 ? (
-        // Error with nothing cached: full error state with retry
-        <EmptyState
-          icon={<CloudOff />}
-          tone="error"
-          role="alert"
-          title={t.list.loadError}
-          description={t.list.checkInternet}
-          action={
-            <Button variant="outline" size="sm" onClick={() => void retry()}>
-              <RefreshCw aria-hidden="true" />
-              {t.common.retry}
-            </Button>
-          }
-        />
-      ) : loading ? (
-        <ul className="flex flex-col gap-2" aria-busy="true" aria-label={t.list.loadingLabel}>
-          {Array.from({ length: 4 }, (_, i) => (
-            <li key={i}>
-              <Skeleton className="h-[104px] w-full" />
-            </li>
-          ))}
-        </ul>
-      ) : restrooms.length === 0 ? (
-        <EmptyState
-          icon={<Toilet />}
-          title={t.list.emptyTitle}
-          description={t.list.emptyDescription}
-          action={
-            <Button asChild size="sm">
-              <Link href="/add">
-                <Plus aria-hidden="true" />
-                {t.list.addRestroom}
-              </Link>
-            </Button>
-          }
-        />
-      ) : items.length === 0 ? (
-        <EmptyState
-          icon={<SearchX />}
-          title={t.list.noMatchTitle}
-          description={
-            query.trim()
-              ? format(t.list.noMatchQuery, { query: query.trim() })
-              : t.list.noMatchFilters
-          }
-          action={
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setActiveFilters([]);
-                setQuery("");
-              }}
-            >
-              {query.trim() ? t.list.clearSearchAndFilters : t.list.clearFilters}
-            </Button>
-          }
-        />
-      ) : (
-        <>
-        <ul className="flex flex-col gap-2">
-          {items.slice(0, limit).map(({ restroom, distanceKm }, index) => (
-            // Staggered entrance (capped so long lists appear quickly); items shown by a filter change animate in too
-            <motion.li key={restroom.id} custom={index} variants={staggerItemCapped} initial="hidden" animate="visible">
-              <RestroomListItem
-                restroom={restroom}
-                distanceKm={distanceKm}
-                isUserAdded={isUserAdded(restroom)}
-              />
-            </motion.li>
-          ))}
-        </ul>
-        {items.length > limit && (
-          <Button variant="outline" onClick={() => setLimit((n) => n + PAGE_SIZE)} className="w-full">
-            <ChevronDown aria-hidden="true" />
-            {format(t.list.showMore, { count: items.length - limit })}
-          </Button>
-        )}
-        </>
-      )}
+      <RestroomResults
+        grid
+        items={items}
+        unfilteredCount={restrooms.length}
+        loading={loading}
+        error={dataError}
+        retry={() => void retry()}
+        isUserAdded={isUserAdded}
+        noMatchDescription={query.trim() ? format(t.list.noMatchQuery, { query: query.trim() }) : t.list.noMatchFilters}
+        clearLabel={query.trim() ? t.list.clearSearchAndFilters : t.list.clearFilters}
+        onClear={() => {
+          setActiveFilters([]);
+          setQuery("");
+        }}
+        resetKey={`${activeFilters.join()}|${query}`}
+      />
     </div>
   );
 }

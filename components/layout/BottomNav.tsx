@@ -3,37 +3,11 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
-import { List, Map, Plus, User, type LucideIcon } from "lucide-react";
 
+import { isNavItemActive as isActive, NAV_ITEMS } from "@/components/layout/nav-items";
 import { useI18n } from "@/hooks/use-i18n";
 import { SPRING } from "@/lib/animations";
 import { cn } from "@/lib/utils";
-
-type NavItem = {
-  href: string;
-  /** Key in t.nav */
-  label: "map" | "list" | "add" | "profile";
-  icon: LucideIcon;
-  /** Extra path prefixes that should also highlight this tab. */
-  matchPrefixes?: string[];
-  /** Render as the raised, round primary action button. */
-  primary?: boolean;
-};
-
-const NAV_ITEMS: NavItem[] = [
-  { href: "/", label: "map", icon: Map },
-  // Restroom detail pages are reached from the list, so keep "List" highlighted there.
-  { href: "/list", label: "list", icon: List, matchPrefixes: ["/restroom"] },
-  { href: "/add", label: "add", icon: Plus, primary: true },
-  { href: "/profile", label: "profile", icon: User },
-];
-
-function isActive(pathname: string, { href, matchPrefixes = [] }: NavItem): boolean {
-  if (href === "/") return pathname === "/";
-  return [href, ...matchPrefixes].some(
-    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
-  );
-}
 
 export function BottomNav() {
   const pathname = usePathname();
@@ -42,7 +16,7 @@ export function BottomNav() {
   return (
     <nav
       aria-label={t.nav.label}
-      className="sticky bottom-0 z-40 w-full border-t bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur supports-[backdrop-filter]:bg-background/80"
+      className="sticky bottom-0 z-40 w-full border-t md:hidden bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur supports-[backdrop-filter]:bg-background/80"
     >
       <ul className="mx-auto grid h-16 max-w-screen-md grid-cols-4">
         {NAV_ITEMS.map((item) => {

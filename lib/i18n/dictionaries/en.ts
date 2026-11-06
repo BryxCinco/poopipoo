@@ -242,6 +242,7 @@ export const en: Dictionary = {
     openAssistant: "Open Poopipoo Assistant",
     assistant: "Poopipoo Assistant",
     askAi: "Ask AI",
+    listLabel: "Restrooms on the map",
     title: "Map of restrooms in Metro Manila",
   },
   map: {
@@ -338,6 +339,7 @@ export const en: Dictionary = {
     noLocation: "No location.",
     sortedByRating: "Sorted by rating.",
     sortedByDistance: "Sorted from nearest.",
+    sortedByMapCenter: "Sorted from the center of the map.",
     loadError: "Couldn't load restrooms",
     checkInternet: "Check your internet connection.",
     emptyTitle: "No restrooms here yet. Add one!",

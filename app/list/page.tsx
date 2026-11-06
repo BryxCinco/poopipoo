@@ -13,7 +13,7 @@ export function generateMetadata(): Metadata {
 export default function ListPage() {
   const t = getT();
   return (
-    <div className="paper-column mx-auto flex w-full max-w-screen-md flex-col gap-3 px-4 py-4">
+    <div className="paper-column mx-auto flex w-full max-w-screen-md flex-col lg:max-w-screen-xl gap-3 px-4 py-4">
       <h1 className="flex items-center gap-2 text-xl font-bold">
         <List className="h-5 w-5" aria-hidden="true" />
         {t.list.heading}
