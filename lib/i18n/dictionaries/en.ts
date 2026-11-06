@@ -241,6 +241,8 @@ export const en: Dictionary = {
     recenter: "Re-center",
     openAssistant: "Open Poopipoo Assistant",
     assistant: "Poopipoo Assistant",
+    askAi: "Ask AI",
+    title: "Map of restrooms in Metro Manila",
   },
   map: {
     viewDetails: "View details",
@@ -364,8 +366,8 @@ export const en: Dictionary = {
     back: "Back",
     backToNavigation: "Back to navigation",
     amenities: "Amenities",
-    available: "(available)",
-    unavailable: "(not available)",
+    noAmenityInfo: "No amenity information yet.",
+    feeUnknown: "Fee unknown",
     description: "Description",
     viewFullDetails: "View full details",
     share: "Share",
@@ -824,7 +826,7 @@ export const en: Dictionary = {
   moderation: {
     status: {
       pending: "Not verified yet",
-      approved: "Verified",
+      approved: "Approved",
       flagged: "Under review",
       rejected: "Rejected",
     },
@@ -833,6 +835,11 @@ export const en: Dictionary = {
       approved: "Confirmed by the community.",
       flagged: "People reported this. Moderators are reviewing it.",
       rejected: "Hidden from other users. Only you and moderators can see it.",
+    },
+    approval: {
+      community: { label: "Verified by community", hint: "Confirmed by the community." },
+      osm: { label: "OSM Import", hint: "From OpenStreetMap. Nobody in the community has confirmed it yet." },
+      approved: { label: "Approved", hint: "Nobody in the community has confirmed it yet." },
     },
     reviewHidden: "This review is hidden from other users.",
     reviewFlagged: "Someone reported this review. It's being reviewed.",

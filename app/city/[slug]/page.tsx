@@ -49,7 +49,7 @@ export default async function CityPage({ params }: CityPageProps) {
   const others = CITIES.filter((other) => other.slug !== city.slug);
 
   return (
-    <div className="mx-auto flex w-full max-w-screen-md flex-col gap-5 px-4 py-5">
+    <div className="paper-column mx-auto flex w-full max-w-screen-md flex-col gap-5 px-4 py-5">
       <header className="flex flex-col gap-2 rounded-2xl border bg-card p-4 shadow-sm">
         <h1 className="flex items-center gap-2 text-xl font-bold">
           <MapPin className="h-5 w-5 shrink-0 text-primary" aria-hidden="true" />

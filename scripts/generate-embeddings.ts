@@ -30,7 +30,7 @@ async function main(): Promise<void> {
   const supabase = createAdminClient();
 
   // Supabase returns at most 1000 rows per request: read in pages
-  type Row = { id: string; name: string; description: string; address: string; amenities: string[]; is_free: boolean };
+  type Row = { id: string; name: string; description: string; address: string; amenities: string[]; is_free: boolean | null };
   const restrooms: Row[] = [];
   for (let from = 0; ; from += 1000) {
     let query = supabase

@@ -77,7 +77,7 @@ export default async function LeaderboardPage() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-screen-md flex-col gap-4 px-4 py-5">
+    <div className="paper-column mx-auto flex w-full max-w-screen-md flex-col gap-4 px-4 py-5">
       <header className="flex flex-col gap-1">
         <h1 className="flex items-center gap-2 text-xl font-bold">
           <Trophy className="h-5 w-5 text-primary" aria-hidden="true" />

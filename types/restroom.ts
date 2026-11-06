@@ -9,7 +9,8 @@ export interface Restroom {
   reviewCount: number;
   amenities: Amenity[];
   images: string[];
-  isFree: boolean;
+  /** null = no fee information yet (never show it as free) */
+  isFree: boolean | null;
   createdAt: string;
   /** Profile id of the user who added it; null for seeded restrooms. */
   createdBy?: string | null;

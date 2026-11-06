@@ -67,7 +67,8 @@ export interface OsmRestroom {
   latitude: number;
   longitude: number;
   amenities: Amenity[];
-  isFree: boolean;
+  /** From the fee tag: true = fee=no, false = paid, null = OSM doesn't say */
+  isFree: boolean | null;
   /** Short Tagalog note from tags (hours, access, unisex) */
   description: string;
 }
@@ -109,7 +110,30 @@ function buildAddress(tags: Record<string, string>): string | null {
 }
 
 /** OSM tags → the app's amenity list (only what OSM says explicitly). */
-function parseAmenities(tags: Record<string, string>, isFree: boolean): Amenity[] {
+/**
+ * What OSM says about the fee. A missing tag means nobody recorded it, not that
+ * the restroom is free, so it stays null. Prices like fee=10 PHP count as paid.
+ */
+export function parseFee(tags: Record<string, string>): boolean | null {
+  const fee = tags.fee?.trim().toLowerCase();
+  if (fee === "no") return true;
+  if (fee === "yes" || tags.charge || /\d/.test(fee ?? "")) return false;
+  return null;
+}
+
+/**
+ * Drops leading address parts that only say "this is a toilet" (Nominatim
+ * returns the toilet's own name first: "women, Parade Loop, Quezon City").
+ */
+export function cleanAddress(address: string): string {
+  const parts = address.split(",").map((part) => part.trim());
+  while (parts.length > 1 && isGenericName(parts[0])) parts.shift();
+  const cleaned = parts.join(", ");
+  // The database requires at least 5 characters
+  return cleaned.length >= 5 ? cleaned : address;
+}
+
+function parseAmenities(tags: Record<string, string>, isFree: boolean | null): Amenity[] {
   const amenities: Amenity[] = [];
   if (yes(tags.wheelchair)) amenities.push("wheelchair");
   if (yes(tags.changing_table) || yes(tags.diaper)) amenities.push("baby-changing");
@@ -118,7 +142,7 @@ function parseAmenities(tags: Record<string, string>, isFree: boolean): Amenity[
   if (yes(tags.bidet) || yes(tags["toilets:bidet"])) amenities.push("bidet");
   if (yes(tags.shower)) amenities.push("shower");
   if (yes(tags.air_conditioning)) amenities.push("air-conditioned");
-  if (isFree) amenities.push("free");
+  if (isFree === true) amenities.push("free");
   return amenities;
 }
 
@@ -128,7 +152,6 @@ function buildDescription(tags: Record<string, string>): string {
   if (tags.opening_hours) notes.push(`Oras: ${tags.opening_hours}.`);
   if (yes(tags.unisex)) notes.push("Unisex.");
   if (tags.fee === "yes" && tags.charge) notes.push(`Bayad: ${tags.charge}.`);
-  notes.push("Mula sa OpenStreetMap.");
   return notes.join(" ").slice(0, DESCRIPTION_MAX);
 }
 
@@ -152,7 +175,7 @@ export function parseElement(element: OverpassElement, city: City): OsmRestroom 
   // "Toilet", "men/women" etc. say nothing about where it is: treat as unnamed
   const named = rawName.length >= 3 && !isGenericName(rawName);
   const name = named ? rawName.slice(0, NAME_MAX) : "Public CR";
-  const isFree = tags.fee !== "yes";
+  const isFree = parseFee(tags);
 
   return {
     osmType: element.type,
@@ -244,6 +267,20 @@ export async function fetchOsmLandmarks(city: City, userAgent: string): Promise<
  * Drops invalid/private ones and duplicates within OSM itself
  * (same name and within ~10 m — e.g. the same toilet mapped twice).
  */
+/** Tags of specific OSM elements, keyed "node/123". Elements since deleted from OSM are absent. */
+export async function fetchOsmTagsById(
+  elements: { osmType: string; osmId: string }[],
+  userAgent: string
+): Promise<Map<string, Record<string, string>>> {
+  const idsOf = (type: string) => elements.filter((e) => e.osmType === type).map((e) => e.osmId).join(",");
+  const selectors = ["node", "way", "relation"]
+    .filter((type) => idsOf(type))
+    .map((type) => `${type}(id:${idsOf(type)});`)
+    .join("");
+  const found = await runOverpass(`[out:json][timeout:180];(${selectors});out tags;`, userAgent);
+  return new Map(found.map((element) => [`${element.type}/${element.id}`, element.tags ?? {}]));
+}
+
 export async function fetchOsmRestrooms(city: City, userAgent: string): Promise<OsmRestroom[]> {
   const elements = await runOverpass(toiletsQuery(city), userAgent);
 

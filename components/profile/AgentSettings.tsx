@@ -48,7 +48,7 @@ export function AgentSettings({ usage }: AgentSettingsProps) {
             aria-labelledby="ai-agent-toggle-label"
             onClick={() => setEnabled(!enabled)}
             className={cn(
-              "relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+              "relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors after:absolute after:inset-x-0 after:-inset-y-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
               enabled ? "bg-primary" : "bg-input"
             )}
           >

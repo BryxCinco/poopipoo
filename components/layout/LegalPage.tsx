@@ -13,7 +13,7 @@ export interface LegalSection {
 export function LegalPage({ title, intro, sections }: { title: string; intro: string; sections: LegalSection[] }) {
   const t = getT();
   return (
-    <article className="mx-auto flex w-full max-w-screen-md flex-col gap-4 px-4 py-6 text-sm leading-relaxed">
+    <article className="paper-column mx-auto flex w-full max-w-screen-md flex-col gap-4 px-4 py-6 text-sm leading-relaxed">
       <Link
         href="/about"
         className="-ml-1 flex w-fit items-center gap-1 rounded-md px-1 text-sm text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"

@@ -104,6 +104,7 @@ export default function HomePage() {
     // overflow-hidden: nothing on the map (e.g. the AI button glow) can widen the page
     // map-search-visible: moves the zoom buttons below the search bar (globals.css)
     <div className={`relative isolate flex-1 overflow-hidden ${navActive ? "" : "map-search-visible"}`}>
+      <h1 className="sr-only">{t.home.title}</h1>
       <RestroomMap
         restrooms={restrooms}
         onSelectRestroom={handleSelectRestroom}
@@ -152,7 +153,7 @@ export default function HomePage() {
       {loading && !navActive && (
         <p
           role="status"
-          className="absolute left-14 top-[4.75rem] z-[1000] flex items-center gap-1.5 rounded-full bg-background px-3 py-1.5 text-xs shadow-md"
+          className="absolute left-14 top-[7.75rem] z-[1000] sm:top-[4.75rem] flex items-center gap-1.5 rounded-full bg-background px-3 py-1.5 text-xs shadow-md"
         >
           <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
           <span className="animate-pulse">{t.home.loadingPins}</span>
@@ -162,7 +163,7 @@ export default function HomePage() {
       {!loading && !error && truncated && !navActive && (
         <p
           role="status"
-          className="absolute left-14 top-[4.75rem] z-[1000] rounded-full bg-background px-3 py-1.5 text-xs shadow-md"
+          className="absolute left-14 top-[7.75rem] z-[1000] sm:top-[4.75rem] rounded-full bg-background px-3 py-1.5 text-xs shadow-md"
         >
           {t.home.zoomInForMore}
         </p>
@@ -214,7 +215,7 @@ export default function HomePage() {
                   whileHover={{ scale: 1.05 }}
                   whileTap={tapScale}
                   transition={SPRING}
-                  className="group relative flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-shadow hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  className="group relative flex h-14 items-center justify-center gap-2 rounded-full px-5 text-sm font-semibold bg-primary text-primary-foreground shadow-lg transition-shadow hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 >
                   {/* Soft pulse ring to draw attention (off with reduced motion) */}
                   <span className="absolute inset-0 animate-pulse-ring rounded-full bg-primary" aria-hidden="true" />
@@ -222,6 +223,7 @@ export default function HomePage() {
                     className="relative h-6 w-6 transition-transform duration-200 group-hover:rotate-12 group-hover:scale-110"
                     aria-hidden="true"
                   />
+                  <span className="relative">{t.home.askAi}</span>
                 </motion.button>
               </TooltipTrigger>
               <TooltipContent side="left">{t.home.assistant}</TooltipContent>

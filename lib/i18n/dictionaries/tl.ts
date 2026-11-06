@@ -245,6 +245,8 @@ export const tl = {
     recenter: "I-center",
     openAssistant: "Buksan ang Poopipoo Assistant",
     assistant: "Poopipoo Assistant",
+    askAi: "Tanong sa AI",
+    title: "Mapa ng mga CR sa Metro Manila",
   },
   map: {
     viewDetails: "Tingnan ang detalye",
@@ -268,9 +270,9 @@ export const tl = {
     gpsUnsupported: "Hindi supported ng browser ang GPS.",
   },
   onboarding: {
-    skip: "Skip",
+    skip: "Laktawan",
     skipLabel: "Laktawan ang intro",
-    next: "Next",
+    next: "Susunod",
     nextLabel: "Susunod na slide",
     start: "Simulan na",
     startLabel: "Simulan ang paggamit ng Poopipoo",
@@ -368,8 +370,8 @@ export const tl = {
     back: "Bumalik",
     backToNavigation: "Bumalik sa navigation",
     amenities: "Amenities",
-    available: "(meron)",
-    unavailable: "(wala)",
+    noAmenityInfo: "Wala pang info tungkol sa amenities.",
+    feeUnknown: "Hindi alam ang bayad",
     description: "Description",
     viewFullDetails: "Tingnan ang buong detalye",
     share: "Share",
@@ -828,7 +830,7 @@ export const tl = {
   moderation: {
     status: {
       pending: "Hindi pa verified",
-      approved: "Verified",
+      approved: "Approved",
       flagged: "Sinusuri",
       rejected: "Tinanggihan",
     },
@@ -837,6 +839,11 @@ export const tl = {
       approved: "Na-confirm na ng community.",
       flagged: "May mga nag-report dito. Sinusuri ito ng moderators.",
       rejected: "Nakatago ito sa ibang user. Ikaw at ang moderators lang ang nakakakita.",
+    },
+    approval: {
+      community: { label: "Verified by community", hint: "Na-confirm na ng community." },
+      osm: { label: "OSM Import", hint: "Galing sa OpenStreetMap. Wala pang nag-confirm mula sa community." },
+      approved: { label: "Approved", hint: "Wala pang nag-confirm mula sa community." },
     },
     reviewHidden: "Nakatago ang review na ito sa ibang user.",
     reviewFlagged: "May nag-report sa review na ito. Sinusuri pa.",

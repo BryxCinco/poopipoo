@@ -27,6 +27,7 @@
  */
 import { CITIES, type City } from "@/lib/cities";
 import { reverseGeocode } from "@/lib/geocode";
+import { cleanAddress } from "@/lib/osm";
 import { distanceMeters, fetchOsmLandmarks, fetchOsmRestrooms, normalizeName, type OsmLandmark, type OsmRestroom } from "@/lib/osm";
 import { describeRestroom, pickLandmark, uniqueName } from "@/lib/osm-naming";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -139,7 +140,7 @@ async function main(): Promise<void> {
     for (let i = 0; i < missing.length; i++) {
       const restroom = missing[i];
       const address = await reverseGeocode(restroom.latitude, restroom.longitude, undefined, USER_AGENT);
-      if (address && address.trim().length >= 5) addresses.set(restroom, address.slice(0, 200));
+      if (address && address.trim().length >= 5) addresses.set(restroom, cleanAddress(address).slice(0, 200));
       if ((i + 1) % 25 === 0) console.log(`  ${i + 1}/${missing.length}`);
       await sleep(GEOCODE_DELAY_MS);
     }

@@ -7,7 +7,7 @@ export function Header() {
       <div className="mx-auto flex h-14 max-w-screen-md items-center px-4">
         <Link
           href="/"
-          className="group flex items-center gap-2 rounded-lg text-lg font-bold tracking-tight focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="group flex min-h-11 items-center gap-2 rounded-lg text-lg font-bold tracking-tight focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           {/* alt="" because the link already says "Poopipoo": screen readers
               would otherwise read the name twice */}

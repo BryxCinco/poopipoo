@@ -57,7 +57,7 @@ export default async function SettingsPage() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-screen-md flex-col gap-6 px-4 py-5">
+    <div className="paper-column mx-auto flex w-full max-w-screen-md flex-col gap-6 px-4 py-5">
       <h1 className="flex items-center gap-2 text-xl font-bold">
         <Settings className="h-5 w-5" aria-hidden="true" />
         {getT().settings.heading}

@@ -13,6 +13,7 @@ Supabase Postgres. The schema lives in `supabase/migrations/` (run in order; eac
 | `0007_account_deletion.sql` | `delete_account` as a `moderation_log` action |
 | `0009_demo_mode.sql` | Demo account: `profiles.is_demo`, `reviews.is_demo`, `agent_queries.session_id`, read-only triggers (there is no `0008`) |
 | `0010_photo_uploads.sql` | `restroom-images` bucket (public, 5 MB, JPEG/PNG/WebP), upload policies, `restrooms.images` check |
+| `0011_data_integrity.sql` | `restrooms.is_free` can be null (fee unknown); the demo block only stops direct writes, so demo reviews get through the rating trigger |
 
 ## Tables
 
@@ -34,6 +35,7 @@ One row per auth user (created by a trigger on sign-up).
 | Column | Notes |
 | --- | --- |
 | `name`, `description`, `address`, `latitude`, `longitude`, `amenities`, `is_free`, `images` | User-editable. `amenities` ⊆ bidet, tissue, soap, wheelchair, baby-changing, shower, air-conditioned, free |
+| `is_free` | `true` free, `false` paid, `NULL` nobody recorded the fee (never shown as free). OSM rows: from the `fee` tag, see `scripts/backfill-osm-accuracy.ts` |
 | `rating`, `review_count` | From non-rejected reviews (trigger) |
 | `created_by` | Author; `NULL` for seeded and imported rows |
 | `status` | `pending` (new) → `approved` (5 confirmations or a moderator) / `flagged` (3+ reports or AI) / `rejected` (5+ reports, moderator or ban; hidden) |
@@ -62,7 +64,7 @@ One row per auth user (created by a trigger on sign-up).
 - **Column grants**: users can only write the columns listed as user-editable above. Status, counts, points, roles and AI fields are read-only for them.
 - **Rate limits** (trigger `before_restroom_insert`): 1 restroom per 5 minutes, 5 per 24 hours, 20 per 7 days. Reports: 10 per 24 hours. The error detail says when it's allowed again.
 - **Bans** (`assert_not_banned()`): banned users can't add, edit, review, vote, verify, report or change their profile.
-- **Demo account** (`is_demo_user()`, 0009): can only write reviews. Its reviews are visible only to itself and don't count toward ratings; it earns no points (so it's never on the leaderboard); restroom, report, verification, vote, profile and avatar writes raise `Demo mode`.
+- **Demo account** (`is_demo_user()`, 0009, 0011): can only write reviews. Its reviews are visible only to itself and don't count toward ratings; it earns no points (so it's never on the leaderboard); restroom, report, verification, vote, profile and avatar writes raise `Demo mode`.
 - **Restroom photos** (`check_restroom_images()`, 0010): at most 5 per restroom, each must be the user's own upload in `restroom-images/<user id>/`, and only for restrooms in Metro Manila for now. Errors: `Photos not available here`, `Invalid restroom photo`.
 - Inserts with the secret key (seed and import scripts) skip the rate limit; they have no signed-in user.
 

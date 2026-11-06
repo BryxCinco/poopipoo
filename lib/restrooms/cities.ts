@@ -12,7 +12,7 @@ export interface CityRestroom {
   address: string;
   rating: number;
   review_count: number;
-  is_free: boolean;
+  is_free: boolean | null;
 }
 
 function inCity(city: City) {

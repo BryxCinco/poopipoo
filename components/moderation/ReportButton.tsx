@@ -108,7 +108,7 @@ export function ReportButton({ targetType, targetId, authorName, viewerId, varia
           onClick={handleOpen}
           aria-label={label}
           title={label}
-          className={cn("h-8 w-8 text-muted-foreground hover:text-destructive", className)}
+          className={cn("text-muted-foreground hover:text-destructive", className)}
         >
           <Flag className="h-3.5 w-3.5" aria-hidden="true" />
         </Button>

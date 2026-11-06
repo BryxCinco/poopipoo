@@ -195,7 +195,7 @@ npm install
 cp .env.example .env.local   # then fill it in (see below)
 ```
 
-1. **Database.** In Supabase → SQL Editor, run the files in `supabase/migrations/` in order (`0001` to `0007`, then `0009` and `0010`; there is no `0008`). Each one is safe to re-run.
+1. **Database.** In Supabase → SQL Editor, run the files in `supabase/migrations/` in order (`0001` to `0007`, then `0009` to `0011`; there is no `0008`). Each one is safe to re-run.
 2. **Auth.** In Supabase → Authentication → URL Configuration, set the Site URL to `http://localhost:3000` (and your production URL later) and add `/auth/callback` to the redirect URLs.
 3. **Data (optional):**
    ```bash

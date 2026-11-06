@@ -44,7 +44,11 @@ export function restroomToDocument(restroom: DocumentFields): string {
     restroom.description.trim(),
     `Location: ${restroom.address}${aliases.length > 0 ? ` (${aliases.join(", ")})` : ""}.`,
     amenities.length > 0 ? `Amenities: ${amenities.join(", ")}.` : "No listed amenities.",
-    restroom.is_free ? "Free public restroom (libre)." : "Paid restroom (may bayad).",
+    restroom.is_free === null
+      ? "Fee unknown (walang info sa bayad)."
+      : restroom.is_free
+        ? "Free public restroom (libre)."
+        : "Paid restroom (may bayad).",
   ]
     .filter(Boolean)
     .join(" ");

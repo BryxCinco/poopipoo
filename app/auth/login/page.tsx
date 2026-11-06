@@ -5,7 +5,7 @@ import { AuthCard } from "@/components/auth/AuthCard";
 import { LoginForm } from "@/components/auth/LoginForm";
 import { TryDemoButton } from "@/components/auth/TryDemoButton";
 import { getDemoUserId } from "@/lib/auth/demo";
-import { safeReturnUrl } from "@/lib/auth/return-url";
+import { demoReturnUrl, safeReturnUrl } from "@/lib/auth/return-url";
 import { getCurrentUser } from "@/lib/auth/server";
 import { getT } from "@/lib/i18n/server";
 import { pageMetadata } from "@/lib/metadata";
@@ -32,8 +32,8 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
 
   return (
     <AuthCard title={t.title} subtitle={t.subtitle}>
+      {getDemoUserId() && <TryDemoButton returnUrl={demoReturnUrl(searchParams.returnUrl)} />}
       <LoginForm returnUrl={returnUrl} initialError={initialError} />
-      {getDemoUserId() && <TryDemoButton returnUrl={returnUrl} />}
     </AuthCard>
   );
 }
