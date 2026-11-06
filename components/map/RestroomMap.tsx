@@ -33,6 +33,8 @@ interface RestroomMapProps {
   onUserPan?: () => void;
   /** Height (px) of a panel covering the bottom of the map, so routes and the user stay visible */
   bottomInset?: number;
+  /** The map's center, on load and after every pan/zoom */
+  onCenterChange?: (center: { latitude: number; longitude: number }) => void;
 }
 
 const DEFAULT_ZOOM = 12;
@@ -102,6 +104,18 @@ function RestroomBoundsLoader() {
   return null;
 }
 
+function CenterReporter({ onChange }: { onChange: NonNullable<RestroomMapProps["onCenterChange"]> }) {
+  const map = useMap();
+  const report = () => {
+    const { lat, lng } = map.getCenter();
+    onChange({ latitude: lat, longitude: lng });
+  };
+  useMapEvents({ moveend: report });
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- once, for the first view
+  useEffect(report, []);
+  return null;
+}
+
 /**
  * On the full-screen map the bottom-right has the AI button and the raised Add
  * button overlaps the bottom edge, so the attribution goes bottom-left and is
@@ -125,6 +139,7 @@ export default function RestroomMap({
   followUser = false,
   onUserPan,
   bottomInset = 0,
+  onCenterChange,
 }: RestroomMapProps) {
   const fitPadding = useMemo(() => ({ top: 70, bottom: bottomInset + 30 }), [bottomInset]);
   const restroomIcon = useMemo(() => createRestroomIcon(), []);
@@ -140,6 +155,7 @@ export default function RestroomMap({
 
       <MapController target={flyTo} />
       <RestroomBoundsLoader />
+      {onCenterChange && <CenterReporter onChange={onCenterChange} />}
 
       {route && route.length > 1 && <RouteLayer coordinates={route} fit={fitRoute} fitPadding={fitPadding} />}
 

@@ -28,6 +28,8 @@ interface RestroomSheetProps {
   isUserAdded?: boolean;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Wide screens: a panel on the right, under the header, with the map still usable */
+  panel?: boolean;
 }
 
 export function RestroomSheet({
@@ -35,13 +37,19 @@ export function RestroomSheet({
   isUserAdded = false,
   open,
   onOpenChange,
+  panel = false,
 }: RestroomSheetProps) {
   const { t } = useI18n();
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
+    <Sheet open={open} onOpenChange={onOpenChange} modal={!panel}>
       <SheetContent
-        side="bottom"
-        className="max-h-[85dvh] overflow-y-auto rounded-t-2xl pb-[calc(1.5rem+env(safe-area-inset-bottom))]"
+        side={panel ? "right" : "bottom"}
+        hideOverlay={panel}
+        className={
+          panel
+            ? "top-14 h-[calc(100dvh-3.5rem)] w-full overflow-y-auto sm:max-w-md"
+            : "max-h-[85dvh] overflow-y-auto rounded-t-2xl pb-[calc(1.5rem+env(safe-area-inset-bottom))]"
+        }
       >
         {restroom && (
           <div className="mx-auto flex w-full max-w-screen-md flex-col gap-4">

@@ -253,7 +253,7 @@ export function RestroomDetail({ restroom, isOwner, viewerId, initialVerified, r
           onProfileChange={nav.setProfile}
           onVoiceChange={nav.setVoiceEnabled}
           // Fixed just above the bottom nav bar (h-16 + safe area)
-          className="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-30 mx-auto max-w-screen-md"
+          className="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-30 mx-auto max-w-screen-md md:bottom-0"
         />
       )}
 

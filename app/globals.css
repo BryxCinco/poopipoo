@@ -185,13 +185,15 @@
 .leaflet-left .leaflet-control-attribution {
   border-radius: 0 0.5rem 0 0;
 }
-/* Full-screen map: lift the bottom-left attribution above the raised Add button */
-.restroom-map .leaflet-bottom.leaflet-left {
-  margin-bottom: 1.75rem;
-}
-/* Home map with the floating search bar: move the zoom buttons below it */
-.map-search-visible .restroom-map .leaflet-top.leaflet-left {
-  margin-top: 4.25rem;
+@media (max-width: 767.98px) {
+  /* Full-screen map: lift the bottom-left attribution above the raised Add button */
+  .restroom-map .leaflet-bottom.leaflet-left {
+    margin-bottom: 1.75rem;
+  }
+  /* Home map with the floating search bar: move the zoom buttons below it */
+  .map-search-visible .restroom-map .leaflet-top.leaflet-left {
+    margin-top: 4.25rem;
+  }
 }
 
 /* Leaflet controls and popups follow the theme */
