@@ -43,7 +43,7 @@ export const tl = {
   meta: {
     siteTitle: "Poopipoo — Saan ang CR?",
     siteDescription:
-      "Hanapin ang pinakamalapit na malinis na CR sa Metro Manila, Cebu, Davao, Iloilo at Bacolod. Crowdsourced restroom finder: mapa, reviews, direksyon at AI assistant.",
+      "Hanapin ang pinakamalapit na malinis na CR sa Metro Manila. Crowdsourced restroom finder: mapa, reviews, direksyon at AI assistant.",
     shareImageAlt: "Poopipoo — Saan ang CR? Crowdsourced restroom finder para sa Pilipinas",
     list: {
       title: "Mga CR Malapit Sa'yo",

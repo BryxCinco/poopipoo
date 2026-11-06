@@ -113,7 +113,7 @@ Called with the Supabase client (`supabase.rpc(...)`):
 
 ## Other routes
 
-- `GET /city/[slug]`: public restrooms in a city (`metro-manila`, `cebu`, `davao`, `iloilo`, `bacolod`).
+- `GET /city/[slug]`: public restrooms in a city (`metro-manila`).
 - `GET /sitemap.xml`: public pages, city pages and every non-rejected restroom (rebuilt hourly).
 - `GET /robots.txt`
 - `GET /opengraph-image`: the share image.

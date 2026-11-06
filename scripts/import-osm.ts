@@ -1,15 +1,14 @@
 /**
  * Imports public restrooms (amenity=toilets) from OpenStreetMap into
- * Supabase, for the cities in lib/cities.ts (Metro Manila, Cebu, Davao,
- * Iloilo, Bacolod).
+ * Supabase, for the cities in lib/cities.ts (Metro Manila for now).
  *
  *   npx tsx scripts/import-osm.ts                       # every city
- *   npx tsx scripts/import-osm.ts --city=cebu,davao     # only these (slugs from lib/cities.ts)
+ *   npx tsx scripts/import-osm.ts --city=metro-manila   # only these (slugs from lib/cities.ts)
  *   npx tsx scripts/import-osm.ts --dry-run             # fetch + show what would happen, no writes
  *   npx tsx scripts/import-osm.ts --no-geocode          # skip filling missing addresses
  *
  * Toilets without a name in OSM get a descriptive one (lib/osm-naming.ts),
- * e.g. "CR sa Ayala Center Cebu", instead of "Public CR".
+ * e.g. "CR sa Rizal Park", instead of "Public CR".
  *
  * Requires migration 0006_osm.sql. Uses the secret key (bypasses RLS and the
  * Phase 11 rate limit, which only applies to signed-in users).

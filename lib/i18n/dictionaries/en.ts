@@ -39,7 +39,7 @@ export const en: Dictionary = {
   meta: {
     siteTitle: "Poopipoo — Where's the restroom?",
     siteDescription:
-      "Find the nearest clean restroom in Metro Manila, Cebu, Davao, Iloilo and Bacolod. Crowdsourced restroom finder: map, reviews, directions and an AI assistant.",
+      "Find the nearest clean restroom in Metro Manila. Crowdsourced restroom finder: map, reviews, directions and an AI assistant.",
     shareImageAlt: "Poopipoo — Where's the restroom? Crowdsourced restroom finder for the Philippines",
     list: {
       title: "Restrooms Near You",

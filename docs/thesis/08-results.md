@@ -6,8 +6,8 @@ This chapter presents the results of the project against its objectives, the mea
 
 | # | Objective (Chapter 2) | Result | Status |
 | --- | --- | --- | --- |
-| 1 | Import 500+ restrooms from OpenStreetMap | 829 imported across 5 cities (859 total with 30 seeded) | Achieved (166% of target) |
-| 2 | AI agent with Groq and Hugging Face | Tool-calling assistant with RAG; 859 of 859 restrooms embedded; works when the Hugging Face API has no credits (local model) | Achieved |
+| 1 | Import 500+ restrooms from OpenStreetMap | 585 imported for Metro Manila (615 total with 30 seeded); the first release imported 829 across 5 cities | Achieved (117% of target) |
+| 2 | AI agent with Groq and Hugging Face | Tool-calling assistant with RAG; 615 of 615 restrooms embedded; works when the Hugging Face API has no credits (local model) | Achieved |
 | 3 | Free navigation with OSRM | Walking and driving routes, bilingual turn-by-turn instructions, spoken guidance, re-routing | Achieved |
 | 4 | Gamification system | Points, 5 levels, 6 badges and a leaderboard, all computed in the database | Achieved |
 | 5 | Anti-spam and moderation | Rate limits, reports, verification, AI moderation, trust score, bans, dashboard; 63 of 63 database rule checks passed | Achieved |
@@ -18,20 +18,17 @@ All seven specific objectives were met. The general objective, a free, crowdsour
 
 ## 8.2 The restroom data
 
-### Coverage by city
+### Coverage
 
-| City (area) | Restrooms | From OSM | Seeded | Shown as free |
+| Area | Restrooms | From OSM | Seeded | Shown as free |
 | --- | --- | --- | --- | --- |
 | Metro Manila | 615 | 585 | 30 | 589 |
-| Cebu (incl. Mandaue, Lapu-Lapu) | 91 | 91 | 0 | 87 |
-| Davao | 74 | 74 | 0 | 71 |
-| Iloilo | 64 | 64 | 0 | 64 |
-| Bacolod | 15 | 15 | 0 | 15 |
-| **Total** | **859** | **829** | **30** | **826** |
+
+**Scope revision (November 2026).** The first release held 859 restrooms in five cities: Metro Manila (615), Cebu (91), Davao (74), Iloilo (64) and Bacolod (15). The seeded data was then narrowed to Metro Manila, to concentrate on one area first, and the 244 imported restrooms outside it were removed. None of them had reviews, verifications or reports. Users can still add restrooms outside Metro Manila. The counts in this chapter describe the revised data. The performance measurements in Chapter 7 and the test records in the appendices were taken on the original 859 restrooms and were not repeated.
 
 ### Naming
 
-Of the 829 toilets imported from OpenStreetMap, **821 (99%) had no specific name**: they were either unnamed or had a generic name such as "Toilet" or "men/women". The naming algorithm (Section 6.2.7) gave all of them a descriptive name:
+Of the 585 toilets imported from OpenStreetMap for Metro Manila, **577 (99%) had no specific name**: they were either unnamed or had a generic name such as "Toilet" or "men/women". The naming algorithm (Section 6.2.7) gave all of them a descriptive name. Across the original import of 821 such toilets in five cities, the names were based on:
 
 | Name based on | Count | Share |
 | --- | --- | --- |
@@ -44,35 +41,37 @@ The remaining 8 imported toilets kept their real OSM names (e.g., "Hel-Loo", "Pa
 
 | Amenity | Restrooms tagged |
 | --- | --- |
-| `free` tag (no fee recorded) | 819 |
-| Wheelchair accessible | 85 |
-| Toilet paper | 34 |
+| `free` tag (no fee recorded) | 582 |
+| Wheelchair accessible | 64 |
+| Toilet paper | 31 |
 | Soap | 25 |
-| Baby changing | 14 |
-| Bidet | 13 |
+| Bidet | 12 |
 | Air-conditioned | 12 |
+| Baby changing | 9 |
 | Shower | 1 |
 
-Only **114 of 859 restrooms (13%)** have any amenity recorded besides the price, and only 13 record a bidet. OpenStreetMap is good at telling *where* toilets are, but says little about *what they have*. This is exactly the information that community reviews and edits are meant to add, and it is the strongest argument for the crowdsourced part of the design.
+Only **87 of 615 restrooms (14%)** have any amenity recorded besides the price, and only 12 record a bidet. OpenStreetMap is good at telling *where* toilets are, but says little about *what they have*. This is exactly the information that community reviews and edits are meant to add, and it is the strongest argument for the crowdsourced part of the design.
 
 ## 8.3 System metrics
 
 | Metric | Value | Source |
 | --- | --- | --- |
-| Restrooms / cities | 859 / 5 | Database |
-| Restrooms with an embedding | 859 (100%) | Database |
-| Sitemap URLs | 870 (11 pages + 859 restrooms) | Production `/sitemap.xml` |
+| Restrooms / cities | 615 / 1 (Metro Manila) | Database |
+| Restrooms with an embedding | 615 (100%) | Database |
+| Sitemap URLs | 622 (7 pages + 615 restrooms) | Calculated from `app/sitemap.ts` |
 | First-load JavaScript, map page | 318 kB | `next build` |
 | Map page ready on Fast 3G / unthrottled | 6.1 s / 1.8 s | Section 7.5 |
 | Server-rendered pages ready on Fast 3G | about 1.7–2.1 s | Section 7.5 |
 | AI assistant response time | about 3–4 s per question | Production test |
 | Semantic search (after the model is loaded) | about 160 ms per query | Local measurement |
-| Vector storage | about 1.3 MB (859 × 384 × 4 bytes, before index) | Calculated |
+| Vector storage | about 0.9 MB (615 × 384 × 4 bytes, before index) | Calculated |
 | Total database size | *[to verify: Supabase Dashboard, Database usage]* | — |
 | Automated checks passed | 247 of 251 (227 of 227 in the six main suites) | Chapter 7 |
 | WCAG 2.1 AA violations (axe) | 0 | Chapter 7 |
 | Development time | 4 days (5–8 October 2026), 19 commits | Git history |
 | Monthly running cost | ₱0 (free tiers) | Service dashboards |
+
+Page-speed, AI response and test figures in this table were measured on the original 859 restrooms (see the scope revision in Section 8.2).
 
 ## 8.4 Comparison with existing applications
 
@@ -80,7 +79,7 @@ Only **114 of 859 restrooms (13%)** have any amenity recorded besides the price,
 | --- | --- | --- | --- | --- |
 | Main purpose | General maps and places | Driving navigation | Finding toilets | **Finding CRs in the Philippines** |
 | Restroom-specific details (bidet, tissue, PWD, fee) | Limited (some accessibility info) | No | Some | **Yes, filterable** |
-| Philippine coverage of restrooms | Incidental (places that have toilets) | No | Sparse | **859 in 5 cities** |
+| Philippine coverage of restrooms | Incidental (places that have toilets) | No | Sparse | **615 in Metro Manila** |
 | Tagalog interface | Yes | Yes | No | **Yes** |
 | Conversational search | Emerging AI features | No | No | **Yes, grounded in own data** |
 | Walking directions | Yes | No (driving) | Usually via another app | **Yes, built in, with voice** |
@@ -95,7 +94,7 @@ Google Maps and Waze are far more mature and have vastly larger user bases, so P
 
 ### What worked
 
-- **Seeding solved the cold start.** Importing OpenStreetMap data turned an empty map into one with 859 restrooms on the first visit, at no cost and with a clear license.
+- **Seeding solved the cold start.** Importing OpenStreetMap data turned an empty map into one with hundreds of restrooms (615 in Metro Manila today) on the first visit, at no cost and with a clear license.
 - **Rules in the database.** Putting points, rate limits and moderation thresholds in PostgreSQL triggers and RLS made them impossible to bypass and easy to test directly (63 database checks). It also kept the API layer small: ordinary reads and writes go directly from the browser to the database.
 - **Grounded AI.** Because the assistant may only answer from tool results, it recommends real restrooms from the database instead of inventing them.
 - **Graceful degradation.** Every external dependency has a fallback: semantic search falls back to keyword search; the Hugging Face API falls back to the local model; the Overpass import tries three servers; the PWA serves visited pages offline.
@@ -115,8 +114,8 @@ Google Maps and Waze are far more mature and have vastly larger user bases, so P
 ### Limitations of the results
 
 - **No community data yet.** At the time of writing, the database has one user profile (the author's) and no reviews. All restrooms come from OpenStreetMap or manual seeding. The contribution, gamification and moderation features are tested and working, but their effect on real users has not been observed.
-- **Thin amenity data.** Only 13% of restrooms record any amenity, so amenity filters return few results until the community adds details.
-- **Fee information is uncertain.** When OSM does not record a fee, the restroom is shown as free (826 of 859). Some are likely paid in practice.
-- **Uneven coverage between cities,** from 615 restrooms in Metro Manila to 15 in Bacolod, following OSM's own coverage.
+- **Thin amenity data.** Only 14% of restrooms record any amenity, so amenity filters return few results until the community adds details.
+- **Fee information is uncertain.** When OSM does not record a fee, the restroom is shown as free (589 of 615). Some are likely paid in practice.
+- **Coverage is limited to Metro Manila.** Seeded data covers one metro. Restrooms elsewhere appear only when users add them.
 - **Map performance on slow networks.** The map takes about 6 seconds to show pins on a Fast 3G connection, mostly to download the JavaScript and all restroom data.
 - **Scalability limit in data loading.** The map loads all restrooms in one request. Supabase returns at most 1,000 rows per request by default, so loading must be changed (by map area or in pages) before the database passes 1,000 restrooms.

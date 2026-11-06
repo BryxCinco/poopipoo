@@ -8,7 +8,7 @@ There is no centralized, free and crowdsourced platform for finding public restr
 
 ### Specific problems
 
-1. How can a database be designed so that it stays fast, consistent and secure for 859 or more restrooms and their reviews, votes and reports, and can keep growing?
+1. How can a database be designed so that it stays fast, consistent and secure for 615 or more restrooms and their reviews, votes and reports, and can keep growing?
 2. How can an AI agent find restrooms from natural-language questions in Tagalog or English, without inventing places that do not exist?
 3. How can navigation to a restroom be provided for free, without Google Maps?
 4. How can gamification encourage users to add and review restrooms?
@@ -26,7 +26,7 @@ To develop a free, crowdsourced and AI-assisted restroom finder application for 
 
 | # | Objective | Outcome in the final system |
 | --- | --- | --- |
-| 1 | Import 500 or more restrooms from OpenStreetMap | 829 restrooms imported (Metro Manila, Cebu, Davao, Iloilo, Bacolod); 859 in total with 30 seeded entries. Unnamed toilets receive descriptive names from nearby landmarks (e.g., "CR sa Rizal Park"). |
+| 1 | Import 500 or more restrooms from OpenStreetMap | 585 restrooms imported for Metro Manila; 615 in total with 30 seeded entries. Unnamed toilets receive descriptive names from nearby landmarks (e.g., "CR sa Rizal Park"). |
 | 2 | Implement an AI agent using Groq and Hugging Face models | Tool-calling assistant on Groq (`gpt-oss-120b`) with RAG over pgvector, using all-MiniLM-L6-v2 embeddings (Hugging Face API, or the same model run locally with transformers.js); keyword-search fallback |
 | 3 | Implement free navigation using OSRM | Walking and driving routes, turn-by-turn instructions in Tagalog and English, spoken guidance (Web Speech API), live progress and automatic re-routing |
 | 4 | Implement a gamification system | Points (+10 per restroom, +5 per review, +1 per helpful vote), five levels, six badges and a leaderboard, all computed by database triggers |
@@ -48,7 +48,7 @@ To develop a free, crowdsourced and AI-assisted restroom finder application for 
 
 ### Scope
 
-- **Coverage:** Metro Manila, Cebu, Davao, Iloilo and Bacolod. The four cities outside Metro Manila are defined by a bounding box around the urban area, so neighbouring towns (for example, Mandaue and Lapu-Lapu around Cebu City) are included.
+- **Coverage:** Metro Manila. The first release also covered Cebu, Davao, Iloilo and Bacolod; in November 2026 the seeded data was narrowed to Metro Manila to concentrate on one area first. Users can still add restrooms elsewhere in the Philippines.
 - **Platform:** a web application and installable PWA for phones and desktops.
 - **Features:** map and list with filters; restroom pages with amenities, ratings and reviews; adding restrooms; walking and driving navigation with voice; AI assistant; gamification; moderation; English and Tagalog; light and dark mode; data export and account deletion.
 
@@ -58,7 +58,7 @@ To develop a free, crowdsourced and AI-assisted restroom finder application for 
 - **No real-time status.** The app cannot show whether a restroom is currently open, crowded or out of water; it relies on reviews and reports.
 - **Voice guidance depends on the device.** Spoken directions use the browser's built-in voices. Most devices have no Filipino voice, so Tagalog instructions are read by the default voice.
 - **Browser testing.** Automated tests ran on a Chromium-based browser (Microsoft Edge). The app was not formally tested on Firefox or Safari.
-- **Uneven data coverage.** Imported data is only as complete as OpenStreetMap; for example, only 15 restrooms were found for Bacolod. When OSM does not say whether a fee is charged, the restroom is shown as free.
+- **Uneven data coverage.** Imported data is only as complete as OpenStreetMap; for example, the original import found 585 restrooms for Metro Manila but only 15 for Bacolod. When OSM does not say whether a fee is charged, the restroom is shown as free.
 - **Free-tier limits.** Groq, Nominatim (one request per second) and the public OSRM server have usage limits and no service guarantee. Heavy traffic would require paid plans or self-hosted services.
 - **English embedding model.** all-MiniLM-L6-v2 is trained mainly on English. Tagalog questions work because the assistant rewrites the search query in English before searching, but pure Tagalog semantic matching is weaker.
 - **No user study.** The system was verified with automated functional, accessibility and production tests, but not yet with a formal usability study among target users.
