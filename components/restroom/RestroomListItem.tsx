@@ -61,10 +61,7 @@ export function RestroomListItem({
         </div>
 
         <div className="flex min-w-0 flex-1 flex-col gap-1">
-          <div className="flex items-start justify-between gap-2">
-            <h2 className="line-clamp-2 font-semibold leading-tight">{restroom.name}</h2>
-            <PriceBadge isFree={restroom.isFree} className="shrink-0" />
-          </div>
+          <h2 className="line-clamp-2 font-semibold leading-tight">{restroom.name}</h2>
 
           {/* Approved is the normal case: only the exceptions get a badge in the list */}
           {(isUserAdded || (restroom.status && restroom.status !== "approved")) && (
@@ -76,7 +73,10 @@ export function RestroomListItem({
             </div>
           )}
 
-          <RestroomRating rating={restroom.rating} reviewCount={restroom.reviewCount} size="sm" />
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <RestroomRating rating={restroom.rating} reviewCount={restroom.reviewCount} size="sm" />
+            <PriceBadge isFree={restroom.isFree} className="px-1.5 py-0 text-[11px]" />
+          </div>
 
           {distanceKm !== null && (
             <p className="flex items-center gap-1 text-xs text-muted-foreground">

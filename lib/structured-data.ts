@@ -36,7 +36,7 @@ export function restroomJsonLd(restroom: Restroom, url: string): Record<string, 
       latitude: restroom.latitude,
       longitude: restroom.longitude,
     },
-    isAccessibleForFree: restroom.isFree,
+    ...(restroom.isFree === null ? {} : { isAccessibleForFree: restroom.isFree }),
     publicAccess: true,
     amenityFeature: restroom.amenities
       .filter((amenity) => amenity !== "free")

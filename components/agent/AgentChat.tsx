@@ -143,7 +143,7 @@ export function AgentChat({ open, onOpenChange }: AgentChatProps) {
           </div>
           <Popover>
             <PopoverTrigger asChild>
-              <Button type="button" variant="ghost" size="icon" aria-label={t.agent.aboutLabel} className="h-8 w-8 shrink-0">
+              <Button type="button" variant="ghost" size="icon" aria-label={t.agent.aboutLabel} className="shrink-0">
                 <Info aria-hidden="true" />
               </Button>
             </PopoverTrigger>

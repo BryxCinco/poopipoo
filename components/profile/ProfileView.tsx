@@ -174,7 +174,7 @@ export function ProfileView({ account, restrooms, reviews, reports }: ProfileVie
   ];
 
   return (
-    <div className="mx-auto flex w-full max-w-screen-md flex-col gap-6 px-4 py-5">
+    <div className="paper-column mx-auto flex w-full max-w-screen-md flex-col gap-6 px-4 py-5">
       {/* Identity */}
       <section className="flex items-center gap-4">
         <motion.div whileHover={{ scale: 1.06, rotate: -3 }} whileTap={{ scale: 0.96 }} transition={SPRING} className="rounded-full">
@@ -268,7 +268,7 @@ export function ProfileView({ account, restrooms, reviews, reports }: ProfileVie
                     >
                       <span className="flex items-start justify-between gap-2">
                         <span className="truncate font-medium">{restroom.name}</span>
-                        {restroom.status && <RestroomStatusBadge status={restroom.status} className="shrink-0" />}
+                        {restroom.status && <RestroomStatusBadge status={restroom.status} verifiedCount={restroom.verifiedCount} source={restroom.source} className="shrink-0" />}
                       </span>
                       <span className="text-xs text-muted-foreground">
                         {restroom.status === "rejected"

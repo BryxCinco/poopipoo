@@ -46,7 +46,7 @@ export type RestroomRow = {
   latitude: number;
   longitude: number;
   amenities: string[];
-  is_free: boolean;
+  is_free: boolean | null;
   images: string[];
   rating: number;
   review_count: number;
@@ -160,7 +160,7 @@ export type RestroomInsert = {
   latitude: number;
   longitude: number;
   amenities?: string[];
-  is_free?: boolean;
+  is_free?: boolean | null;
   images?: string[];
   created_by: string | null;
   // Writable by the secret (admin) key only, used by the seed/import scripts.

@@ -4,7 +4,7 @@ import { getT } from "@/lib/i18n/server";
 /** Matches the settings layout: account card, then grouped rows. */
 export default function Loading() {
   return (
-    <div className="mx-auto flex w-full max-w-screen-md flex-col gap-6 px-4 py-5" aria-busy="true" aria-label={getT().common.loading}>
+    <div className="paper-column mx-auto flex w-full max-w-screen-md flex-col gap-6 px-4 py-5" aria-busy="true" aria-label={getT().common.loading}>
       <Skeleton className="h-7 w-32" />
       <div className="flex flex-col gap-2">
         <Skeleton className="h-5 w-20" />

@@ -86,7 +86,7 @@ function buildUserPrompt(restroom: Restroom, context: ModerationContext): string
     `Address: ${restroom.address}`,
     `Description: ${restroom.description || "(none)"}`,
     `Coordinates: ${restroom.latitude.toFixed(6)}, ${restroom.longitude.toFixed(6)}`,
-    `Free: ${restroom.isFree ? "yes" : "no"}`,
+    `Free: ${restroom.isFree === null ? "unknown" : restroom.isFree ? "yes" : "no"}`,
     "</listing>",
     `Nearby restrooms:\n${nearby}`,
     `Added by this user in the last 24 hours: ${context.recentSubmissions}`,

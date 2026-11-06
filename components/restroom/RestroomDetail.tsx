@@ -25,11 +25,11 @@ import { useMainScrollY } from "@/hooks/use-main-scroll";
 import { useNavigation } from "@/hooks/use-navigation";
 import { slideUp, staggerContainer, staggerItem } from "@/lib/animations";
 import {
-  ALL_AMENITIES,
   getAmenityIcon,
   getAmenityLabel,
   getDisplayAmenities,
 } from "@/lib/icons";
+import { approvalKind } from "@/lib/moderation/approval";
 import { cn } from "@/lib/utils";
 import type { Restroom } from "@/types/restroom";
 import type { Review } from "@/types/review";
@@ -61,6 +61,7 @@ export function RestroomDetail({ restroom, isOwner, viewerId, initialVerified, r
   const router = useRouter();
   const nav = useNavigation();
   const { t, locale } = useI18n();
+  const amenities = getDisplayAmenities(restroom.amenities);
   // Moderation status + confirmations; updated in place after a vote
   const [community, setCommunity] = useState({
     status: restroom.status ?? "approved",
@@ -92,7 +93,7 @@ export function RestroomDetail({ restroom, isOwner, viewerId, initialVerified, r
   return (
     <article
       className={cn(
-        "mx-auto flex w-full max-w-screen-md flex-col gap-5 px-4 py-3",
+        "paper-column mx-auto flex w-full max-w-screen-md flex-col gap-5 px-4 py-3",
         // Leave room for the fixed navigation panel
         planning ? "pb-[60dvh]" : "pb-8"
       )}
@@ -115,7 +116,7 @@ export function RestroomDetail({ restroom, isOwner, viewerId, initialVerified, r
           className="flex flex-col gap-2"
         >
           <div className="flex flex-wrap gap-1.5">
-            <RestroomStatusBadge status={community.status} />
+            <RestroomStatusBadge status={community.status} verifiedCount={community.verifiedCount} source={restroom.source} />
             {isOwner && <UserAddedBadge label={t.restroom.yourContribution} />}
           </div>
           <h1 className="text-2xl font-bold leading-tight">{restroom.name}</h1>
@@ -174,7 +175,9 @@ export function RestroomDetail({ restroom, isOwner, viewerId, initialVerified, r
         <h2 id="verify-heading" className="text-sm font-semibold">
           {t.moderation.verify.question}
         </h2>
-        <p className="text-xs text-muted-foreground">{t.moderation.statusHint[community.status]}</p>
+        <p className="text-xs text-muted-foreground">{community.status === "approved"
+            ? t.moderation.approval[approvalKind(community.verifiedCount, restroom.source)].hint
+            : t.moderation.statusHint[community.status]}</p>
         <VerifyButton
           restroomId={restroom.id}
           status={community.status}
@@ -188,38 +191,31 @@ export function RestroomDetail({ restroom, isOwner, viewerId, initialVerified, r
 
       <section className="flex flex-col gap-2">
         <h2 className="font-semibold">{t.restroom.amenities}</h2>
-        {/* Shows every amenity type so it's clear what's missing too (e.g. walang bidet) */}
-        <motion.ul
-          className="grid grid-cols-2 gap-2"
-          variants={staggerContainer}
-          initial="hidden"
-          animate="visible"
-        >
-          {getDisplayAmenities(ALL_AMENITIES).map((amenity) => {
-            const Icon = getAmenityIcon(amenity);
-            const available = restroom.amenities.includes(amenity);
-            return (
-              <motion.li
-                key={amenity}
-                variants={staggerItem}
-                className={cn(
-                  // Solid card background: the paper-map pattern must not show through the text
-                  "flex items-center gap-2 rounded-lg border bg-card px-3 py-2 text-sm",
-                  available
-                    ? "border-primary/40 font-medium"
-                    : "text-muted-foreground"
-                )}
-              >
-                <Icon
-                  className={cn("h-4 w-4 shrink-0", available && "text-primary")}
-                  aria-hidden="true"
-                />
-                <span className={cn(!available && "line-through")}>{getAmenityLabel(amenity, locale)}</span>
-                <span className="sr-only">{available ? t.restroom.available : t.restroom.unavailable}</span>
-              </motion.li>
-            );
-          })}
-        </motion.ul>
+        {/* Only what's known to be there: a missing amenity usually means nobody recorded it, not "wala" */}
+        {amenities.length === 0 ? (
+          <p className="text-sm text-muted-foreground">{t.restroom.noAmenityInfo}</p>
+        ) : (
+          <motion.ul
+            className="grid grid-cols-2 gap-2"
+            variants={staggerContainer}
+            initial="hidden"
+            animate="visible"
+          >
+            {amenities.map((amenity) => {
+              const Icon = getAmenityIcon(amenity);
+              return (
+                <motion.li
+                  key={amenity}
+                  variants={staggerItem}
+                  className="flex items-center gap-2 rounded-lg border border-primary/40 bg-card px-3 py-2 text-sm font-medium"
+                >
+                  <Icon className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+                  {getAmenityLabel(amenity, locale)}
+                </motion.li>
+              );
+            })}
+          </motion.ul>
+        )}
       </section>
 
       {restroom.description && (

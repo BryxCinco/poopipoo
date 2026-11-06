@@ -1220,9 +1220,11 @@ All seven specific objectives were met. The general objective, a free, crowdsour
 
 ### Coverage
 
-| Area | Restrooms | From OSM | Seeded | Shown as free |
-| --- | --- | --- | --- | --- |
-| Metro Manila | 615 | 585 | 30 | 589 |
+| Area | Restrooms | From OSM | Seeded | Free | Paid | Fee unknown |
+| --- | --- | --- | --- | --- | --- | --- |
+| Metro Manila | 615 | 585 | 30 | 111 | 26 | 478 |
+
+**Fee correction (November 2026).** Earlier versions of this chapter reported 589 of 615 restrooms as free, and 582 with a `free` tag. Those figures were a default assumption, not confirmed facts: the importer treated every OpenStreetMap toilet without a `fee` tag as free. A check of the 585 imported toilets against OpenStreetMap found only 89 tagged as free (`fee=no`), 18 as paid, and 478 with no fee information (13 of these are no longer in OpenStreetMap). The application now stores those 478 as unknown and shows "Fee unknown" instead of "Free", and the AI assistant says that it has no fee information. The free and paid counts above include the 30 seeded restrooms (22 free, 8 paid), whose values were entered by hand and have not been confirmed by the community.
 
 **Scope revision (November 2026).** The first release held 859 restrooms in five cities: Metro Manila (615), Cebu (91), Davao (74), Iloilo (64) and Bacolod (15). The seeded data was then narrowed to Metro Manila, to concentrate on one area first, and the 244 imported restrooms outside it were removed. None of them had reviews, verifications or reports. Users can still add restrooms outside Metro Manila. The counts in this chapter describe the revised data. The performance measurements in Chapter 7 and the test records in the appendices were taken on the original 859 restrooms and were not repeated.
 
@@ -1241,7 +1243,7 @@ The remaining 8 imported toilets kept their real OSM names (e.g., "Hel-Loo", "Pa
 
 | Amenity | Restrooms tagged |
 | --- | --- |
-| `free` tag (no fee recorded) | 582 |
+| `free` tag (OSM `fee=no`, or set by hand on seeded rows) | 104 |
 | Wheelchair accessible | 64 |
 | Toilet paper | 31 |
 | Soap | 25 |
@@ -1315,7 +1317,8 @@ Google Maps and Waze are far more mature and have vastly larger user bases, so P
 
 - **No community data yet.** At the time of writing, the database has one user profile (the author's) and no reviews. All restrooms come from OpenStreetMap or manual seeding. The contribution, gamification and moderation features are tested and working, but their effect on real users has not been observed.
 - **Thin amenity data.** Only 14% of restrooms record any amenity, so amenity filters return few results until the community adds details.
-- **Fee information is uncertain.** When OSM does not record a fee, the restroom is shown as free (589 of 615). Some are likely paid in practice.
+- **Fee information is thin.** OSM records a fee status for only 107 of the 585 imported toilets, so 478 of 615 restrooms show "Fee unknown" until the community adds it.
+- **Most restrooms are unconfirmed.** No restroom has a community confirmation yet. Imported ones are labeled "OSM Import" and seeded ones "Approved"; "Verified by community" appears only after a real confirmation.
 - **Coverage is limited to Metro Manila.** Seeded data covers one metro. Restrooms elsewhere appear only when users add them.
 - **Map performance on slow networks.** The map takes about 6 seconds to show pins on a Fast 3G connection, mostly to download the JavaScript and all restroom data.
 - **Scalability limit in data loading.** The map loads all restrooms in one request. Supabase returns at most 1,000 rows per request by default, so loading must be changed (by map area or in pages) before the database passes 1,000 restrooms.

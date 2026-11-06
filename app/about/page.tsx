@@ -41,7 +41,7 @@ export default async function AboutPage() {
   ];
 
   return (
-    <div className="mx-auto flex w-full max-w-screen-md flex-col gap-6 px-4 py-6">
+    <div className="paper-column mx-auto flex w-full max-w-screen-md flex-col gap-6 px-4 py-6">
       {/* App */}
       <section className="flex flex-col items-center gap-3 text-center">
         <Image

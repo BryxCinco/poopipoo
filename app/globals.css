@@ -111,6 +111,12 @@
 }
 
 @layer utilities {
+  /* Content column: covers the paper-map pattern so it never runs under text.
+     The pattern still shows beside and below the content. */
+  .paper-column {
+    background-color: hsl(var(--background));
+    box-shadow: 0 0 24px 16px hsl(var(--background));
+  }
   /* Link underline that grows from the left on hover/focus */
   .link-underline {
     background-image: linear-gradient(currentColor, currentColor);

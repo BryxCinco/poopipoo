@@ -21,7 +21,7 @@ interface FilterDef {
 }
 
 export const FILTERS: FilterDef[] = [
-  { id: "free", icon: BadgeCheck, matches: (r) => r.isFree },
+  { id: "free", icon: BadgeCheck, matches: (r) => r.isFree === true },
   {
     id: "bidet",
     icon: getAmenityIcon("bidet"),
@@ -71,7 +71,7 @@ function FilterChip({ label, icon: Icon, active, onClick }: ChipProps) {
       whileTap={{ scale: 0.92 }}
       transition={SPRING}
       className={cn(
-        "flex h-8 shrink-0 items-center gap-1.5 rounded-full border px-3 text-sm transition-[color,background-color,border-color,box-shadow] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        "flex h-11 shrink-0 items-center gap-1.5 rounded-full border px-3 text-sm transition-[color,background-color,border-color,box-shadow] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
         active
           ? "border-primary bg-primary text-primary-foreground shadow-sm"
           : "bg-card text-foreground hover:border-primary/40 hover:bg-muted"

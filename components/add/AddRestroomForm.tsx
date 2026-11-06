@@ -336,7 +336,7 @@ export function AddRestroomForm({ userId }: AddRestroomFormProps) {
     );
 
   return (
-    <div className="mx-auto flex w-full max-w-screen-md flex-1 flex-col">
+    <div className="paper-column mx-auto flex w-full max-w-screen-md flex-1 flex-col">
       {/* Top bar: back + step indicator + cancel */}
       <div className="flex flex-col gap-2 px-4 pt-3">
         <div className="flex items-center justify-between">

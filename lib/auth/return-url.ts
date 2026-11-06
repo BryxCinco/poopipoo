@@ -18,6 +18,16 @@ export function safeReturnUrl(value: string | string[] | null | undefined): stri
   return url;
 }
 
+/**
+ * Where "Try demo" lands: the map, since the Profile is all zeros and the demo
+ * account can't add restrooms. Any other page it came from (e.g. a restroom it
+ * wants to review) is kept.
+ */
+export function demoReturnUrl(value: string | string[] | null | undefined): string {
+  const url = safeReturnUrl(value);
+  return url.startsWith("/profile") || url.startsWith("/add") ? "/" : url;
+}
+
 export function loginUrl(returnUrl: string): string {
   return `/auth/login?returnUrl=${encodeURIComponent(returnUrl)}`;
 }

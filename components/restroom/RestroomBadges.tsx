@@ -1,6 +1,6 @@
 "use client";
 
-import { BadgeCheck, CircleDollarSign, UserRound } from "lucide-react";
+import { BadgeCheck, CircleDollarSign, CircleHelp, UserRound } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { useI18n } from "@/hooks/use-i18n";
@@ -8,9 +8,18 @@ import { getAmenityIcon, getAmenityLabel } from "@/lib/icons";
 import { cn } from "@/lib/utils";
 import type { Amenity } from "@/types/restroom";
 
-export function PriceBadge({ isFree, className }: { isFree: boolean; className?: string }) {
+export function PriceBadge({ isFree, className }: { isFree: boolean | null; className?: string }) {
   const Icon = isFree ? BadgeCheck : CircleDollarSign;
   const { t } = useI18n();
+  // No fee information yet: say so, never "Libre"
+  if (isFree === null) {
+    return (
+      <Badge variant="outline" className={cn("gap-1 font-normal text-muted-foreground", className)}>
+        <CircleHelp className="h-3.5 w-3.5" aria-hidden="true" />
+        {t.restroom.feeUnknown}
+      </Badge>
+    );
+  }
   return (
     <Badge variant={isFree ? "secondary" : "outline"} className={cn("gap-1", className)}>
       <Icon className="h-3.5 w-3.5" aria-hidden="true" />

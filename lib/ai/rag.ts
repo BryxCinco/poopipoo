@@ -185,8 +185,8 @@ export function buildContext(restrooms: RankedRestroom[], locale: Locale = "tl")
       const parts = [
         `${index + 1}. ${restroom.name} (id: ${restroom.id})`,
         `Address: ${restroom.address}`,
-        restroom.isFree ? "Libre" : "May bayad",
-        `Amenities: ${amenities.length > 0 ? amenities.join(", ") : "wala nakalista"}`,
+        restroom.isFree === null ? "Walang info sa bayad" : restroom.isFree ? "Libre" : "May bayad",
+        `Amenities: ${amenities.length > 0 ? amenities.join(", ") : "walang nakalista"}`,
         restroom.reviewCount > 0
           ? `Rating: ${restroom.rating.toFixed(1)}/5 (${restroom.reviewCount} review)`
           : "Rating: wala pang review",
@@ -197,5 +197,5 @@ export function buildContext(restrooms: RankedRestroom[], locale: Locale = "tl")
     })
     .join("\n");
   // Grounding reminder: the model must not add restrooms or amenities from its own knowledge
-  return `${list}\n(Ito LANG ang mga CR na tugma. Huwag magdagdag ng iba o ng amenities na wala rito.)`;
+  return `${list}\n(Ito LANG ang mga CR na tugma. Huwag magdagdag ng iba o ng amenities na wala rito. Ang \"Walang info sa bayad\" at \"walang nakalista\" ay hindi pa alam: huwag sabihing libre o wala, sabihing walang info.)`;
 }

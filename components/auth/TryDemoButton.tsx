@@ -39,17 +39,17 @@ export function TryDemoButton({ returnUrl }: { returnUrl: string }) {
   };
 
   return (
-    <div className="mt-4 flex flex-col gap-2">
+    <div className="mb-4 flex flex-col gap-2">
+      <Button type="button" variant="secondary" size="lg" className="w-full" disabled={pending} onClick={() => void start()}>
+        {pending ? <Loader2 className="animate-spin" aria-hidden="true" /> : <Sparkles aria-hidden="true" />}
+        {pending ? t.demo.starting : t.demo.tryDemo}
+      </Button>
+      <p className="text-center text-xs text-muted-foreground">{t.demo.hint}</p>
       <div className="flex items-center gap-3 text-xs text-muted-foreground">
         <span className="h-px flex-1 bg-border" aria-hidden="true" />
         {t.demo.or}
         <span className="h-px flex-1 bg-border" aria-hidden="true" />
       </div>
-      <Button type="button" variant="outline" size="lg" className="w-full" disabled={pending} onClick={() => void start()}>
-        {pending ? <Loader2 className="animate-spin" aria-hidden="true" /> : <Sparkles aria-hidden="true" />}
-        {pending ? t.demo.starting : t.demo.tryDemo}
-      </Button>
-      <p className="text-center text-xs text-muted-foreground">{t.demo.hint}</p>
     </div>
   );
 }
